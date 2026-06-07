@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MSTR Options Projector — wisesatoshi.com</title>
+<meta name="description" content="Project the value of your MSTR call options based on Bitcoin price, BTC holdings, mNAV, and time to expiration. Built for Bitcoiners and MSTR shareholders." />
+<meta property="og:title" content="MSTR Options Projector — wisesatoshi.com" />
+<meta property="og:description" content="Model your MSTR call option value against any Bitcoin price scenario." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #F7931A;
+    --orange-dim: #c4750f;
+    --orange-glow: rgba(247,147,26,0.15);
+    --orange-faint: rgba(247,147,26,0.06);
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #181818;
+    --border: rgba(255,255,255,0.07);
+    --border-orange: rgba(247,147,26,0.3);
+    --text: #f0ede8;
+    --text-muted: #888880;
+    --text-dim: #555550;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 6px;
+    --radius-lg: 12px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--orange);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-x {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--orange);
+    text-decoration: none;
+    border: 1px solid var(--border-orange);
+    padding: 4px 12px;
+    border-radius: var(--radius);
+    transition: background 0.2s;
+  }
+
+  .nav-x:hover { background: var(--orange-glow); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    padding: 6rem 2rem 4rem;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--orange);
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+  }
+
+  h1 span { color: var(--orange); }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+    font-weight: 300;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-orange), transparent);
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── TOOL SECTION ── */
+  .tool-section {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 2rem 4rem;
+  }
+
+  .tool-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tool-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .tool-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── SLIDERS ── */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .slider-row:last-child { margin-bottom: 0; }
+
+  .slider-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    min-width: 200px;
+    flex-shrink: 0;
+  }
+
+  .slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--orange);
+    cursor: pointer;
+    transition: transform 0.15s;
+    box-shadow: 0 0 0 3px rgba(247,147,26,0.2);
+  }
+
+  .slider-row input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--orange);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 0 3px rgba(247,147,26,0.2);
+  }
+
+  .slider-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    min-width: 100px;
+    text-align: right;
+  }
+
+  /* ── DERIVED MSTR BOX ── */
+  .derived-box {
+    background: var(--orange-faint);
+    border: 1px solid var(--border-orange);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .derived-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange-dim);
+    margin-bottom: 4px;
+  }
+
+  .derived-price {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .derived-formula {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    text-align: right;
+  }
+
+  .override-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--orange-dim);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    letter-spacing: 0.06em;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    display: block;
+  }
+
+  #overrideSection { display: none; margin-top: 10px; }
+
+  .override-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .override-row label {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .override-row input[type=number] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 6px 10px;
+    width: 110px;
+    outline: none;
+  }
+
+  .override-row input[type=number]:focus {
+    border-color: var(--border-orange);
+  }
+
+  /* ── DATE ROW ── */
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .date-input-wrap label {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  input[type=date] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=date]:focus { border-color: var(--border-orange); }
+
+  .tte-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .tte-box span:first-child {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .tte-box span:last-child {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  /* ── RESULTS GRID ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+  }
+
+  .result-card.featured {
+    border-color: var(--border-orange);
+    background: var(--orange-faint);
+  }
+
+  .result-card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .result-card.featured .result-card-label { color: var(--orange-dim); }
+
+  .result-card-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .result-card.featured .result-card-value { color: var(--orange); font-size: 26px; }
+
+  .result-card-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .moneyness-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-top: 4px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .itm { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+  .otm { background: rgba(247,147,26,0.1); color: var(--orange-dim); border: 1px solid var(--border-orange); }
+
+  /* ── GREEKS ── */
+  .greeks-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .greek-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 0.9rem;
+  }
+
+  .greek-symbol {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .greek-value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .greek-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* ── SCENARIOS ── */
+  .scenarios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .scenario-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .scenario-btn:hover {
+    border-color: var(--border-orange);
+    color: var(--orange);
+    background: var(--orange-faint);
+  }
+
+  /* ── CONTRACTS INPUT ── */
+  .contracts-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .contracts-row label {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .contracts-row input[type=number] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 6px 10px;
+    width: 80px;
+    outline: none;
+    text-align: center;
+  }
+
+  .contracts-row input[type=number]:focus { border-color: var(--border-orange); }
+
+  .strike-info {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border-orange);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-top: 1.5rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 2rem;
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--orange);
+    text-decoration: none;
+  }
+
+  .footer-credit {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .footer-credit a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-credit a:hover { color: var(--orange); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero { animation: fadeUp 0.6s ease both; }
+  .panel { animation: fadeUp 0.5s ease both; }
+  .panel:nth-child(2) { animation-delay: 0.05s; }
+  .panel:nth-child(3) { animation-delay: 0.1s; }
+  .panel:nth-child(4) { animation-delay: 0.15s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    nav { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .hero { padding: 3.5rem 1rem 2.5rem; }
+    .tool-section { padding: 2rem 1rem; }
+    .slider-label { min-width: 140px; font-size: 12px; }
+    .greeks-grid { grid-template-columns: repeat(2, 1fr); }
+    .date-row { grid-template-columns: 1fr; }
+    .derived-formula { text-align: left; }
+    footer { padding: 2rem 1rem; flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="#">wisesatoshi.com</a>
+  <ul class="nav-links">
+    <li><a href="#tool">projector</a></li>
+    <li><a href="#about">about</a></li>
+  </ul>
+  <a class="nav-x" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+</nav>
+
+<section class="hero">
+  <p class="hero-eyebrow">MSTR options projector</p>
+  <h1>What is your <span>MSTR position</span> worth at any Bitcoin price?</h1>
+  <p class="hero-sub">Model your MSTR call option value across any Bitcoin scenario. Adjust BTC price, holdings, mNAV multiple, and time to expiration to see what your position could be worth.</p>
+  <div class="hero-tags">
+    <span class="tag">Black-Scholes pricing</span>
+    <span class="tag">mNAV-derived MSTR price</span>
+    <span class="tag">Greeks included</span>
+    <span class="tag">any strike / expiry</span>
+    <span class="tag">built by a Bitcoiner</span>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<section class="tool-section" id="tool">
+  <div class="tool-header">
+    <span class="tool-title">// options projector</span>
+    <span class="tool-meta">Black-Scholes · American-style approximation</span>
+  </div>
+
+  <!-- Position setup -->
+  <div class="panel">
+    <p class="panel-title">Your position</p>
+    <div class="contracts-row">
+      <label>Number of contracts</label>
+      <input type="number" id="contracts" value="10" min="1" max="10000" step="1" oninput="update()" />
+      <span class="strike-info">Strike: $<span id="strikeDisplay">275</span> · Expiry: 12/15/2028</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Strike price ($)</span>
+      <input type="range" id="strike" min="50" max="2000" step="5" value="275" oninput="update()">
+      <span class="slider-val">$<span id="strikeVal">275</span></span>
+    </div>
+    <div class="date-row">
+      <div class="date-input-wrap">
+        <label>Expiration date</label>
+        <input type="date" id="expiry" value="2028-12-15" min="2025-01-01" max="2035-12-31" />
+      </div>
+      <div class="date-input-wrap">
+        <label>Projection date</label>
+        <input type="date" id="projDate" value="2026-06-05" min="2024-01-01" max="2035-12-31" />
+      </div>
+    </div>
+    <div class="tte-box" style="margin-top:-4px;">
+      <span>Time to expiry</span>
+      <span id="tte">—</span>
+    </div>
+  </div>
+
+  <!-- Bitcoin & fundamentals -->
+  <div class="panel">
+    <p class="panel-title">Bitcoin & MSTR fundamentals</p>
+    <div class="slider-row">
+      <span class="slider-label">Bitcoin price <span id="btcLiveTag" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;margin-left:6px;">fetching…</span></span>
+      <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="105000" oninput="update()">
+      <span class="slider-val">$<span id="btcPriceVal">105,000</span></span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">BTC held by MSTR</span>
+      <input type="range" id="btcHeld" min="100000" max="1500000" step="1000" value="843706" oninput="update()">
+      <span class="slider-val"><span id="btcHeldVal">843,706</span></span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Shares outstanding (millions)</span>
+      <input type="range" id="shares" min="100" max="2000" step="10" value="310" oninput="update()">
+      <span class="slider-val"><span id="sharesVal">310</span>M</span>
+    </div>
+    <p style="font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.08em; margin: -4px 0 10px; display:flex; align-items:center; gap:6px;">
+      <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--orange); opacity:0.6; flex-shrink:0;"></span>
+      DEFAULTS LAST UPDATED: JUNE 5, 2026 &nbsp;·&nbsp; BTC HELD SOURCE: BITCOINTREASURIES.NET &nbsp;·&nbsp; STRATEGY BUYS FREQUENTLY — VERIFY BEFORE SHARING
+    </p>
+    <div class="slider-row">
+      <span class="slider-label">mNAV multiple</span>
+      <input type="range" id="mnav" min="0.5" max="10" step="0.1" value="2.0" oninput="update()">
+      <span class="slider-val"><span id="mnavVal">2.0</span>×</span>
+    </div>
+
+    <div class="derived-box">
+      <div>
+        <p class="derived-label">Derived MSTR share price</p>
+        <p class="derived-price" id="derivedMSTR">—</p>
+        <button class="override-link" onclick="toggleOverride()">manual override ↓</button>
+      </div>
+      <p class="derived-formula" id="derivedFormula">—</p>
+    </div>
+
+    <div id="overrideSection">
+      <div class="override-row">
+        <label>Manual MSTR price ($)</label>
+        <input type="number" id="mstrOverride" value="430" min="1" max="99999" step="1" oninput="update()" />
+        <button class="override-link" onclick="toggleOverride()">← use derived price</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vol & rate -->
+  <div class="panel">
+    <p class="panel-title">Volatility & rate</p>
+    <div class="slider-row">
+      <span class="slider-label">Implied volatility (IV)</span>
+      <input type="range" id="iv" min="0.3" max="2.5" step="0.01" value="0.9" oninput="update()">
+      <span class="slider-val"><span id="ivVal">90</span>%</span>
+    </div>
+    <div class="slider-row">
+      <span class="slider-label">Risk-free rate</span>
+      <input type="range" id="rfr" min="0.01" max="0.1" step="0.005" value="0.045" oninput="update()">
+      <span class="slider-val"><span id="rfrVal">4.5</span>%</span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="panel">
+    <p class="panel-title">Results</p>
+    <div class="results-grid">
+      <div class="result-card">
+        <p class="result-card-label">Intrinsic value / share</p>
+        <p class="result-card-value" id="intrinsic">—</p>
+      </div>
+      <div class="result-card">
+        <p class="result-card-label">Option price (B-S)</p>
+        <p class="result-card-value" id="optionPrice">—</p>
+        <div id="moneyness"></div>
+      </div>
+      <div class="result-card">
+        <p class="result-card-label">Value per contract</p>
+        <p class="result-card-value" id="perContract">—</p>
+        <p class="result-card-sub">100 shares × option price</p>
+      </div>
+      <div class="result-card featured">
+        <p class="result-card-label">Total position value</p>
+        <p class="result-card-value" id="totalValue">—</p>
+        <p class="result-card-sub" id="totalSub">—</p>
+      </div>
+    </div>
+
+    <p class="panel-title" style="margin-top:1.5rem;">Greeks</p>
+    <div class="greeks-grid">
+      <div class="greek-card">
+        <p class="greek-symbol">Delta (Δ)</p>
+        <p class="greek-value" id="delta">—</p>
+        <p class="greek-desc">per $1 move in MSTR</p>
+      </div>
+      <div class="greek-card">
+        <p class="greek-symbol">Theta (Θ)</p>
+        <p class="greek-value" id="theta">—</p>
+        <p class="greek-desc">per day decay</p>
+      </div>
+      <div class="greek-card">
+        <p class="greek-symbol">Vega (ν)</p>
+        <p class="greek-value" id="vega">—</p>
+        <p class="greek-desc">per 1% IV move</p>
+      </div>
+      <div class="greek-card">
+        <p class="greek-symbol">Gamma (Γ)</p>
+        <p class="greek-value" id="gamma">—</p>
+        <p class="greek-desc">delta change per $1</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scenarios -->
+  <div class="panel">
+    <p class="panel-title">Quick scenarios</p>
+    <div class="scenarios">
+      <button class="scenario-btn" onclick="setScenario(105000,843706,310,2.0,0.9)">Current (~$105K BTC)</button>
+      <button class="scenario-btn" onclick="setScenario(200000,600000,360,2.2,1.0)">BTC $200K</button>
+      <button class="scenario-btn" onclick="setScenario(500000,700000,400,2.5,1.2)">BTC $500K</button>
+      <button class="scenario-btn" onclick="setScenario(1000000,800000,500,3.0,1.5)">BTC $1M</button>
+      <button class="scenario-btn" onclick="setScenario(60000,560000,320,1.5,0.85)">Bear ($60K BTC)</button>
+    </div>
+  </div>
+
+  <div class="disclaimer" id="about">
+    <strong style="color:var(--text-muted); font-family:var(--mono); font-size:11px; letter-spacing:0.08em;">DISCLAIMER</strong><br/>
+    This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ slightly. MSTR price is derived from BTC holdings and a user-supplied mNAV multiple — this is a model assumption, not a prediction. Nothing here constitutes financial advice. Do your own research.
+  </div>
+</section>
+
+<footer>
+  <a class="footer-brand" href="#">wisesatoshi.com</a>
+  <p class="footer-credit">
+    built by a Bitcoiner &mdash;
+    <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a>
+  </p>
+</footer>
+
+<script>
+  let overrideMode = false;
+
+  function norm(x) {
+    const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    const t = 1/(1+p*Math.abs(x));
+    const y = 1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x/2);
+    return 0.5*(1+sign*y);
+  }
+  function normPDF(x) { return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
+
+  function blackScholes(S, K, T, r, sigma) {
+    if (T <= 0) return { price: Math.max(S-K,0), delta:S>K?1:0, theta:0, vega:0, gamma:0 };
+    const sqrtT = Math.sqrt(T);
+    const d1 = (Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*sqrtT);
+    const d2 = d1 - sigma*sqrtT;
+    const Nd1 = norm(d1), Nd2 = norm(d2);
+    const price = S*Nd1 - K*Math.exp(-r*T)*Nd2;
+    const delta = Nd1;
+    const gamma = normPDF(d1)/(S*sigma*sqrtT);
+    const theta = (-(S*normPDF(d1)*sigma)/(2*sqrtT) - r*K*Math.exp(-r*T)*Nd2)/365;
+    const vega = S*normPDF(d1)*sqrtT/100;
+    return { price, delta, theta, vega, gamma };
+  }
+
+  function fmt(n, dec=2) { return n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function fmtM(n) {
+    if (n >= 1e9) return '$'+fmt(n/1e9,2)+'B';
+    if (n >= 1e6) return '$'+fmt(n/1e6,2)+'M';
+    return '$'+fmt(n,0);
+  }
+
+  function toggleOverride() {
+    overrideMode = !overrideMode;
+    document.getElementById('overrideSection').style.display = overrideMode ? 'block' : 'none';
+    update();
+  }
+
+  function update() {
+    const btc = parseFloat(document.getElementById('btcPrice').value);
+    const btcHeld = parseFloat(document.getElementById('btcHeld').value);
+    const sharesM = parseFloat(document.getElementById('shares').value);
+    const mnav = parseFloat(document.getElementById('mnav').value);
+    const sigma = parseFloat(document.getElementById('iv').value);
+    const r = parseFloat(document.getElementById('rfr').value);
+    const K = parseFloat(document.getElementById('strike').value);
+    const contracts = Math.max(1, parseInt(document.getElementById('contracts').value) || 1);
+    const projDate = new Date(document.getElementById('projDate').value);
+    const expiryDate = new Date(document.getElementById('expiry').value);
+
+    document.getElementById('strikeDisplay').textContent = fmt(K,0);
+    document.getElementById('strikeVal').textContent = fmt(K,0);
+    document.getElementById('btcPriceVal').textContent = fmt(btc,0);
+    document.getElementById('btcHeldVal').textContent = fmt(btcHeld,0);
+    document.getElementById('sharesVal').textContent = fmt(sharesM,0);
+    document.getElementById('mnavVal').textContent = fmt(mnav,1);
+    document.getElementById('ivVal').textContent = fmt(sigma*100,0);
+    document.getElementById('rfrVal').textContent = fmt(r*100,1);
+
+    const navPerShare = (btcHeld * btc) / (sharesM * 1e6);
+    const derivedS = navPerShare * mnav;
+
+    document.getElementById('derivedMSTR').textContent = '$' + fmt(derivedS, 2);
+    document.getElementById('derivedFormula').textContent =
+      fmt(btcHeld,0) + ' BTC × $' + fmt(btc,0) + '\n÷ ' + fmt(sharesM,0) + 'M shares\n× ' + fmt(mnav,1) + '× mNAV\n= $' + fmt(derivedS,2);
+
+    const S = overrideMode
+      ? Math.max(1, parseFloat(document.getElementById('mstrOverride').value) || derivedS)
+      : derivedS;
+
+    const msToExp = expiryDate - projDate;
+    const daysToExp = Math.max(0, Math.floor(msToExp/86400000));
+    const T = daysToExp/365;
+    document.getElementById('tte').textContent = daysToExp > 0
+      ? daysToExp + ' days (' + fmt(T,2) + ' yrs)' : 'Expired';
+
+    const bs = blackScholes(S, K, T, r, sigma);
+    const intrinsic = Math.max(S - K, 0);
+    const positionValue = bs.price * 100 * contracts;
+    const perContract = bs.price * 100;
+
+    document.getElementById('intrinsic').textContent = '$'+fmt(intrinsic,2);
+    document.getElementById('optionPrice').textContent = '$'+fmt(bs.price,2);
+
+    const itm = S > K;
+    document.getElementById('moneyness').innerHTML = itm
+      ? '<span class="moneyness-badge itm">in the money</span>'
+      : '<span class="moneyness-badge otm">out of the money</span>';
+
+    document.getElementById('perContract').textContent = fmtM(perContract);
+    document.getElementById('totalValue').textContent = fmtM(positionValue);
+    document.getElementById('totalSub').textContent = contracts + ' contracts × 100sh × $'+fmt(bs.price,2);
+
+    document.getElementById('delta').textContent = fmt(bs.delta,3);
+    document.getElementById('theta').textContent = '$'+fmt(bs.theta*100,3);
+    document.getElementById('vega').textContent = '$'+fmt(bs.vega,3);
+    document.getElementById('gamma').textContent = fmt(bs.gamma,5);
+  }
+
+  function setScenario(btc, btcHeld, sharesM, mnav, iv) {
+    overrideMode = false;
+    document.getElementById('overrideSection').style.display = 'none';
+    document.getElementById('btcPrice').value = btc;
+    document.getElementById('btcHeld').value = btcHeld;
+    document.getElementById('shares').value = sharesM;
+    document.getElementById('mnav').value = mnav;
+    document.getElementById('iv').value = iv;
+    update();
+  }
+
+  document.getElementById('projDate').addEventListener('change', update);
+  document.getElementById('expiry').addEventListener('change', update);
+
+  async function fetchLiveBTCPrice() {
+    const tag = document.getElementById('btcLiveTag');
+    const slider = document.getElementById('btcPrice');
+
+    function applyPrice(price) {
+      const clamped = Math.min(Math.max(Math.round(price / 1000) * 1000, parseInt(slider.min)), parseInt(slider.max));
+      slider.value = clamped;
+      tag.textContent = '\u25cf live';
+      tag.style.color = '#4ade80';
+      update();
+    }
+
+    async function tryCoinGecko() {
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', {cache:'no-store'});
+      const data = await res.json();
+      if (data.bitcoin && data.bitcoin.usd > 0) return data.bitcoin.usd;
+      throw new Error('no price');
+    }
+
+    async function tryCoinbase() {
+      const res = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot', {cache:'no-store'});
+      const data = await res.json();
+      const price = parseFloat(data.data.amount);
+      if (price > 0) return price;
+      throw new Error('no price');
+    }
+
+    async function tryBinance() {
+      const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {cache:'no-store'});
+      const data = await res.json();
+      const price = parseFloat(data.price);
+      if (price > 0) return price;
+      throw new Error('no price');
+    }
+
+    const sources = [tryCoinGecko, tryCoinbase, tryBinance];
+    for (const source of sources) {
+      try {
+        const price = await source();
+        applyPrice(price);
+        return;
+      } catch(e) { continue; }
+    }
+    tag.textContent = '\u25cb offline \u2014 using default';
+    tag.style.color = 'var(--text-dim)';
+  }
+
+  update();
+  fetchLiveBTCPrice();
+</script>
+</body>
+</html>
