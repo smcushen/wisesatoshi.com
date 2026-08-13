@@ -729,27 +729,27 @@
     <p class="panel-title">Bitcoin & MSTR fundamentals</p>
     <div class="slider-row">
       <span class="slider-label">Bitcoin price <span id="btcLiveTag" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:0.06em;margin-left:6px;">fetching…</span></span>
-      <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="105000" oninput="update()">
+      <input type="range" id="btcPrice" min="20000" max="500000" step="1000" value="105000" oninput="update()">
       <span class="slider-val">$<span id="btcPriceVal">105,000</span></span>
     </div>
     <div class="slider-row">
       <span class="slider-label">BTC held by MSTR</span>
-      <input type="range" id="btcHeld" min="100000" max="1500000" step="1000" value="843706" oninput="update()">
-      <span class="slider-val"><span id="btcHeldVal">843,706</span></span>
+      <input type="range" id="btcHeld" min="100000" max="1500000" step="1000" value="840447" oninput="update()">
+      <span class="slider-val"><span id="btcHeldVal">840,447</span></span>
     </div>
     <div class="slider-row">
       <span class="slider-label">Shares outstanding (millions)</span>
-      <input type="range" id="shares" min="100" max="2000" step="10" value="310" oninput="update()">
-      <span class="slider-val"><span id="sharesVal">310</span>M</span>
+      <input type="range" id="shares" min="100" max="3000" step="10" value="394" oninput="update()">
+      <span class="slider-val"><span id="sharesVal">394</span>M</span>
     </div>
     <p style="font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.08em; margin: -4px 0 10px; display:flex; align-items:center; gap:6px;">
       <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--orange); opacity:0.6; flex-shrink:0;"></span>
-      DEFAULTS LAST UPDATED: JUNE 5, 2026 &nbsp;·&nbsp; BTC HELD SOURCE: BITCOINTREASURIES.NET &nbsp;·&nbsp; STRATEGY BUYS FREQUENTLY — VERIFY BEFORE SHARING
+      DEFAULTS LAST UPDATED: AUG 9, 2026 &nbsp;·&nbsp; SOURCE: STRATEGY.COM/SHARES &nbsp;·&nbsp; BASIC SHARES: 394.2M · ADSO: 423.85M · BTC: 840,447
     </p>
     <div class="slider-row">
       <span class="slider-label">mNAV multiple</span>
-      <input type="range" id="mnav" min="0.5" max="10" step="0.1" value="2.0" oninput="update()">
-      <span class="slider-val"><span id="mnavVal">2.0</span>×</span>
+      <input type="range" id="mnav" min="0.3" max="10" step="0.01" value="0.72" oninput="update()">
+      <span class="slider-val"><span id="mnavVal">0.72</span>×</span>
     </div>
 
     <div class="derived-box">
@@ -839,7 +839,7 @@
   <div class="panel">
     <p class="panel-title">Quick scenarios</p>
     <div class="scenarios">
-      <button class="scenario-btn" onclick="setScenario(105000,843706,310,2.0,0.9)">Current (~$105K BTC)</button>
+      <button class="scenario-btn" onclick="setScenario(63000,840447,394,0.72,0.9)">Current (~$63K BTC)</button>
       <button class="scenario-btn" onclick="setScenario(200000,600000,360,2.2,1.0)">BTC $200K</button>
       <button class="scenario-btn" onclick="setScenario(500000,700000,400,2.5,1.2)">BTC $500K</button>
       <button class="scenario-btn" onclick="setScenario(1000000,800000,500,3.0,1.5)">BTC $1M</button>
