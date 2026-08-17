@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=">
 <title>MSTR Options Projector — wisesatoshi.com</title>
 <meta name="description" content="Project the value of your MSTR call options based on Bitcoin price, BTC holdings, mNAV, and time to expiration. Built for Bitcoiners and MSTR shareholders.">
 <meta property="og:title" content="MSTR Options Projector — wisesatoshi.com">
@@ -51,7 +52,8 @@
     border-bottom:1px solid var(--line);
     position:relative;z-index:2;
   }
-  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:15px;}
+  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:15px;display:inline-flex;align-items:center;gap:9px;}
+  header .brand img{width:24px;height:24px;display:block;}
   header .brand span{color:var(--orange);}
   nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
   nav a:hover{color:var(--ink);}
@@ -171,6 +173,8 @@
     color:var(--ink-faint);font-size:13px;
   }
   footer a{color:var(--orange-dim);text-decoration:none;}
+  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
+  footer .brand-mark img{width:18px;height:18px;display:block;}
 
   ::selection{background:var(--orange);color:#12100c;}
 </style>
@@ -178,7 +182,7 @@
 <body>
 
 <header>
-  <a class="brand" href="#">wise<span>satoshi</span>.com</a>
+  <a class="brand" href="#"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
   <nav>
     <a href="#tool">projector</a>
     <a href="#about">about</a>
@@ -356,7 +360,7 @@
 </main>
 
 <footer>
-  <span>wisesatoshi.com</span>
+  <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
   <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
 </footer>
 
