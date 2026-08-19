@@ -72,7 +72,7 @@ def build_post(content, live_price):
     today_in_bitcoin = content.get("TODAY_IN_BITCOIN", "").strip()
     if today_in_bitcoin:
         lines.append("")
-        lines.append(f"\U0001F570\uFE0F On this day: {today_in_bitcoin}")
+        lines.append(f"\u23F3 On this day: {today_in_bitcoin}")
 
     treasury_items = []
     for i in range(1, 4):
