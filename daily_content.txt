@@ -1,0 +1,18 @@
+# Fill this in each night before bed. Save, commit, push.
+# Lines starting with # are ignored.
+#
+# PREVIOUS_CLOSE: the BTC price at the most recent 00:00 UTC close.
+#   Check a UTC-set chart (TradingView, CoinMarketCap historical table).
+#
+# TODAY_IN_BITCOIN: one line. Leave blank to skip this section entirely.
+#
+# TREASURY_1 / TREASURY_2 / TREASURY_3: up to 3 sourced developments.
+#   Format: a short description, source, and URL, e.g.:
+#   Strategy's USD Reserve rose to $4.80B (SEC 8-K) https://sec.gov/...
+#   Leave any of them blank if you don't have 3 verified items -- that's fine.
+
+PREVIOUS_CLOSE=63500
+TODAY_IN_BITCOIN=On August 18, 2008, the bitcoin.org domain was registered by Satoshi Nakamoto.
+TREASURY_1=Strategy's USD Reserve rose to $4.80B, per its 8-K covering Aug 10-16 https://www.sec.gov/Archives/edgar/data/0001050446/000119312526353240/mstr-20260817.htm
+TREASURY_2=
+TREASURY_3=
