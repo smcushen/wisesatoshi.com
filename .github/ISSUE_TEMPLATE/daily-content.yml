@@ -1,0 +1,40 @@
+name: Daily Breakdown Content
+description: Fill in tonight's content for tomorrow's automated Daily Breakdown post
+title: "Daily content"
+labels: ["daily-content"]
+body:
+  - type: input
+    id: previous_close
+    attributes:
+      label: Previous UTC Close
+      description: "BTC price at the most recent 00:00 UTC close. Numbers only -- no $ sign, no commas."
+      placeholder: "63500"
+    validations:
+      required: true
+  - type: input
+    id: today_in_bitcoin
+    attributes:
+      label: Today in Bitcoin
+      description: "One-line Bitcoin history fact for tomorrow's date. Leave blank to skip this section entirely."
+      placeholder: "On [date], ..."
+    validations:
+      required: false
+  - type: input
+    id: treasury_1
+    attributes:
+      label: Treasury Watch - Item 1
+      description: "Short description, source, and URL. Leave blank if you don't have one."
+    validations:
+      required: false
+  - type: input
+    id: treasury_2
+    attributes:
+      label: Treasury Watch - Item 2
+    validations:
+      required: false
+  - type: input
+    id: treasury_3
+    attributes:
+      label: Treasury Watch - Item 3
+    validations:
+      required: false
