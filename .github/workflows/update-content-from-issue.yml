@@ -1,0 +1,40 @@
+name: Update Daily Content from Issue Form
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update-content:
+    if: contains(github.event.issue.labels.*.name, 'daily-content')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse issue and update daily_content.txt
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: python parse_issue_to_content.py
+
+      - name: Commit updated content
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add daily_content.txt
+          git commit -m "Update daily content from issue #${{ github.event.issue.number }}" || echo "No changes to commit"
+          git push
+
+      - name: Close the issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh issue close ${{ github.event.issue.number }} --comment "Content updated -- this will be used for the next scheduled post."
