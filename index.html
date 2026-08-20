@@ -548,7 +548,7 @@ async function fetchLiveBtcPrice() {
 // IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
 const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
 
-function '● live (' + stamp + ')'(success, stamp) {
+function setMnavStatus(success, stamp) {
   const el2 = el('mnavStatus');
   if (success) {
     el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? '● live ('+stamp+')' : '● prev. close ('+stamp+') — market closed. Use slider to model after-hours mNAV.'; })();
