@@ -545,8 +545,8 @@ async function fetchLiveBtcPrice() {
 }
 
 // live MSTR price -> live mNAV, via our own Netlify function (keeps the API key private).
-// IMPORTANT: replace NETLIFY_SITE_URL below with your actual Netlify function URL once deployed.
-const MSTR_PRICE_ENDPOINT = 'https://NETLIFY_SITE_URL/.netlify/functions/mstr-price';
+// IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
+const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
 
 function setMnavStatus(success, stamp) {
   const el2 = el('mnavStatus');
