@@ -497,7 +497,7 @@ function setPriceStatus(success, sourceName) {
     const now = new Date();
     const stamp = now.toISOString().slice(11,16) + ' UTC';
     el2.textContent = '● live (' + sourceName + ', ' + stamp + ')';
-    el2.style.color = 'var(--green)';
+    el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
   } else {
     el2.textContent = '⚠ live price unavailable -- showing manual default, verify before using';
     el2.style.color = 'var(--red)';
@@ -548,11 +548,11 @@ async function fetchLiveBtcPrice() {
 // IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
 const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
 
-function setMnavStatus(success, stamp) {
+function '● live (' + stamp + ')'(success, stamp) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = '● live (' + stamp + ')';
-    el2.style.color = 'var(--green)';
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? '● live ('+stamp+')' : '● prev. close ('+stamp+') — market closed. Use slider to model after-hours mNAV.'; })();
+    el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
     el2.style.color = 'var(--red)';
