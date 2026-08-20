@@ -1,8 +1,8 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=69146
-TODAY_IN_BITCOIN=
-TREASURY_1=Bitcoin performed well today! Number go up!
-TREASURY_2=Bitcoin treasuries performed well today! Numbers go up!
-TREASURY_3=Bitcoiners were very happy today.
+PREVIOUS_CLOSE=64681
+TODAY_IN_BITCOIN=Bitcoin dropped 50% in a single day — from $15.28 to $7.60 — after a fraudulent Bitcoin savings scheme offering 7% weekly interest collapsed. The operator, Trendon Shavers, was later convicted in the first Bitcoin securities-fraud case in U.S. history. Long way from $7.60.
+TREASURY_1=Bitcoin hit $69,000 (first time in 2 months) after the Treasury announced it's doubling its long-term bond buyback program from $2B to $4B per operation, pushing yields lower. (Forbes) https://www.forbes.com/sites/digital-assets/2026/08/19/bitcoin-approaches-70000-after-treasury-announces-buyback-expansion/
+TREASURY_2=Strategy raised $333.7M between Aug 10-16 via its ATM program, selling ~3.46M MSTR shares. No Bitcoin bought or sold — holdings remain at 840,447 BTC. $149.1M of the proceeds went to the dollar reserve, now ~$4.80B. (CryptoTimes) https://www.cryptotimes.io/2026/08/20/strategy-stock-mstr-jumps-12-as-bitcoin-reclaims-68k/
+TREASURY_3=The SEC proposed a new crypto offering framework on Aug 19, adding to the Treasury-buyback-fueled rally. Bitcoin hit $69,000 for the first time in two months, with nearly $2B in liquidations over 24 hours. (The Block) https://www.theblock.co/news/markets/2026-08-19-bitcoin-69000-ether-jumps-treasury-buybacks-sec-crypto-proposal-fuel-market-rally-412248
