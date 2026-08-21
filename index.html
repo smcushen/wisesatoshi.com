@@ -595,32 +595,44 @@ async function fetchLiveMnav() {
 }
 
 
-// Live risk-free rate — US 10-year Treasury yield via FRED (no API key needed).
+// Live risk-free rate — US 10-year Treasury yield, tries multiple sources.
 async function fetchLiveRate() {
-  try {
-    const resp = await fetch('https://api.fiscaldata.treasury.gov/services/api/v1/accounting/od/avg_interest_rates?fields=record_date,avg_interest_rate_amt,security_desc&filter=security_desc:eq:Treasury%20Notes&sort=-record_date&page[size]=1');
-    if (!resp.ok) throw new Error('bad response');
-    const data = await resp.json();
-    if (!data.data || !data.data[0]) throw new Error('no data');
-    const rate = parseFloat(data.data[0].avg_interest_rate_amt);
-    if (rate && !isNaN(rate)) {
-      el('rate').value = rate.toFixed(1);
-      el('lblRate').textContent = rate.toFixed(2) + '%';
-      const rateStatus = document.getElementById('rateStatus');
-      if (rateStatus) {
-        rateStatus.textContent = '● live (US Treasury)';
-        rateStatus.style.color = 'var(--green)';
-      }
-      recalc();
-      return;
-    }
-  } catch(e) {
-    // silently fall back to default
-    const rateStatus = document.getElementById('rateStatus');
+  const rateStatus = document.getElementById('rateStatus');
+
+  function applyRate(rate, source) {
+    el('rate').value = parseFloat(rate).toFixed(1);
+    el('lblRate').textContent = parseFloat(rate).toFixed(2) + '%';
     if (rateStatus) {
-      rateStatus.textContent = '○ using default (4.2%)';
-      rateStatus.style.color = 'var(--ink-faint)';
+      rateStatus.textContent = '● live (' + source + ')';
+      rateStatus.style.color = 'var(--green)';
     }
+    recalc();
+  }
+
+  // Source 1: Twelve Data (no key needed for basic quotes, CORS-friendly)
+  try {
+    const resp = await fetch('https://api.twelvedata.com/quote?symbol=TNX&apikey=demo');
+    if (resp.ok) {
+      const data = await resp.json();
+      const rate = parseFloat(data.close);
+      if (rate && !isNaN(rate)) { applyRate(rate, 'CBOE/Twelve Data'); return; }
+    }
+  } catch(e) {}
+
+  // Source 2: Yahoo Finance proxy via allorigins
+  try {
+    const resp = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?interval=1d&range=1d');
+    if (resp.ok) {
+      const data = await resp.json();
+      const rate = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (rate && !isNaN(rate)) { applyRate(rate, 'Yahoo Finance'); return; }
+    }
+  } catch(e) {}
+
+  // All sources failed — show default notice
+  if (rateStatus) {
+    rateStatus.textContent = '○ using default (4.2%)';
+    rateStatus.style.color = 'var(--ink-faint)';
   }
 }
 
