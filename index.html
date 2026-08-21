@@ -236,7 +236,7 @@
     <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
 
     <div class="field">
-      <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span> <span id="priceStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);display:block;margin-top:2px;"></span></label>
+      <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span><br><span id="priceStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);display:block;margin-top:2px;"></span></label>
       <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="63063">
     </div>
 
@@ -421,6 +421,7 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
 
 function recalc(){
   const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+  el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
   const btcHeld = parseFloat(el('btcHeld').value);
   const sharesM = parseFloat(el('shares').value);
   const debtB = parseFloat(el('debt').value);
@@ -433,7 +434,6 @@ function recalc(){
   const ratePct = parseFloat(el('rate').value);
 
   el('lblContracts').textContent = contracts;
-  el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
   el('lblMnav').textContent = mnav.toFixed(2) + '×';
   el('lblIv').textContent = ivPct + '%';
   el('lblRate').textContent = ratePct.toFixed(1) + '%';
