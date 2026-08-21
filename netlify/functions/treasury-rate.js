@@ -6,7 +6,7 @@ exports.handler = async function(event, context) {
   };
 
   try {
-    const url = 'https://yieldwatch.io/api/yield-curve/latest';
+    const url = 'https://yieldwatch.io/api/rates/latest';
     const response = await fetch(url);
     if (!response.ok) throw new Error(`fetch error: ${response.status}`);
     const data = await response.json();
