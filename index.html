@@ -605,40 +605,24 @@ async function fetchLiveMnav() {
 async function fetchLiveRate() {
   const rateStatus = document.getElementById('rateStatus');
 
-  function applyRate(rate, source) {
-    el('rate').value = parseFloat(rate).toFixed(1);
-    el('lblRate').textContent = parseFloat(rate).toFixed(2) + '%';
+  try {
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
+
+    el('rate').value = parseFloat(data.rate).toFixed(1);
+    el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
     if (rateStatus) {
-      rateStatus.textContent = '● live (' + source + ')';
+      rateStatus.textContent = '● live (US Treasury, ' + data.date + ')';
       rateStatus.style.color = 'var(--green)';
     }
     recalc();
-  }
-
-  // Source 1: Twelve Data (no key needed for basic quotes, CORS-friendly)
-  try {
-    const resp = await fetch('https://api.twelvedata.com/quote?symbol=TNX&apikey=demo');
-    if (resp.ok) {
-      const data = await resp.json();
-      const rate = parseFloat(data.close);
-      if (rate && !isNaN(rate)) { applyRate(rate, 'CBOE/Twelve Data'); return; }
+  } catch(e) {
+    if (rateStatus) {
+      rateStatus.textContent = '○ using default (4.2%)';
+      rateStatus.style.color = 'var(--ink-faint)';
     }
-  } catch(e) {}
-
-  // Source 2: Yahoo Finance proxy via allorigins
-  try {
-    const resp = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?interval=1d&range=1d');
-    if (resp.ok) {
-      const data = await resp.json();
-      const rate = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (rate && !isNaN(rate)) { applyRate(rate, 'Yahoo Finance'); return; }
-    }
-  } catch(e) {}
-
-  // All sources failed — show default notice
-  if (rateStatus) {
-    rateStatus.textContent = '○ using default (4.2%)';
-    rateStatus.style.color = 'var(--ink-faint)';
   }
 }
 
