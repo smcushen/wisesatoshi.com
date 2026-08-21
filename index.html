@@ -301,7 +301,7 @@
   <div class="panel">
     <div class="panel-title">Quick scenarios</div>
     <div class="toggle-row">
-      <button data-scenario="current" class="active">Current (~$63K BTC)</button>
+      <button data-scenario="current" class="active">Current (~$75K BTC)</button>
       <button data-scenario="200k">BTC $200K</button>
       <button data-scenario="500k">BTC $500K</button>
       <button data-scenario="1m">BTC $1M</button>
@@ -536,7 +536,7 @@ async function fetchLiveBtcPrice() {
         window._liveBtcExact = price;
         recalc();
         setPriceStatus(true, source.name, price);
-        const kLabel = '$' + (price >= 1000 ? (price/1000).toFixed(1) + 'K' : Math.round(price));
+        const kLabel = '$' + Math.round(price).toLocaleString('en-US');
         const btn = document.querySelector('.scenario-btn');
         if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
         return;
@@ -598,6 +598,22 @@ async function fetchLiveMnav() {
 fetchLiveBtcPrice().then(fetchLiveMnav);
 
 recalc();
+
+// Auto-refresh: BTC every 60 seconds, mNAV every 5 minutes.
+setInterval(() => {
+  fetchLiveBtcPrice();
+}, 60 * 1000);
+
+setInterval(() => {
+  fetchLiveMnav();
+}, 5 * 60 * 1000);
+
+// Also refresh when user returns to the tab after being away.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    fetchLiveBtcPrice().then(fetchLiveMnav);
+  }
+});
 </script>
 
 </body>
