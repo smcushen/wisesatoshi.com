@@ -59,7 +59,7 @@ def build_post(content, live_price):
 
     previous_close = float(content["PREVIOUS_CLOSE"])
     pct_change = (live_price - previous_close) / previous_close * 100
-    arrow = "\u25B2" if pct_change >= 0 else "\u25BC"  # ▲ or ▼
+    trend_icon = "\u25B2" if pct_change >= 0 else "\u25BC"  # ▲ or ▼
     sign = "+" if pct_change >= 0 else ""
 
     today_str = datetime.now(timezone.utc).strftime("%B %d").replace(" 0", " ")
@@ -67,7 +67,7 @@ def build_post(content, live_price):
     lines = []
     lines.append(f"\U0001F4CA Bitcoin Daily Breakdown \u2014 {today_str}")
     lines.append("")
-    lines.append(f"BTC: ${live_price:,.0f} ({arrow} {sign}{pct_change:.2f}% from previous UTC close)")
+    lines.append(f"BTC: ${live_price:,.0f} \u00B7 {trend_icon} {sign}{pct_change:.2f}% from previous UTC close of ${previous_close:,.0f}")
 
     today_in_bitcoin = content.get("TODAY_IN_BITCOIN", "").strip()
     if today_in_bitcoin:
