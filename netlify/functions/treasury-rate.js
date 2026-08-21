@@ -1,35 +1,659 @@
-exports.handler = async function(event, context) {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=">
+<title>MSTR Options Projector — wisesatoshi.com</title>
+<meta name="description" content="Project the value of your MSTR call options based on Bitcoin price, BTC holdings, mNAV, and time to expiration. Built for Bitcoiners and MSTR shareholders.">
+<meta property="og:title" content="MSTR Options Projector — wisesatoshi.com">
+<meta property="og:description" content="Model your MSTR call option value against any Bitcoin price scenario.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#0b0d0f;
+    --bg-panel:#131619;
+    --bg-panel-2:#181c20;
+    --line:#262b30;
+    --ink:#e9e6df;
+    --ink-dim:#9aa0a6;
+    --ink-faint:#5c6268;
+    --orange:#f7931a;
+    --orange-dim:#c9791a;
+    --green:#4caf7d;
+    --red:#e0674a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
+
+  /* enso ring motif, used sparingly */
+  .enso{
+    position:absolute;
+    border-radius:50%;
+    border:1.5px solid var(--orange);
+    opacity:0.14;
+    border-right-color:transparent;
+    border-bottom-color:transparent;
+    transform:rotate(-35deg);
+    pointer-events:none;
+  }
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 32px;
+    border-bottom:1px solid var(--line);
+    position:relative;z-index:2;
+  }
+  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:15px;}
+  header .brand img{width:24px;height:24px;vertical-align:middle;margin-right:9px;position:relative;top:-1px;}
+  header .brand span{color:var(--orange);}
+  nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
+  nav a:hover{color:var(--ink);}
+  nav a.x-link{color:var(--orange-dim);}
+
+  .hero{
+    position:relative;
+    padding:64px 32px 40px;
+    max-width:900px;
+    overflow:hidden;
+  }
+  .hero .enso{width:520px;height:520px;top:-160px;right:-220px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--orange);margin-bottom:14px;font-weight:600;
+  }
+  h1{
+    font-size:clamp(28px,4vw,42px);
+    line-height:1.15;
+    margin:0 0 16px;
+    font-weight:600;
+    max-width:16ch;
+  }
+  .lede{color:var(--ink-dim);font-size:16px;max-width:60ch;margin:0 0 28px;}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;}
+  .badge{
+    font-size:12px;color:var(--ink-dim);
+    border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px;
+  }
+
+  main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px;
+    margin-bottom:20px;
+  }
+  .panel-title{
+    font-size:12px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 20px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--ink-dim);margin-bottom:8px;
+  }
+  .field label .val{color:var(--orange);font-weight:600;}
+  .field input[type=range]{
+    width:100%;accent-color:var(--orange);
+    height:4px;background:var(--line);
+  }
+  .field input[type=number],.field input[type=date],.field input[type=text]{
+    width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:14px;
+  }
+  .field .hint{font-size:11px;color:var(--ink-faint);margin-top:6px;}
+  .field.new label .val{color:var(--green);}
+  .field.new{
+    border-left:2px solid var(--orange);
+    padding-left:12px;margin-left:-14px;
+  }
+
+  .toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .toggle-row button{
+    background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink-dim);
+    font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;
+  }
+  .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
+
+  .source-line{font-size:11px;color:var(--ink-faint);letter-spacing:0.02em;margin-top:-8px;margin-bottom:18px;}
+
+  .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
+  @media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
+  .result-card{
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
+  }
+  .result-card .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+  .result-card .value{font-size:24px;font-weight:600;color:var(--orange);}
+  .result-card .sub{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+  .result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
+  .result-card.total .value{font-size:32px;}
+
+  .greeks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media(max-width:640px){.greeks-grid{grid-template-columns:repeat(2,1fr);}}
+  .greek-card{text-align:center;padding:14px 8px;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;}
+  .greek-card .sym{font-size:20px;color:var(--orange);margin-bottom:4px;}
+  .greek-card .gval{font-size:16px;font-weight:600;}
+  .greek-card .glabel{font-size:10.5px;color:var(--ink-faint);margin-top:3px;}
+
+  .methodology{
+    font-size:13px;color:var(--ink-dim);line-height:1.7;
+  }
+  .methodology code{
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;color:var(--orange);font-size:12px;
+  }
+  .fix-note{
+    font-size:12px;color:var(--green);background:rgba(76,175,125,0.08);
+    border:1px solid rgba(76,175,125,0.3);border-radius:8px;padding:12px 16px;margin-bottom:18px;
+  }
+
+  .disclaimer{font-size:12px;color:var(--ink-faint);line-height:1.7;}
+
+  footer{
+    border-top:1px solid var(--line);padding:28px 32px;
+    display:flex;justify-content:space-between;align-items:center;
+    color:var(--ink-faint);font-size:13px;
+  }
+  footer a{color:var(--orange-dim);text-decoration:none;}
+  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
+  footer .brand-mark img{width:18px;height:18px;display:block;}
+
+  ::selection{background:var(--orange);color:#12100c;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="#"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
+  <nav>
+    <a href="#tool">projector</a>
+    <a href="#about">about</a>
+    <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="enso"></div>
+  <div class="eyebrow">MSTR options projector</div>
+  <h1>What is your MSTR position worth at any Bitcoin price?</h1>
+  <p class="lede">Model your MSTR call option value across any Bitcoin scenario. Adjust BTC price, holdings, capital structure, and time to expiration to see what your position could be worth.</p>
+  <div class="badges">
+    <span class="badge">Black-Scholes pricing</span>
+    <span class="badge">Full capital-stack mNAV</span>
+    <span class="badge">Greeks included</span>
+    <span class="badge">Any strike / expiry</span>
+    <span class="badge">Built by a Bitcoiner</span>
+  </div>
+</section>
+
+<main id="tool">
+
+  <div class="fix-note">
+    Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve, matching the company's own published capital-structure math.
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Your position</div>
+    <div class="grid">
+      <div class="field">
+        <label>Number of contracts <span class="val" id="lblContracts">10</span></label>
+        <input type="range" id="contracts" min="1" max="200" value="10">
+      </div>
+      <div class="field">
+        <label>Strike price ($)</label>
+        <input type="number" id="strike" value="275" step="5">
+      </div>
+      <div class="field">
+        <label>Expiration date</label>
+        <input type="date" id="expiryDate" value="2028-12-15">
+      </div>
+      <div class="field">
+        <label>Projection date</label>
+        <input type="date" id="projDate">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
+
+    <div class="field">
+      <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
+      <div id="priceStatus" style="font-size:11px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;"></div>
+      <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="63063" oninput="window._liveBtcExact=null; window._userMovedBtcSlider=true; el('lblBtc').textContent='$'+parseInt(this.value).toLocaleString('en-US'); recalc();">
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <label>BTC held by Strategy</label>
+        <input type="number" id="btcHeld" value="840447">
+      </div>
+      <div class="field">
+        <label>Shares outstanding (millions)</label>
+        <input type="number" id="shares" value="401" step="0.1">
+      </div>
+      <div class="field">
+        <label>Convertible debt ($B)</label>
+        <input type="number" id="debt" value="6.75" step="0.01">
+      </div>
+      <div class="field new">
+        <label>Preferred stock — STRK/STRF/STRD/STRC ($B) <span class="val">new</span></label>
+        <input type="number" id="preferred" value="15.24" step="0.01">
+        <div class="hint">Previously missing — this is the accuracy fix.</div>
+      </div>
+      <div class="field new">
+        <label>USD Reserve ($B) <span class="val">new</span></label>
+        <input type="number" id="usdReserve" value="4.65" step="0.01">
+        <div class="hint">Cash set aside for debt/preferred service — adds back.</div>
+      </div>
+      <div class="field">
+        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
+        <input type="range" id="mnav" min="0.5" max="2.5" step="0.01" value="1.05">
+      </div>
+    </div>
+
+    <div class="source-line">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
+
+    <div class="field">
+      <label>Derived MSTR share price</label>
+      <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
+    </div>
+
+    <div class="field">
+      <label>Manual override — MSTR price ($, optional)</label>
+      <input type="number" id="manualPrice" placeholder="leave blank to use derived price">
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Volatility &amp; rate</div>
+    <div class="grid">
+      <div class="field">
+        <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
+        <input type="range" id="iv" min="20" max="150" value="84">
+        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one.</div>
+      </div>
+      <div class="field">
+        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
+        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Quick scenarios</div>
+    <div class="toggle-row">
+      <button data-scenario="current" class="active">Current (~$75K BTC)</button>
+      <button data-scenario="200k">BTC $200K</button>
+      <button data-scenario="500k">BTC $500K</button>
+      <button data-scenario="1m">BTC $1M</button>
+      <button data-scenario="bear">Bear ($40K BTC)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Results</div>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="label">Intrinsic value / share</div>
+        <div class="value" id="outIntrinsic">—</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Option price (Black-Scholes)</div>
+        <div class="value" id="outOptionPrice">—</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Value per contract</div>
+        <div class="value" id="outContractValue">—</div>
+        <div class="sub">100 shares × option price</div>
+      </div>
+      <div class="result-card">
+        <div class="label">Implied mNAV vs derived price</div>
+        <div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
+      </div>
+      <div class="result-card total">
+        <div class="label">Total position value</div>
+        <div class="value" id="outTotal">—</div>
+      </div>
+    </div>
+
+    <div class="greeks-grid">
+      <div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
+      <div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
+      <div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
+      <div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="about">
+    <div class="panel-title">Methodology</div>
+    <div class="methodology">
+      <p><strong>Net BTC per share</strong> is calculated as:</p>
+      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve) ÷ shares outstanding</code></p>
+      <p>This mirrors Strategy's own published capital-structure accounting: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack. Earlier versions of this tool only netted out convertible debt, which overstated fair value per share by roughly 30% at current prices.</p>
+      <p>The derived MSTR price is then <code>net value per share × mNAV multiple</code>. Option pricing uses Black-Scholes as a European-style approximation for MSTR's American-style calls — early exercise is rarely optimal for a non-dividend-paying stock, so the approximation is close in practice.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Disclaimer</div>
+    <p class="disclaimer">This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ. MSTR price is derived from BTC holdings and a user-supplied mNAV multiple — this is a model assumption, not a prediction. Implied volatility for long-dated, deep out-of-the-money contracts is illiquid and can vary meaningfully from theoretical values — check a live quote where possible. Nothing here constitutes financial advice. Do your own research.</p>
+  </div>
+
+</main>
+
+<footer>
+  <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
+  <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
+</footer>
+
+<script>
+// ---------- Normal CDF / PDF ----------
+function normPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
+function normCdf(x){
+  // Abramowitz-Stegun approximation
+  const b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429;
+  const p=0.2316419, c=0.39894228;
+  if(x>=0){
+    const t=1/(1+p*x);
+    return 1-c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
+  }else{
+    const t=1/(1-p*x);
+    return c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
+  }
+}
+
+function blackScholesCall(S,K,T,r,sigma){
+  if(T<=0){
+    const price=Math.max(S-K,0);
+    return {price, delta: S>K?1:0, gamma:0, vega:0, theta:0};
+  }
+  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
+  const d2=d1-sigma*Math.sqrt(T);
+  const price=S*normCdf(d1)-K*Math.exp(-r*T)*normCdf(d2);
+  const delta=normCdf(d1);
+  const gamma=normPdf(d1)/(S*sigma*Math.sqrt(T));
+  const vega=S*normPdf(d1)*Math.sqrt(T)/100;
+  const theta=(-(S*normPdf(d1)*sigma)/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*normCdf(d2))/365;
+  return {price,delta,gamma,vega,theta};
+}
+
+// ---------- Elements ----------
+const el = id => document.getElementById(id);
+const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
+const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
+
+const projDateInput = el('projDate');
+const today = new Date();
+projDateInput.value = today.toISOString().slice(0,10);
+
+function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM){
+  const shares = sharesM * 1e6;
+  const debt = debtB * 1e9;
+  const preferred = preferredB * 1e9;
+  const usdReserve = usdReserveB * 1e9;
+
+  const debtBtc = debt / btcPrice;
+  const preferredBtc = preferred / btcPrice;
+  const reserveBtc = usdReserve / btcPrice;
+
+  const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc;
+  const netBtcPerShare = netBtc / shares;
+  return netBtcPerShare * btcPrice;
+}
+
+function recalc(){
+  const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+  el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
+  const btcHeld = parseFloat(el('btcHeld').value);
+  const sharesM = parseFloat(el('shares').value);
+  const debtB = parseFloat(el('debt').value);
+  const preferredB = parseFloat(el('preferred').value);
+  const usdReserveB = parseFloat(el('usdReserve').value);
+  const mnav = parseFloat(el('mnav').value);
+  const strike = parseFloat(el('strike').value);
+  const contracts = parseFloat(el('contracts').value);
+  const ivPct = parseFloat(el('iv').value);
+  const ratePct = parseFloat(el('rate').value);
+
+  el('lblContracts').textContent = contracts;
+  el('lblMnav').textContent = mnav.toFixed(2) + '×';
+  el('lblIv').textContent = ivPct + '%';
+  el('lblRate').textContent = ratePct.toFixed(1) + '%';
+
+  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
+  const derivedPrice = netValuePerShare * mnav;
+  el('derivedPrice').value = fmtUSD(derivedPrice) + '  (net value/share: ' + fmtUSD(netValuePerShare) + ')';
+
+  const manualOverride = el('manualPrice').value;
+  const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
+
+  // time to expiry
+  const expiry = new Date(el('expiryDate').value);
+  const proj = new Date(el('projDate').value);
+  const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
+  const r = ratePct/100;
+  const sigma = ivPct/100;
+
+  const {price, delta, gamma, vega, theta} = blackScholesCall(S, strike, T, r, sigma);
+  const intrinsic = Math.max(S - strike, 0);
+
+  el('outIntrinsic').textContent = fmtUSD(intrinsic);
+  el('outOptionPrice').textContent = fmtUSD(price);
+  el('outContractValue').textContent = fmtUSD0(price*100);
+  el('outTotal').textContent = fmtUSD0(price*100*contracts);
+  el('outMnavCheck').textContent = (S/netValuePerShare).toFixed(3) + '×';
+
+  el('outDelta').textContent = delta.toFixed(3);
+  el('outTheta').textContent = fmtUSD(theta);
+  el('outVega').textContent = fmtUSD(vega);
+  el('outGamma').textContent = gamma.toFixed(5);
+}
+
+// wire up all inputs
+['btcPrice','btcHeld','shares','debt','preferred','usdReserve','mnav',
+ 'strike','contracts','iv','rate','expiryDate','projDate','manualPrice']
+ .forEach(id => el(id).addEventListener('input', recalc));
+
+// quick scenarios
+document.querySelectorAll('.toggle-row button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.toggle-row button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const s = btn.dataset.scenario;
+    const map = {current:63063, '200k':200000, '500k':500000, '1m':1000000, bear:40000};
+    el('btcPrice').value = map[s];
+    el('manualPrice').value = '';
+    // reset assumption sliders to current defaults on every scenario click
+    el('mnav').value = 1.05;
+    el('iv').value = 84;
+    el('rate').value = 4.2;
+    recalc();
+  });
+});
+
+// live BTC price fetch -- tries three independent sources in order, and always
+// tells the visitor plainly whether it succeeded or is showing a manual default.
+function setPriceStatus(success, sourceName, exactPrice) {
+  const el2 = el('priceStatus');
+  if (success) {
+    const now = new Date();
+    const stamp = now.toISOString().slice(11,16) + ' UTC';
+    const priceStr = exactPrice ? '$' + Math.round(exactPrice).toLocaleString('en-US') + ' ' : '';
+    el2.textContent = priceStr + '● live (' + sourceName + ', ' + stamp + ')';
+    el2.style.color = 'var(--green)';
+  } else {
+    el2.textContent = '⚠ live price unavailable — showing manual default, verify before using';
+    el2.style.color = 'var(--red)';
+  }
+}
+
+async function fetchLiveBtcPrice() {
+  const sources = [
+    {
+      name: 'CoinGecko',
+      url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
+      extract: d => d.bitcoin.usd
+    },
+    {
+      name: 'Coinbase',
+      url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
+      extract: d => parseFloat(d.data.amount)
+    },
+    {
+      name: 'Binance',
+      url: 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT',
+      extract: d => parseFloat(d.price)
+    }
+  ];
+
+  for (const source of sources) {
+    try {
+      const resp = await fetch(source.url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const price = source.extract(data);
+      if (price && !isNaN(price)) {
+        // Only reset slider if user hasn't manually moved it
+        if (!window._userMovedBtcSlider) {
+          el('btcPrice').value = Math.round(price);
+          window._liveBtcExact = price;
+          recalc();
+        } else {
+          // Still store exact price and update status/button — just don't touch the slider
+          window._liveBtcExact = price;
+        }
+        setPriceStatus(true, source.name, price);
+        const kLabel = '$' + Math.round(price).toLocaleString('en-US');
+        const btn = document.querySelector('.scenario-btn');
+        if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
+        return;
+      }
+    } catch (err) {
+      // this source failed -- silently try the next one
+      continue;
+    }
+  }
+  // every source failed
+  setPriceStatus(false);
+}
+
+// live MSTR price -> live mNAV, via our own Netlify function (keeps the API key private).
+// IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
+const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
+
+function setMnavStatus(success, stamp) {
+  const el2 = el('mnavStatus');
+  if (success) {
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? ' ● live ('+stamp+')' : ' ● Previous close (21:00 UTC) — Current time: ' + new Date().toISOString().slice(11,16) + ' UTC · Market closed · Use slider to estimate after-hours mNAV'; })();
+    el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
+  } else {
+    el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
+    el2.style.color = 'var(--red)';
+  }
+}
+
+async function fetchLiveMnav() {
+  try {
+    const resp = await fetch(MSTR_PRICE_ENDPOINT);
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (!data.price) throw new Error('no price');
+
+    // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
+    // are currently in the inputs (BTC price should already be live by this point).
+    const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+    const btcHeld = parseFloat(el('btcHeld').value);
+    const sharesM = parseFloat(el('shares').value);
+    const debtB = parseFloat(el('debt').value);
+    const preferredB = parseFloat(el('preferred').value);
+    const usdReserveB = parseFloat(el('usdReserve').value);
+
+    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
+    const liveMnav = data.price / netValuePerShare;
+
+    el('mnav').value = liveMnav.toFixed(2);
+    recalc();
+
+    const stamp = new Date().toISOString().slice(11,16) + ' UTC';
+    setMnavStatus(true, stamp);
+  } catch (err) {
+    setMnavStatus(false);
+  }
+}
+
+
+// Live risk-free rate — US 10-year Treasury yield via Netlify function (yieldwatch.io).
+async function fetchLiveRate() {
+  const rateStatus = document.getElementById('rateStatus');
 
   try {
-    const url = 'https://yieldwatch.io/api/rates/latest';
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`fetch error: ${response.status}`);
-    const data = await response.json();
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
 
-    if (!data.success || !data.data || !data.data.rates) throw new Error('no data');
-
-    const tenYear = data.data.rates.find(r => r.maturity === '10YR');
-    if (!tenYear) throw new Error('10YR not found');
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        rate: parseFloat(tenYear.rate.toFixed(2)),
-        date: data.data.date,
-        timestamp: Math.floor(Date.now() / 1000)
-      })
-    };
-  } catch (err) {
-    return {
-      statusCode: 502,
-      headers,
-      body: JSON.stringify({ error: err.message })
-    };
+    el('rate').value = parseFloat(data.rate).toFixed(1);
+    el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
+    if (rateStatus) {
+      rateStatus.textContent = '● live (US Treasury, ' + data.date + ')';
+      rateStatus.style.color = 'var(--green)';
+    }
+    recalc();
+  } catch(e) {
+    if (rateStatus) {
+      rateStatus.textContent = '○ using default (4.2%)';
+      rateStatus.style.color = 'var(--ink-faint)';
+    }
   }
-};
+}
+
+// Run BTC price first, then mNAV (which depends on BTC price being current).
+fetchLiveBtcPrice().then(fetchLiveMnav);
+fetchLiveRate();
+
+recalc();
+
+// Auto-refresh: BTC every 60 seconds, mNAV every 5 minutes.
+setInterval(() => {
+  fetchLiveBtcPrice();
+}, 60 * 1000);
+
+setInterval(() => {
+  fetchLiveMnav();
+}, 5 * 60 * 1000);
+
+// Risk-free rate refreshes once per hour (Treasury data updates daily).
+setInterval(() => {
+  fetchLiveRate();
+}, 60 * 60 * 1000);
+
+// Also refresh when user returns to the tab after being away.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveRate();
+  }
+});
+</script>
+
+</body>
+</html>
