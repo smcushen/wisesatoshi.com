@@ -6,26 +6,22 @@ exports.handler = async function(event, context) {
   };
 
   try {
-    // Alpha Vantage Treasury yield — no key needed for this endpoint
-    const url = 'https://www.alphavantage.co/query?function=TREASURY_YIELD&interval=daily&maturity=10year&apikey=demo';
+    const url = 'https://yieldwatch.io/api/yield-curve/latest';
     const response = await fetch(url);
     if (!response.ok) throw new Error(`fetch error: ${response.status}`);
     const data = await response.json();
-    
-    // Data comes back as array of {date, value} — grab most recent
-    const series = data?.data;
-    if (!series || !series.length) throw new Error('no data');
-    
-    const latest = series[0];
-    const rate = parseFloat(latest.value);
-    if (!rate || isNaN(rate)) throw new Error('no price returned');
-    
+
+    if (!data.success || !data.data || !data.data.rates) throw new Error('no data');
+
+    const tenYear = data.data.rates.find(r => r.maturity === '10YR');
+    if (!tenYear) throw new Error('10YR not found');
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        rate: parseFloat(rate.toFixed(2)),
-        date: latest.date,
+        rate: parseFloat(tenYear.rate.toFixed(2)),
+        date: data.data.date,
         timestamp: Math.floor(Date.now() / 1000)
       })
     };
