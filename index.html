@@ -292,7 +292,7 @@
         <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one.</div>
       </div>
       <div class="field">
-        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span></label>
+        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
         <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
       </div>
     </div>
@@ -594,8 +594,39 @@ async function fetchLiveMnav() {
   }
 }
 
+
+// Live risk-free rate — US 10-year Treasury yield via FRED (no API key needed).
+async function fetchLiveRate() {
+  try {
+    const resp = await fetch('https://api.fiscaldata.treasury.gov/services/api/v1/accounting/od/avg_interest_rates?fields=record_date,avg_interest_rate_amt,security_desc&filter=security_desc:eq:Treasury%20Notes&sort=-record_date&page[size]=1');
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (!data.data || !data.data[0]) throw new Error('no data');
+    const rate = parseFloat(data.data[0].avg_interest_rate_amt);
+    if (rate && !isNaN(rate)) {
+      el('rate').value = rate.toFixed(1);
+      el('lblRate').textContent = rate.toFixed(2) + '%';
+      const rateStatus = document.getElementById('rateStatus');
+      if (rateStatus) {
+        rateStatus.textContent = '● live (US Treasury)';
+        rateStatus.style.color = 'var(--green)';
+      }
+      recalc();
+      return;
+    }
+  } catch(e) {
+    // silently fall back to default
+    const rateStatus = document.getElementById('rateStatus');
+    if (rateStatus) {
+      rateStatus.textContent = '○ using default (4.2%)';
+      rateStatus.style.color = 'var(--ink-faint)';
+    }
+  }
+}
+
 // Run BTC price first, then mNAV (which depends on BTC price being current).
 fetchLiveBtcPrice().then(fetchLiveMnav);
+fetchLiveRate();
 
 recalc();
 
@@ -608,10 +639,16 @@ setInterval(() => {
   fetchLiveMnav();
 }, 5 * 60 * 1000);
 
+// Risk-free rate refreshes once per hour (Treasury data updates daily).
+setInterval(() => {
+  fetchLiveRate();
+}, 60 * 60 * 1000);
+
 // Also refresh when user returns to the tab after being away.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveRate();
   }
 });
 </script>
