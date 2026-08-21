@@ -420,7 +420,7 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
 }
 
 function recalc(){
-  const btcPrice = parseFloat(el('btcPrice').value);
+  const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
   const btcHeld = parseFloat(el('btcHeld').value);
   const sharesM = parseFloat(el('shares').value);
   const debtB = parseFloat(el('debt').value);
@@ -491,15 +491,16 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
 
 // live BTC price fetch -- tries three independent sources in order, and always
 // tells the visitor plainly whether it succeeded or is showing a manual default.
-function setPriceStatus(success, sourceName) {
+function setPriceStatus(success, sourceName, exactPrice) {
   const el2 = el('priceStatus');
   if (success) {
     const now = new Date();
     const stamp = now.toISOString().slice(11,16) + ' UTC';
-    el2.textContent = '● live (' + sourceName + ', ' + stamp + ')';
-    el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
+    const priceStr = exactPrice ? '$' + Math.round(exactPrice).toLocaleString('en-US') + ' ' : '';
+    el2.textContent = priceStr + '● live (' + sourceName + ', ' + stamp + ')';
+    el2.style.color = 'var(--green)';
   } else {
-    el2.textContent = '⚠ live price unavailable -- showing manual default, verify before using';
+    el2.textContent = '⚠ live price unavailable — showing manual default, verify before using';
     el2.style.color = 'var(--red)';
   }
 }
@@ -531,8 +532,12 @@ async function fetchLiveBtcPrice() {
       const price = source.extract(data);
       if (price && !isNaN(price)) {
         el('btcPrice').value = Math.round(price);
+        window._liveBtcExact = price;
         recalc();
-        setPriceStatus(true, source.name);
+        setPriceStatus(true, source.name, price);
+        const kLabel = '$' + (price >= 1000 ? (price/1000).toFixed(1) + 'K' : Math.round(price));
+        const btn = document.querySelector('.scenario-btn');
+        if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
         return;
       }
     } catch (err) {
@@ -551,7 +556,7 @@ const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/
 function setMnavStatus(success, stamp) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? '● live ('+stamp+')' : '● prev. close ('+stamp+') — market closed. Use slider to model after-hours mNAV.'; })();
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? '● live ('+stamp+')' : '● Previous close (21:00 UTC) — Current time: ' + new Date().toISOString().slice(11,16) + ' UTC · Market closed · Use slider to estimate after-hours mNAV'; })();
     el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
@@ -568,7 +573,7 @@ async function fetchLiveMnav() {
 
     // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
     // are currently in the inputs (BTC price should already be live by this point).
-    const btcPrice = parseFloat(el('btcPrice').value);
+    const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
     const btcHeld = parseFloat(el('btcHeld').value);
     const sharesM = parseFloat(el('shares').value);
     const debtB = parseFloat(el('debt').value);
