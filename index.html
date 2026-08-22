@@ -515,8 +515,24 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
     document.querySelectorAll('.toggle-row button').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const s = btn.dataset.scenario;
-    const map = {current:63063, '200k':200000, '500k':500000, '1m':1000000, bear:40000};
-    el('btcPrice').value = map[s];
+    const map = {'200k':200000, '500k':500000, '1m':1000000, bear:40000};
+
+    if (s === 'current') {
+      // "Current" means follow the live price, not a stale snapshot from page-load.
+      // Resume live tracking rather than treating this as a manual override.
+      window._userMovedBtcSlider = false;
+      const livePrice = window._liveBtcExact || 63063; // fallback only if no live fetch has completed yet
+      el('btcPrice').value = Math.round(livePrice);
+      window._liveBtcExact = livePrice;
+    } else {
+      // Every other scenario is an explicit manual override — mark it so the
+      // next background price refresh doesn't silently snap it back to live.
+      window._userMovedBtcSlider = true;
+      window._liveBtcExact = null;
+      el('btcPrice').value = map[s];
+    }
+    el('lblBtc').textContent = '$' + Math.round(parseFloat(el('btcPrice').value)).toLocaleString('en-US');
+
     el('manualPrice').value = '';
     // reset assumption sliders to current defaults on every scenario click
     el('mnav').value = 1.05;
