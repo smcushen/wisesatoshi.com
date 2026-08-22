@@ -178,11 +178,15 @@
   footer{
     border-top:1px solid var(--line);padding:28px 32px;
     display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;row-gap:10px;
     color:var(--ink-faint);font-size:13px;
   }
   footer a{color:var(--orange-dim);text-decoration:none;}
   footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
   footer .brand-mark img{width:18px;height:18px;display:block;}
+  @media(max-width:480px){
+    footer{padding:20px;justify-content:center;text-align:center;}
+  }
 
   ::selection{background:var(--orange);color:#12100c;}
 </style>
