@@ -1,48 +1,42 @@
-// netlify/functions/mstr-price.js
-//
-// Secure proxy for MSTR's live stock price. The Finnhub API key lives only
-// here, as a Netlify environment variable -- never exposed to the browser.
-// The site's JavaScript calls this function instead of calling Finnhub directly.
+let cache = { price: null, timestamp: 0 };
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-exports.handler = async function (event, context) {
-  const allowedOrigin = 'https://wisesatoshi.com';
-
+exports.handler = async function(event, context) {
   const headers = {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
   };
 
-  // Browsers send a preflight OPTIONS request before the real GET -- handle it.
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
+  // Serve from cache if fresh
+  if (cache.price && (Date.now() - cache.timestamp) < CACHE_TTL) {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ price: cache.price, timestamp: Math.floor(cache.timestamp / 1000), cached: true })
+    };
   }
 
   const apiKey = process.env.FINNHUB_API_KEY;
   if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Server not configured -- missing API key.' }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'API key not configured' }) };
   }
 
   try {
-    const resp = await fetch(`https://finnhub.io/api/v1/quote?symbol=MSTR&token=${apiKey}`);
-    if (!resp.ok) {
-      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Upstream price provider error.' }) };
-    }
-    const data = await resp.json();
-    // Finnhub's quote response uses "c" for current price.
-    if (!data || typeof data.c !== 'number' || data.c <= 0) {
-      return { statusCode: 502, headers, body: JSON.stringify({ error: 'No valid price returned.' }) };
-    }
+    const url = `https://finnhub.io/api/v1/quote?symbol=MSTR&token=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Finnhub error: ${response.status}`);
+    const data = await response.json();
+    if (!data.c || data.c === 0) throw new Error('no price returned');
+
+    cache = { price: data.c, timestamp: Date.now() };
+
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ price: data.c, timestamp: data.t }),
+      body: JSON.stringify({ price: data.c, timestamp: Math.floor(Date.now() / 1000) })
     };
   } catch (err) {
-    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Fetch failed.' }) };
+    return { statusCode: 502, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
