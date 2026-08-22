@@ -184,8 +184,15 @@
   footer a{color:var(--orange-dim);text-decoration:none;}
   footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
   footer .brand-mark img{width:18px;height:18px;display:block;}
-  @media(max-width:480px){
-    footer{padding:20px;justify-content:center;text-align:center;}
+  @media(max-width:640px){
+    footer{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:20px;
+      text-align:center;
+    }
   }
 
   ::selection{background:var(--orange);color:#12100c;}
