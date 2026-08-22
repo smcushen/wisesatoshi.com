@@ -765,7 +765,7 @@ async function submitWaitlist() {
     if (firstName) formData.append('first_name', firstName);
     formData.append('tags[]', 'ws-pro-waitlist');
 
-    const resp = await fetch('https://app.kit.com/forms/9831084/subscriptions', {
+    const resp = await fetch('https://app.kit.com/forms/9831141/subscriptions', {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
       body: formData
