@@ -560,10 +560,10 @@ async function fetchLiveBtcPrice() {
 // IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
 const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
 
-function setMnavStatus(success, stamp) {
+function setMnavStatus(success, stamp, liveDisplayMnav) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; return mkt ? ' ● live ('+stamp+')' : ' ● Previous close (21:00 UTC) — Current time: ' + new Date().toISOString().slice(11,16) + ' UTC · Market closed · Use slider to estimate after-hours mNAV'; })();
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; return mkt ? ' ' + mnavStr + '● live ('+stamp+')' : ' ' + mnavStr + '● Previous close (21:00 UTC) — Current time: ' + new Date().toISOString().slice(11,16) + ' UTC · Market closed · Use slider to estimate after-hours mNAV'; })();
     el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return d>=1&&d<=5&&h>=14&&h<21 ? 'var(--green)' : 'var(--orange-dim)'; })();
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
@@ -594,7 +594,8 @@ async function fetchLiveMnav() {
     recalc();
 
     const stamp = new Date().toISOString().slice(11,16) + ' UTC';
-    setMnavStatus(true, stamp);
+    const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
+    setMnavStatus(true, stamp, liveDisplayMnav);
   } catch (err) {
     setMnavStatus(false);
   }
@@ -639,7 +640,7 @@ setInterval(() => {
 
 setInterval(() => {
   fetchLiveMnav();
-}, 5 * 60 * 1000);
+}, 15 * 60 * 1000);
 
 // Risk-free rate refreshes once per hour (Treasury data updates daily).
 setInterval(() => {
