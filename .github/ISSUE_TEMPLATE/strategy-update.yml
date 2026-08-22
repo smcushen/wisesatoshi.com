@@ -1,0 +1,54 @@
+name: 📊 Strategy Fundamentals Update
+description: Submit this week's verified Strategy (MSTR) fundamentals to update the WS Model
+title: "Strategy Fundamentals Update"
+labels: ["data-update-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in the current values from strategy.com/shares, the latest investor briefing, and the most recent SEC 8-K.
+        If a number hasn't changed since last week, just re-enter the same value — every field is required so the bot has a complete set to write.
+  - type: input
+    id: btc-held
+    attributes:
+      label: BTC held by Strategy
+      description: Whole number, no commas
+      placeholder: "840447"
+    validations:
+      required: true
+  - type: input
+    id: shares-outstanding
+    attributes:
+      label: Basic shares outstanding (millions)
+      placeholder: "401"
+    validations:
+      required: true
+  - type: input
+    id: usd-reserve
+    attributes:
+      label: USD Reserve ($B)
+      placeholder: "4.65"
+    validations:
+      required: true
+  - type: input
+    id: preferred-stock
+    attributes:
+      label: Preferred stock — STRK/STRF/STRD/STRC ($B)
+      placeholder: "15.24"
+    validations:
+      required: true
+  - type: input
+    id: convertible-debt
+    attributes:
+      label: Convertible debt ($B)
+      placeholder: "6.75"
+    validations:
+      required: true
+  - type: input
+    id: source-date
+    attributes:
+      label: As-of date for these figures
+      description: Format YYYY-MM-DD
+      placeholder: "2026-08-25"
+    validations:
+      required: true
