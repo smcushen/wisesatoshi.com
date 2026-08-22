@@ -305,7 +305,7 @@
         <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
       </div>
       <div style="font-size:11px;color:var(--ink-faint);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-        🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <a href="mailto:wisesatoshi@gmail.com?subject=WS Model Pro Waitlist" style="color:var(--orange);text-decoration:none;">Join the waitlist ↗</a>
+        🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
       </div>
       <div class="field">
         <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
@@ -724,6 +724,61 @@ function calibrateIV() {
   stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
 }
 
+
+// Waitlist Modal
+function openWaitlistModal() {
+  const modal = document.getElementById('waitlistModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWaitlistModal() {
+  document.getElementById('waitlistModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.getElementById('waitlistModal').addEventListener('click', function(e) {
+  if (e.target === this) closeWaitlistModal();
+});
+
+async function submitWaitlist() {
+  const firstName = document.getElementById('waitlistFirstName').value.trim();
+  const email = document.getElementById('waitlistEmail').value.trim();
+  const msg = document.getElementById('waitlistMsg');
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Please enter a valid email address.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  msg.textContent = 'Submitting...';
+  msg.style.color = 'var(--ink-dim)';
+
+  try {
+    const formData = new FormData();
+    formData.append('email_address', email);
+    if (firstName) formData.append('first_name', firstName);
+    formData.append('tags[]', 'ws-pro-waitlist');
+
+    const resp = await fetch('https://app.kit.com/forms/9831084/subscriptions', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: formData
+    });
+
+    if (resp.ok || resp.status === 200 || resp.status === 201) {
+      document.getElementById('waitlistForm').innerHTML = '<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You're on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We'll email you when WS Model Pro launches.</div></div>';
+    } else {
+      throw new Error('submission failed');
+    }
+  } catch(e) {
+    msg.textContent = 'Something went wrong — try again or email hello@wisesatoshi.com';
+    msg.style.color = 'var(--red)';
+  }
+}
+
 // Run BTC price first, then mNAV (which depends on BTC price being current).
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
@@ -753,5 +808,21 @@ document.addEventListener('visibilitychange', () => {
 });
 </script>
 
+
+<!-- Waitlist Modal -->
+<div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
+    <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
+    <div style="font-size:20px;margin-bottom:4px;">🔒 WS Model Pro</div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
+    <div id="waitlistForm">
+      <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+      <input type="email" id="waitlistEmail" placeholder="Email address" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
+      <button onclick="submitWaitlist()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.03em;">Join the Waitlist</button>
+      <div id="waitlistMsg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--ink-dim);"></div>
+    </div>
+    <div style="font-size:10px;color:var(--ink-faint);margin-top:12px;text-align:center;">No spam. Unsubscribe anytime.</div>
+  </div>
+</div>
 </body>
 </html>
