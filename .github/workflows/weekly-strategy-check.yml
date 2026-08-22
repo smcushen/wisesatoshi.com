@@ -1,0 +1,55 @@
+name: Weekly Strategy Fundamentals Check
+
+on:
+  schedule:
+    # Every Tuesday at 10:00 AM Eastern (14:00 UTC)
+    - cron: '0 14 * * 2'
+  workflow_dispatch:  # allows manual trigger anytime
+
+jobs:
+  create-reminder:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Create weekly fundamentals reminder issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Weekly Strategy Fundamentals Check — ${today}`,
+              body: `## WS Model — Weekly Data Verification
+            
+            It's Tuesday. Strategy typically announces Bitcoin purchases on Mondays, so today is the right time to verify all model defaults.
+            
+            ### Step 1 — Check strategy.com/shares
+            - [ ] **BTC held** (current default: 840,447)
+            - [ ] **Basic shares outstanding** (current default: 401M)
+            
+            ### Step 2 — Check Strategy investor briefing
+            - [ ] **USD Reserve** (current default: $4.65B)
+            - [ ] **Preferred stock — STRK/STRF/STRD/STRC** (current default: $15.24B)
+            
+            ### Step 3 — Check latest SEC 8-K filing
+            - [ ] **Convertible debt** (current default: $6.75B)
+            
+            ### If anything changed:
+            1. Open \`index.html\` in GitHub
+            2. Update the relevant default \`value=\` attributes in the input fields
+            3. Update the timestamp line: \`DEFAULTS LAST UPDATED: ${today}\`
+            4. Commit with message: \`Update Strategy fundamentals ${today}\`
+            
+            **Sources:**
+            - [strategy.com/shares](https://strategy.com/shares)
+            - [SEC EDGAR — MSTR filings](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=MSTR&type=8-K&dateb=&owner=include&count=10)
+            
+            *Close this issue after updating (or confirming no changes needed).*`,
+              labels: ['maintenance', 'data-update']
+            });
+            
+            console.log('Weekly reminder issue created successfully');
