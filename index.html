@@ -300,6 +300,10 @@
         <input type="range" id="iv" min="20" max="150" value="84">
         <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> if you already have one</div>
       </div>
+      <div class="field">
+        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
+        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
+      </div>
       <div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
         <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -315,10 +319,6 @@
       </div>
       <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
         🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
-      </div>
-      <div class="field">
-        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
-        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
       </div>
     </div>
   </div>
@@ -338,6 +338,10 @@
     <div class="panel-title">Results</div>
     <div class="results-grid">
       <div class="result-card">
+        <div class="label">Implied mNAV vs derived price</div>
+        <div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
+      </div>
+      <div class="result-card">
         <div class="label">Intrinsic value / share</div>
         <div class="value" id="outIntrinsic">—</div>
       </div>
@@ -350,10 +354,6 @@
         <div class="value" id="outContractValue">—</div>
         <div class="sub">100 shares × option price</div>
       </div>
-      <div class="result-card">
-        <div class="label">Implied mNAV vs derived price</div>
-        <div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
-      </div>
       <div class="result-card total">
         <div class="label">Total position value</div>
         <div class="value" id="outTotal">—</div>
@@ -362,9 +362,9 @@
 
     <div class="greeks-grid">
       <div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
+      <div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
       <div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
       <div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
-      <div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
     </div>
   </div>
 
