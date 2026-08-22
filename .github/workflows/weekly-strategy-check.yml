@@ -1,17 +1,14 @@
 name: Weekly Strategy Fundamentals Check
-
 on:
   schedule:
-    # Every Tuesday at 10:00 AM Eastern (14:00 UTC)
-    - cron: '0 14 * * 2'
+    # Every Tuesday at 9:00 AM Eastern (13:00 UTC during EDT)
+    - cron: '0 13 * * 2'
   workflow_dispatch:  # allows manual trigger anytime
-
 jobs:
   create-reminder:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-
     steps:
       - name: Create weekly fundamentals reminder issue
         uses: actions/github-script@v7
