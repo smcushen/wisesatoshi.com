@@ -270,7 +270,7 @@
       </div>
     </div>
 
-    <div class="source-line">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
+    <div class="source-line" id="sourceLine">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
 
     <div class="field">
       <label>Derived MSTR share price</label>
@@ -782,9 +782,42 @@ async function submitWaitlist() {
   }
 }
 
+// Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
+// from the JSON file the weekly update-form automation writes to. Falls back to the
+// hardcoded defaults above if the file is missing or the fetch fails.
+function loadStrategyFundamentals() {
+  function formatDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
+  fetch('data/strategy-fundamentals.json')
+    .then(res => res.json())
+    .then(data => {
+      el('btcHeld').value = data.btcHeld;
+      el('shares').value = data.sharesOutstandingMillions;
+      el('debt').value = data.convertibleDebtBillions;
+      el('preferred').value = data.preferredStockBillions;
+      el('usdReserve').value = data.usdReserveBillions;
+
+      const sourceLine = el('sourceLine');
+      if (sourceLine) {
+        sourceLine.textContent =
+          `DEFAULTS LAST UPDATED: ${formatDate(data.lastUpdated)} · SOURCE: STRATEGY SEC 8-K & INVESTOR BRIEFING · BASIC SHARES ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
+      }
+
+      recalc();
+    })
+    .catch(err => {
+      console.warn('Could not load live fundamentals, keeping hardcoded defaults.', err);
+    });
+}
+
 // Run BTC price first, then mNAV (which depends on BTC price being current).
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
+loadStrategyFundamentals();
 
 recalc();
 
