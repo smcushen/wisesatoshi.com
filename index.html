@@ -559,7 +559,7 @@ async function fetchLiveBtcPrice() {
         }
         setPriceStatus(true, source.name, price);
         const kLabel = '$' + Math.round(price).toLocaleString('en-US');
-        const btn = document.querySelector('.scenario-btn');
+        const btn = document.querySelector('[data-scenario="current"]');
         if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
         return;
       }
