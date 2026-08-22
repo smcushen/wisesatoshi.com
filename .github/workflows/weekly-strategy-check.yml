@@ -15,6 +15,7 @@ jobs:
         with:
           script: |
             const today = new Date().toISOString().slice(0, 10);
+            const formUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/new?template=strategy-update.yml`;
             
             await github.rest.issues.create({
               owner: context.repo.owner,
@@ -35,17 +36,16 @@ jobs:
             ### Step 3 — Check latest SEC 8-K filing
             - [ ] **Convertible debt** (current default: $6.75B)
             
-            ### If anything changed:
-            1. Open \`index.html\` in GitHub
-            2. Update the relevant default \`value=\` attributes in the input fields
-            3. Update the timestamp line: \`DEFAULTS LAST UPDATED: ${today}\`
-            4. Commit with message: \`Update Strategy fundamentals ${today}\`
+            ### Submit this week's numbers
+            👉 [Click here to open the update form](${formUrl})
+            
+            Fill in all five fields (even if unchanged) and submit — a bot will automatically update the site and close this reminder.
             
             **Sources:**
             - [strategy.com/shares](https://strategy.com/shares)
             - [SEC EDGAR — MSTR filings](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=MSTR&type=8-K&dateb=&owner=include&count=10)
             
-            *Close this issue after updating (or confirming no changes needed).*`,
+            *This reminder closes automatically once you submit the form above.*`,
               labels: ['maintenance', 'data-update']
             });
             
