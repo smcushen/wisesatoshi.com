@@ -219,11 +219,11 @@
       </div>
       <div class="field">
         <label>Strike price ($)</label>
-        <input type="number" id="strike" value="275" step="5">
+        <input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
       </div>
       <div class="field">
         <label>Expiration date</label>
-        <input type="date" id="expiryDate" value="2028-12-15">
+        <input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
       </div>
       <div class="field">
         <label>Projection date</label>
@@ -289,7 +289,23 @@
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
         <input type="range" id="iv" min="20" max="150" value="84">
-        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one.</div>
+        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a></div>
+      </div>
+      <div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
+        <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from observed market price</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="number" id="observedPrice" placeholder="e.g. 22.50" min="0.01" step="0.01"
+            style="width:110px;background:var(--bg-panel);border:1px solid var(--line);border-radius:4px;color:var(--ink);padding:6px 8px;font-size:13px;font-family:var(--mono);">
+          <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Solve IV</button>
+          <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
+        </div>
+        <div id="ivSkewWarning" style="display:none;font-size:11px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
+          ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
+        </div>
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
+      </div>
+      <div style="font-size:11px;color:var(--ink-faint);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
+        🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <a href="mailto:wisesatoshi@gmail.com?subject=WS Model Pro Waitlist" style="color:var(--orange);text-decoration:none;">Join the waitlist ↗</a>
       </div>
       <div class="field">
         <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
@@ -625,6 +641,87 @@ async function fetchLiveRate() {
       rateStatus.style.color = 'var(--ink-faint)';
     }
   }
+}
+
+
+
+// Show IV skew warning when strike or expiry differs from defaults
+function checkIvWarning() {
+  const strike = parseFloat(el('strike').value);
+  const expiry = el('expiryDate').value;
+  const warning = document.getElementById('ivSkewWarning');
+  if (!warning) return;
+  const changed = (strike !== 275 || expiry !== '2028-12-15');
+  warning.style.display = changed ? 'block' : 'none';
+}
+
+// IV Calibration — back-solves Black-Scholes to find implied volatility
+// from a real observed market price for the contract.
+function calibrateIV() {
+  const observed = parseFloat(document.getElementById('observedPrice').value);
+  const resultEl = document.getElementById('ivCalibResult');
+  const stampEl = document.getElementById('ivCalibStamp');
+
+  if (!observed || observed <= 0) {
+    resultEl.textContent = '⚠ Enter a valid observed price first.';
+    resultEl.style.color = 'var(--red)';
+    return;
+  }
+
+  // Get current model inputs
+  const S = parseFloat(el('derivedPrice').value) || window._liveMstrPrice;
+  const manualOverride = el('manualPrice').value;
+  const useS = manualOverride ? parseFloat(manualOverride) : (window._liveMstrPrice || parseFloat(el('btcPrice').value));
+
+  const K = parseFloat(el('strike').value);
+  const ratePct = parseFloat(el('rate').value);
+  const r = ratePct / 100;
+  const expiry = new Date(el('expiry').value);
+  const proj = new Date(el('projDate').value);
+  const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
+
+  if (!useS || !K || !T) {
+    resultEl.textContent = '⚠ Model inputs incomplete.';
+    resultEl.style.color = 'var(--red)';
+    return;
+  }
+
+  // Binary search for sigma that produces the observed price
+  let lo = 0.01, hi = 5.0, mid, bsPrice, iter = 0;
+  while (iter < 200) {
+    mid = (lo + hi) / 2;
+    bsPrice = blackScholesCall(useS, K, T, r, mid).price;
+    if (Math.abs(bsPrice - observed) < 0.001) break;
+    if (bsPrice < observed) lo = mid;
+    else hi = mid;
+    iter++;
+  }
+
+  const impliedIvPct = Math.round(mid * 100);
+
+  if (impliedIvPct < 20 || impliedIvPct > 300) {
+    resultEl.textContent = '⚠ Result out of range — check your inputs.';
+    resultEl.style.color = 'var(--red)';
+    return;
+  }
+
+  resultEl.innerHTML = 'Implied IV: <strong style="color:var(--orange);">' + impliedIvPct + '%</strong> &nbsp;';
+
+  // Add "Use this IV" button inline
+  const useBtn = document.createElement('button');
+  useBtn.textContent = 'Use this IV';
+  useBtn.style.cssText = 'background:var(--orange);color:#000;border:none;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;';
+  useBtn.onclick = function() {
+    el('iv').value = impliedIvPct;
+    el('lblIv').textContent = impliedIvPct + '%';
+    recalc();
+    resultEl.innerHTML += ' <span style="color:var(--green);">✓ applied</span>';
+  };
+  resultEl.appendChild(useBtn);
+  resultEl.style.color = 'var(--ink)';
+
+  const now = new Date();
+  stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
 }
 
 // Run BTC price first, then mNAV (which depends on BTC price being current).
