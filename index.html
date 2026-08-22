@@ -738,8 +738,11 @@ function closeWaitlistModal() {
 }
 
 // Close on backdrop click
-document.getElementById('waitlistModal').addEventListener('click', function(e) {
-  if (e.target === this) closeWaitlistModal();
+document.addEventListener('DOMContentLoaded', function() {
+  var modal = document.getElementById('waitlistModal');
+  if (modal) modal.addEventListener('click', function(e) {
+    if (e.target === this) closeWaitlistModal();
+  });
 });
 
 async function submitWaitlist() {
@@ -769,7 +772,7 @@ async function submitWaitlist() {
     });
 
     if (resp.ok || resp.status === 200 || resp.status === 201) {
-      document.getElementById('waitlistForm').innerHTML = '<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You're on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We'll email you when WS Model Pro launches.</div></div>';
+       document.getElementById("waitlistForm").innerHTML = `<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You are on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We will email you when WS Model Pro launches.</div></div>`;
     } else {
       throw new Error('submission failed');
     }
