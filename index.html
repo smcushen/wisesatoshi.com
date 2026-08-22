@@ -152,6 +152,7 @@
   .result-card .sub{font-size:11px;color:var(--ink-faint);margin-top:4px;}
   .result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
   .result-card.total .value{font-size:32px;}
+  .result-card.highlight{border-color:var(--orange-dim);}
 
   .greeks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   @media(max-width:640px){.greeks-grid{grid-template-columns:repeat(2,1fr);}}
@@ -344,7 +345,7 @@
         <div class="label">Option price (Black-Scholes)</div>
         <div class="value" id="outOptionPrice">—</div>
       </div>
-      <div class="result-card">
+      <div class="result-card highlight">
         <div class="label">Value per contract</div>
         <div class="value" id="outContractValue">—</div>
         <div class="sub">100 shares × option price</div>
