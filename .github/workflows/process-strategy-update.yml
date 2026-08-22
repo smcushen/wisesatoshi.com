@@ -1,0 +1,91 @@
+name: Process Strategy Fundamentals Update
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  update-fundamentals:
+    if: contains(github.event.issue.labels.*.name, 'data-update-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Parse issue form and write JSON
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body;
+
+            function extract(label) {
+              const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const re = new RegExp(`### ${escaped}\\s*\\n\\s*\\n([^\\n]+)`);
+              const match = body.match(re);
+              return match ? match[1].trim() : null;
+            }
+
+            const btcHeld = extract('BTC held by Strategy');
+            const sharesOutstanding = extract('Basic shares outstanding (millions)');
+            const usdReserve = extract('USD Reserve ($B)');
+            const preferredStock = extract('Preferred stock — STRK/STRF/STRD/STRC ($B)');
+            const convertibleDebt = extract('Convertible debt ($B)');
+            const asOfDate = extract('As-of date for these figures');
+
+            const fields = { btcHeld, sharesOutstanding, usdReserve, preferredStock, convertibleDebt, asOfDate };
+            const missing = Object.entries(fields).filter(([k, v]) => !v).map(([k]) => k);
+
+            if (missing.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ Couldn't parse: ${missing.join(', ')}. Please check the form and resubmit, or edit \`data/strategy-fundamentals.json\` directly.`
+              });
+              core.setFailed('Missing one or more required fields.');
+              return;
+            }
+
+            const data = {
+              btcHeld: parseInt(btcHeld.replace(/,/g, ''), 10),
+              sharesOutstandingMillions: parseFloat(sharesOutstanding),
+              usdReserveBillions: parseFloat(usdReserve),
+              preferredStockBillions: parseFloat(preferredStock),
+              convertibleDebtBillions: parseFloat(convertibleDebt),
+              lastUpdated: asOfDate
+            };
+
+            fs.mkdirSync('data', { recursive: true });
+            fs.writeFileSync('data/strategy-fundamentals.json', JSON.stringify(data, null, 2) + '\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ Parsed successfully — committing updated fundamentals (as of ${asOfDate}).`
+            });
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/strategy-fundamentals.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Update Strategy fundamentals via issue form"
+          git push
+
+      - name: Close issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed'
+            });
