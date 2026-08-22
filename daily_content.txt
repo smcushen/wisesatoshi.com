@@ -1,8 +1,8 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=73027
+PREVIOUS_CLOSE=78338
 TODAY_IN_BITCOIN=
-TREASURY_1=Bitcoin-treasury-linked stocks surged amid today's rally — Strategy and Bitmine gained around 10%, while Fold, BitGo, and American Bitcoin rose more sharply, as markets rallied on the Treasury's bond-buyback expansion and a new SEC crypto proposal. (The Block, Aug 19-20) https://www.theblock.co/news/markets/2026-08-19-bitcoin-69000-ether-jumps-treasury-buybacks-sec-crypto-proposal-fuel-market-rally-412248
-TREASURY_2=Spot Bitcoin ETFs saw their largest inflow in 3.5 months — over $517 million in net inflows Wednesday, the largest since May 4, attributed to the same Treasury-buyback-driven rally. (The Block, Aug 20) https://www.theblock.co/news/markets/2026-08-20-us-bitcoin-etf-517-million-inflows-412291
+TREASURY_1=Bitcoin’s rally above $77,000 (at one point exceeding $79,000) on Friday pushed Strategy’s 840,447 BTC treasury back into the black. The company had acquired the coins at an average cost of $75,385, resulting in an unrealized gain of roughly $1.4 billion after months of paper losses. Strategy shares also rose sharply that day, reaching two-month highs near $120. https://www.coindesk.com/markets/2026/08/21/strategy-sits-on-usd1-4-billion-profit-on-bitcoin-holdings-as-price-surges
+TREASURY_2=Late on August 21 (around 5–9 p.m. across U.S. time zones), Bitcoin retraced from highs near $79,500 toward $77,000. The roughly 2.5–3% dip cascaded into $476–547 million in liquidations within about one hour, with the large majority hitting leveraged long positions. No major external news catalyst was identified; the move was described as a structural deleveraging after the prior short-squeeze rally. https://cryptobriefing.com/476m-crypto-long-liquidations-one-hour/
 TREASURY_3=
