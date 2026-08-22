@@ -457,7 +457,7 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
 }
 
 function recalc(){
-  const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+  const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
   el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
   const btcHeld = parseFloat(el('btcHeld').value);
   const sharesM = parseFloat(el('shares').value);
@@ -616,7 +616,7 @@ async function fetchLiveMnav() {
 
     // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
     // are currently in the inputs (BTC price should already be live by this point).
-    const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+    const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
     const btcHeld = parseFloat(el('btcHeld').value);
     const sharesM = parseFloat(el('shares').value);
     const debtB = parseFloat(el('debt').value);
@@ -688,10 +688,23 @@ function calibrateIV() {
     return;
   }
 
-  // Get current model inputs
-  const S = parseFloat(el('derivedPrice').value) || window._liveMstrPrice;
+  // Get current model inputs — recompute the derived MSTR price the same way
+  // recalc() does, unless the user has entered a manual price override.
   const manualOverride = el('manualPrice').value;
-  const useS = manualOverride ? parseFloat(manualOverride) : (window._liveMstrPrice || parseFloat(el('btcPrice').value));
+  let useS;
+  if (manualOverride) {
+    useS = parseFloat(manualOverride);
+  } else {
+    const btcPriceForCalib = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
+    const btcHeldForCalib = parseFloat(el('btcHeld').value);
+    const sharesForCalib = parseFloat(el('shares').value);
+    const debtForCalib = parseFloat(el('debt').value);
+    const preferredForCalib = parseFloat(el('preferred').value);
+    const usdReserveForCalib = parseFloat(el('usdReserve').value);
+    const mnavForCalib = parseFloat(el('mnav').value);
+    const netValuePerShareForCalib = calcNetValuePerShare(btcHeldForCalib, btcPriceForCalib, debtForCalib, preferredForCalib, usdReserveForCalib, sharesForCalib);
+    useS = netValuePerShareForCalib * mnavForCalib;
+  }
 
   const K = parseFloat(el('strike').value);
   const ratePct = parseFloat(el('rate').value);
