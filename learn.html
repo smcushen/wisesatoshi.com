@@ -89,6 +89,18 @@
     padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;
     text-decoration:none;margin-top:16px;
   }
+  .prev-link{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--bg-panel-2);color:var(--ink-dim);border:1px solid var(--line);border-radius:6px;
+    padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;
+    text-decoration:none;margin-top:16px;
+  }
+  .prev-link:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .section-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  .back-to-calc{
+    display:block;margin-top:18px;font-size:13px;color:var(--ink-faint);text-decoration:none;
+  }
+  .back-to-calc:hover{color:var(--orange);}
 
   @media(max-width:760px){
     .primer-layout{flex-direction:column;}
@@ -167,6 +179,7 @@
         <p>I found a handful of calculators that would estimate MSTR's share price and mNAV at a given Bitcoin price — but that's where they stopped. None of them took the next step and actually priced an options contract. And the few "fair value per share" estimates I did find were often missing pieces of Strategy's real capital structure — convertible debt, preferred stock, the cash set aside to service both — which quietly skews the number, sometimes by a lot.</p>
         <p>So there was a real gap: plenty of tools for "what's MSTR worth," nothing for "what's my actual options position worth." I built this to close that gap for myself first. Once I checked it against real market prices and it held up, it seemed worth sharing rather than keeping to myself.</p>
         <button class="next-link" onclick="goToSection('why')">Next: Why MSTR &amp; Calls →</button>
+        <a href="index.html" class="back-to-calc">← Back to the calculator</a>
       </div>
 
       <!-- SECTION B: WHY MSTR & WHY CALLS -->
@@ -179,7 +192,11 @@
         <p>So MSTR isn't just familiar or convenient. It's the one name where a serious options-focused model is actually useful to someone holding a real position, not a theoretical one.</p>
         <p>I should also be upfront about what this tool does and doesn't do: it prices long calls specifically — not puts, not spreads. That's not just a practical scope decision — it's a matter of principle. I believe Bitcoin, and logically following, MSTR, are going up and to the right. Forever (Laura). Puts can yield a profit given the right market conditions — that's just math, and I won't pretend otherwise. But as a permabull, I am and will always be, from a position of principle, long Bitcoin. That conviction is baked into what this tool models, not just an accident of what I happened to build first.</p>
         <p>There's a practical side to this too, worth naming honestly: spreads are also a bigger step up in complexity — multiple contracts, a different risk shape entirely (lower cost, capped upside), built for more advanced, capital-efficient strategies. That's a legitimate approach for someone else. It's just not what this tool models right now, while it's still proving itself as a simple, accurate long-call calculator first.</p>
-        <button class="next-link" onclick="goToSection('options')">Next: How Options Work →</button>
+        <div class="section-nav">
+          <button class="prev-link" onclick="goToSection('origin')">← Previous: Origin Story</button>
+          <button class="next-link" onclick="goToSection('options')">Next: How Options Work →</button>
+        </div>
+        <a href="index.html" class="back-to-calc">← Back to the calculator</a>
       </div>
 
       <!-- SECTION C: HOW OPTIONS WORK -->
@@ -190,7 +207,11 @@
         <p>That's the trade in one sentence: a call caps your downside at a known number, while leaving your upside open — in exchange for the fact that the position expires. Being right about direction eventually stops mattering if you're wrong about timing.</p>
         <div class="callout">That downside cap deserves to be stated plainly, not softened: if MSTR closes below your strike at expiration, the option expires worthless — and the entire premium you paid is gone. Not most of it. All of it. This isn't a remote, theoretical edge case; it's a completely normal outcome, and it's a fundamentally different kind of risk than owning the stock outright, where a bad move still leaves you holding something of value. Anyone deciding whether options belong in their own portfolio, and how much of it, should weigh this specific risk seriously — not treat it as a footnote to the upside story.</div>
 
-        <button class="next-link" onclick="goToSection('pricing')">Next: Pricing Factors →</button>
+        <div class="section-nav">
+          <button class="prev-link" onclick="goToSection('why')">← Previous: Why MSTR &amp; Calls</button>
+          <button class="next-link" onclick="goToSection('pricing')">Next: Pricing Factors →</button>
+        </div>
+        <a href="index.html" class="back-to-calc">← Back to the calculator</a>
       </div>
 
       <!-- SECTION D: PRICING FACTORS -->
@@ -233,7 +254,10 @@
           </div>
         </div>
 
-        <p style="margin-top:24px;"><a href="index.html" style="color:var(--orange);text-decoration:none;font-weight:600;">← Back to the calculator</a></p>
+        <div class="section-nav">
+          <button class="prev-link" onclick="goToSection('options')">← Previous: How Options Work</button>
+        </div>
+        <a href="index.html" class="back-to-calc">← Back to the calculator</a>
       </div>
 
     </div>
