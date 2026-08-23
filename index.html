@@ -101,8 +101,8 @@
     margin-bottom:20px;
   }
   .panel-title{
-    font-size:12px;letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--ink-faint);margin:0 0 20px;
+    font-size:14px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--ink-dim);margin:0 0 20px;
     display:flex;align-items:center;gap:10px;
   }
   .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
@@ -140,7 +140,7 @@
   .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
   .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
 
-  .source-line{font-size:13px;color:var(--ink-faint);letter-spacing:0.02em;margin-top:-8px;margin-bottom:18px;}
+  .source-line{font-size:13px;color:var(--ink-faint);margin-top:-8px;margin-bottom:18px;}
 
   .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
   @media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
@@ -290,7 +290,7 @@
       </div>
     </div>
 
-    <div class="source-line" id="sourceLine">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
+    <div class="source-line" id="sourceLine">Defaults last updated: Aug 14, 2026 · Source: Strategy SEC 8-K (Aug 10) &amp; Investor Briefing (Aug 13) · Basic shares ≈401M · BTC: 840,447</div>
 
     <div class="grid">
       <div class="field">
@@ -858,7 +858,7 @@ async function submitWaitlist() {
 function loadStrategyFundamentals() {
   function formatDate(iso) {
     const d = new Date(iso + 'T00:00:00');
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   }
 
@@ -874,7 +874,7 @@ function loadStrategyFundamentals() {
       const sourceLine = el('sourceLine');
       if (sourceLine) {
         sourceLine.textContent =
-          `DEFAULTS LAST UPDATED: ${formatDate(data.lastUpdated)} · SOURCE: STRATEGY SEC 8-K & INVESTOR BRIEFING · BASIC SHARES ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
+          `Defaults last updated: ${formatDate(data.lastUpdated)} · Source: Strategy SEC 8-K & Investor Briefing · Basic shares ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
       }
 
       recalc();
