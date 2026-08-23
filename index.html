@@ -892,25 +892,34 @@ loadStrategyFundamentals();
 
 recalc();
 
-// Auto-refresh: BTC every 60 seconds, mNAV every 5 minutes.
+// Auto-refresh: BTC every 60 seconds (external APIs, no Netlify cost either way).
 setInterval(() => {
   fetchLiveBtcPrice();
 }, 60 * 1000);
 
-setInterval(() => {
-  fetchLiveMnav();
-}, 15 * 60 * 1000);
+// mNAV and rate hit Netlify functions, so these are the ones that cost credits.
+// Stretched from 15min/60min to 30min/2hr, and paused entirely while the tab
+// is backgrounded, rather than firing uselessly for a tab nobody's watching.
+let mnavInterval, rateInterval;
+function startNetlifyPolling(){
+  mnavInterval = setInterval(fetchLiveMnav, 30 * 60 * 1000);
+  rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
+}
+function stopNetlifyPolling(){
+  clearInterval(mnavInterval);
+  clearInterval(rateInterval);
+}
+startNetlifyPolling();
 
-// Risk-free rate refreshes once per hour (Treasury data updates daily).
-setInterval(() => {
-  fetchLiveRate();
-}, 60 * 60 * 1000);
-
-// Also refresh when user returns to the tab after being away.
+// Also refresh when user returns to the tab after being away — and pause/resume
+// the Netlify-hitting timers based on whether the tab is actually visible.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     fetchLiveBtcPrice().then(fetchLiveMnav);
     fetchLiveRate();
+    startNetlifyPolling();
+  } else {
+    stopNetlifyPolling();
   }
 });
 </script>
