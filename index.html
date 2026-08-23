@@ -622,9 +622,8 @@ async function fetchLiveBtcPrice() {
   setPriceStatus(false);
 }
 
-// live MSTR price -> live mNAV, via our own Netlify function (keeps the API key private).
-// IMPORTANT: replace wisesatoshi.netlify.app below with your actual Netlify function URL once deployed.
-const MSTR_PRICE_ENDPOINT = 'https://wisesatoshi.netlify.app/.netlify/functions/mstr-price';
+// live mNAV: reads data/mstr-price.json, a static file kept fresh by a scheduled
+// GitHub Action (rather than hitting Netlify directly from every visitor's browser).
 
 function setMnavStatus(success, stamp, liveDisplayMnav) {
   const el2 = el('mnavStatus');
@@ -639,7 +638,7 @@ function setMnavStatus(success, stamp, liveDisplayMnav) {
 
 async function fetchLiveMnav() {
   try {
-    const resp = await fetch(MSTR_PRICE_ENDPOINT);
+    const resp = await fetch('data/mstr-price.json');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
@@ -681,7 +680,7 @@ async function fetchLiveRate() {
   const rateStatus = document.getElementById('rateStatus');
 
   try {
-    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
+    const resp = await fetch('data/treasury-rate.json');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
@@ -897,29 +896,32 @@ setInterval(() => {
   fetchLiveBtcPrice();
 }, 60 * 1000);
 
-// mNAV and rate hit Netlify functions, so these are the ones that cost credits.
-// Stretched from 15min/60min to 30min/2hr, and paused entirely while the tab
-// is backgrounded, rather than firing uselessly for a tab nobody's watching.
+// mNAV now reads data/mstr-price.json, refreshed server-side every 5 minutes via
+// GitHub Actions calling Finnhub directly (free at any frequency). Rate reads
+// data/treasury-rate.json, refreshed every 6 hours since it barely moves intraday.
+// Both are free static files, so client-side polling can match freely — still
+// paused while the tab is backgrounded, since there's no reason to poll a tab
+// nobody's watching.
 let mnavInterval, rateInterval;
-function startNetlifyPolling(){
-  mnavInterval = setInterval(fetchLiveMnav, 30 * 60 * 1000);
+function startDataPolling(){
+  mnavInterval = setInterval(fetchLiveMnav, 5 * 60 * 1000);
   rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
 }
-function stopNetlifyPolling(){
+function stopDataPolling(){
   clearInterval(mnavInterval);
   clearInterval(rateInterval);
 }
-startNetlifyPolling();
+startDataPolling();
 
 // Also refresh when user returns to the tab after being away — and pause/resume
-// the Netlify-hitting timers based on whether the tab is actually visible.
+// polling based on whether the tab is actually visible.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     fetchLiveBtcPrice().then(fetchLiveMnav);
     fetchLiveRate();
-    startNetlifyPolling();
+    startDataPolling();
   } else {
-    stopNetlifyPolling();
+    stopDataPolling();
   }
 });
 </script>
