@@ -292,10 +292,17 @@
 
     <div class="source-line" id="sourceLine">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
 
-    <div class="field">
-      <label>Derived MSTR share price</label>
-      <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
-      <div class="hint" id="derivedPriceSub" style="margin-top:4px;"></div>
+    <div class="grid">
+      <div class="field">
+        <label>Net value/share</label>
+        <input type="text" id="netValuePerShareDisplay" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
+        <div class="hint">Pure Bitcoin-backed asset value — before the market's premium (mNAV) is applied.</div>
+      </div>
+      <div class="field">
+        <label>Derived MSTR share price</label>
+        <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
+        <div class="hint">Net value/share × mNAV — what the model estimates MSTR should actually trade at.</div>
+      </div>
     </div>
 
     <div class="field">
@@ -479,7 +486,7 @@ function recalc(){
   const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
   const derivedPrice = netValuePerShare * mnav;
   el('derivedPrice').value = fmtUSD(derivedPrice);
-  el('derivedPriceSub').textContent = '(net value/share: ' + fmtUSD(netValuePerShare) + ')';
+  el('netValuePerShareDisplay').value = fmtUSD(netValuePerShare);
 
   const manualOverride = el('manualPrice').value;
   const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
@@ -910,7 +917,7 @@ document.addEventListener('visibilitychange', () => {
 <div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
   <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
     <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
-    <div style="font-size:20px;margin-bottom:4px;">🚀 WS Model Pro</div>
+    <div style="font-size:20px;margin-bottom:4px;text-align:center;">🚀&nbsp;&nbsp;WS Model Pro</div>
     <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
     <div id="waitlistForm">
       <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
