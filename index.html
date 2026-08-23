@@ -53,8 +53,8 @@
     border-bottom:1px solid var(--line);
     position:relative;z-index:2;
   }
-  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:15px;}
-  header .brand img{width:24px;height:24px;vertical-align:middle;margin-right:9px;position:relative;top:-1px;}
+  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:18px;}
+  header .brand img{width:30px;height:30px;vertical-align:middle;margin-right:10px;position:relative;top:-1px;}
   header .brand span{color:var(--orange);}
   nav{display:flex;flex-wrap:wrap;row-gap:8px;}
   nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
@@ -182,8 +182,8 @@
     color:var(--ink-faint);font-size:13px;
   }
   footer a{color:var(--orange-dim);text-decoration:none;}
-  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
-  footer .brand-mark img{width:18px;height:18px;display:block;}
+  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;font-size:15px;}
+  footer .brand-mark img{width:22px;height:22px;display:block;}
   @media(max-width:640px){
     footer{
       flex-direction:column;
@@ -295,6 +295,7 @@
     <div class="field">
       <label>Derived MSTR share price</label>
       <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
+      <div class="hint" id="derivedPriceSub" style="margin-top:4px;"></div>
     </div>
 
     <div class="field">
@@ -477,7 +478,8 @@ function recalc(){
 
   const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
   const derivedPrice = netValuePerShare * mnav;
-  el('derivedPrice').value = fmtUSD(derivedPrice) + '  (net value/share: ' + fmtUSD(netValuePerShare) + ')';
+  el('derivedPrice').value = fmtUSD(derivedPrice);
+  el('derivedPriceSub').textContent = '(net value/share: ' + fmtUSD(netValuePerShare) + ')';
 
   const manualOverride = el('manualPrice').value;
   const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
@@ -521,9 +523,10 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
       // "Current" means follow the live price, not a stale snapshot from page-load.
       // Resume live tracking rather than treating this as a manual override.
       window._userMovedBtcSlider = false;
-      const livePrice = window._liveBtcExact || 63063; // fallback only if no live fetch has completed yet
+      const livePrice = window._lastKnownLivePrice || 63063; // fallback only if no live fetch has ever completed
       el('btcPrice').value = Math.round(livePrice);
       window._liveBtcExact = livePrice;
+      fetchLiveBtcPrice(); // proactively re-check now, rather than waiting for the next scheduled interval
     } else {
       // Every other scenario is an explicit manual override — mark it so the
       // next background price refresh doesn't silently snap it back to live.
@@ -584,6 +587,7 @@ async function fetchLiveBtcPrice() {
       const data = await resp.json();
       const price = source.extract(data);
       if (price && !isNaN(price)) {
+        window._lastKnownLivePrice = price; // never cleared by manual overrides — always the freshest fetch
         // Only reset slider if user hasn't manually moved it
         if (!window._userMovedBtcSlider) {
           el('btcPrice').value = Math.round(price);
@@ -642,8 +646,16 @@ async function fetchLiveMnav() {
     const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
     const liveMnav = data.price / netValuePerShare;
 
-    el('mnav').value = liveMnav.toFixed(2);
-    recalc();
+    // Sanity check before applying — if fundamentals are still mid-load (a race
+    // condition with loadStrategyFundamentals()), netValuePerShare can briefly be
+    // near-zero or negative, which would otherwise silently clamp the mNAV slider
+    // to its minimum (0.5) rather than actually reflecting a real live value.
+    if (isFinite(liveMnav) && liveMnav >= 0.5 && liveMnav <= 2.5) {
+      el('mnav').value = liveMnav.toFixed(2);
+      recalc();
+    } else {
+      console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
+    }
 
     const stamp = new Date().toISOString().slice(11,16) + ' UTC';
     const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
@@ -898,7 +910,7 @@ document.addEventListener('visibilitychange', () => {
 <div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
   <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
     <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
-    <div style="font-size:20px;margin-bottom:4px;">🔒 WS Model Pro</div>
+    <div style="font-size:20px;margin-bottom:4px;">🚀 WS Model Pro</div>
     <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
     <div id="waitlistForm">
       <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
