@@ -1,0 +1,45 @@
+name: Refresh Treasury Rate
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # every 6 hours — Treasury yields barely move intraday, no need for more
+  workflow_dispatch:  # allows manual trigger anytime
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-rate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch Treasury rate
+        run: |
+          RESPONSE=$(curl -s https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate)
+          RATE=$(echo "$RESPONSE" | jq '.rate')
+          RATE_DATE=$(echo "$RESPONSE" | jq -r '.date')
+
+          # Guard against a failed fetch — never commit bad/empty data.
+          if [ -z "$RATE" ] || [ "$RATE" == "null" ]; then
+            echo "Failed to fetch Treasury rate — aborting without committing."
+            exit 1
+          fi
+
+          mkdir -p data
+          cat > data/treasury-rate.json << EOF
+          {
+            "rate": $RATE,
+            "date": "$RATE_DATE",
+            "lastFetched": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/treasury-rate.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Refresh Treasury rate"
+          git push
