@@ -124,7 +124,7 @@
     width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
     color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
   }
-  .field .hint{font-size:11px;color:var(--ink-faint);margin-top:6px;}
+  .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
   .field.new label .val{color:var(--green);}
   .field.new{
     border-left:2px solid var(--orange);
@@ -140,7 +140,7 @@
   .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
   .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
 
-  .source-line{font-size:11px;color:var(--ink-faint);letter-spacing:0.02em;margin-top:-8px;margin-bottom:18px;}
+  .source-line{font-size:13px;color:var(--ink-faint);letter-spacing:0.02em;margin-top:-8px;margin-bottom:18px;}
 
   .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
   @media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
@@ -149,7 +149,7 @@
   }
   .result-card .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
   .result-card .value{font-size:24px;font-weight:600;color:var(--orange);}
-  .result-card .sub{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+  .result-card .sub{font-size:13px;color:var(--ink-faint);margin-top:4px;}
   .result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
   .result-card.total .value{font-size:32px;}
   .result-card.highlight{border-color:var(--orange-dim);}
@@ -159,7 +159,7 @@
   .greek-card{text-align:center;padding:14px 8px;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;}
   .greek-card .sym{font-size:20px;color:var(--orange);margin-bottom:4px;}
   .greek-card .gval{font-size:16px;font-weight:600;}
-  .greek-card .glabel{font-size:10.5px;color:var(--ink-faint);margin-top:3px;}
+  .greek-card .glabel{font-size:13px;color:var(--ink-faint);margin-top:3px;}
 
   .methodology{
     font-size:13px;color:var(--ink-dim);line-height:1.7;
@@ -257,7 +257,7 @@
 
     <div class="field">
       <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
-      <div id="priceStatus" style="font-size:11px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;"></div>
+      <div id="priceStatus" style="font-size:13px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;"></div>
       <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="63063" oninput="window._liveBtcExact=null; window._userMovedBtcSlider=true; el('lblBtc').textContent='$'+parseInt(this.value).toLocaleString('en-US'); recalc();">
     </div>
 
@@ -285,7 +285,7 @@
         <div class="hint">Cash set aside for debt/preferred service — adds back.</div>
       </div>
       <div class="field">
-        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
+        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
         <input type="range" id="mnav" min="0.5" max="2.5" step="0.01" value="1.05">
       </div>
     </div>
@@ -322,7 +322,7 @@
         <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> if you already have one</div>
       </div>
       <div class="field">
-        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
+        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
         <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
       </div>
       <div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
@@ -333,10 +333,10 @@
           <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Solve IV</button>
           <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
         </div>
-        <div id="ivSkewWarning" style="display:none;font-size:11px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
+        <div id="ivSkewWarning" style="display:none;font-size:13px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
           ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
         </div>
-        <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
+        <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
       </div>
       <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
         🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
