@@ -1,0 +1,54 @@
+name: Refresh Live Price Data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # every 30 minutes, regardless of site traffic
+  workflow_dispatch:  # allows manual trigger anytime
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch live MSTR price and Treasury rate
+        run: |
+          MSTR_JSON=$(curl -s https://wisesatoshi.netlify.app/.netlify/functions/mstr-price)
+          RATE_JSON=$(curl -s https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate)
+
+          MSTR_PRICE=$(echo "$MSTR_JSON" | jq '.price')
+          RATE=$(echo "$RATE_JSON" | jq '.rate')
+          RATE_DATE=$(echo "$RATE_JSON" | jq -r '.date')
+
+          # Guard against a failed fetch — never commit bad/empty data.
+          # If this run fails, the last known-good file just stays as-is.
+          if [ -z "$MSTR_PRICE" ] || [ "$MSTR_PRICE" == "null" ]; then
+            echo "Failed to fetch MSTR price — aborting without committing."
+            exit 1
+          fi
+          if [ -z "$RATE" ] || [ "$RATE" == "null" ]; then
+            echo "Failed to fetch Treasury rate — aborting without committing."
+            exit 1
+          fi
+
+          mkdir -p data
+          cat > data/live-data.json << EOF
+          {
+            "mstrPrice": $MSTR_PRICE,
+            "treasuryRate": $RATE,
+            "treasuryRateDate": "$RATE_DATE",
+            "lastFetched": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/live-data.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Refresh live price data"
+          git push
