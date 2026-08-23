@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=">
+<title>The Options Primer — wisesatoshi.com</title>
+<meta name="description" content="Why this tool exists, why MSTR, why long calls, and how options pricing actually works — an interactive primer for MSTR options.">
+<style>
+  :root{
+    --bg:#0b0d0f;
+    --bg-panel:#131619;
+    --bg-panel-2:#181c20;
+    --line:#262b30;
+    --ink:#e9e6df;
+    --ink-dim:#9aa0a6;
+    --ink-faint:#7f858b;
+    --orange:#f7931a;
+    --orange-dim:#c9791a;
+    --green:#4caf7d;
+    --red:#e0674a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;row-gap:10px;
+    padding:22px 32px;
+    border-bottom:1px solid var(--line);
+  }
+  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:18px;}
+  header .brand img{width:30px;height:30px;vertical-align:middle;margin-right:10px;position:relative;top:-1px;}
+  header .brand span{color:var(--orange);}
+  nav{display:flex;flex-wrap:wrap;row-gap:8px;}
+  nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
+  nav a:hover{color:var(--ink);}
+  nav a.x-link{color:var(--orange-dim);}
+  @media(max-width:480px){
+    header{padding:18px 20px;}
+    nav a{margin-left:0;margin-right:20px;}
+  }
+
+  main{max-width:1000px;margin:0 auto;padding:36px 24px 60px;}
+
+  .page-eyebrow{font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--orange);margin-bottom:10px;}
+  .page-title{font-size:clamp(24px,4vw,34px);font-weight:700;margin:0 0 30px;max-width:32ch;}
+
+  /* ---------- Card-nav layout ---------- */
+  .primer-layout{display:flex;gap:28px;align-items:flex-start;}
+  .primer-nav{
+    flex:0 0 220px;
+    display:flex;flex-direction:column;gap:8px;
+    position:sticky;top:24px;
+  }
+  .primer-nav button{
+    text-align:left;
+    background:var(--bg-panel);border:1px solid var(--line);border-radius:8px;
+    color:var(--ink-dim);padding:14px 16px;font-size:14px;font-weight:500;
+    cursor:pointer;transition:border-color 0.15s,color 0.15s;
+  }
+  .primer-nav button:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .primer-nav button.active{background:var(--bg-panel-2);border-color:var(--orange);color:var(--ink);font-weight:600;}
+  .primer-content{flex:1;min-width:0;}
+
+  .primer-section{display:none;}
+  .primer-section.active{display:block;}
+  .primer-section h2{font-size:22px;margin:0 0 18px;}
+  .primer-section p{color:var(--ink-dim);margin:0 0 16px;max-width:66ch;}
+  .primer-section .callout{
+    background:rgba(247,147,26,0.08);border-left:2px solid var(--orange);
+    border-radius:4px;padding:14px 16px;margin:20px 0;color:var(--ink);
+    max-width:66ch;
+  }
+  .primer-section ul{color:var(--ink-dim);max-width:60ch;padding-left:22px;margin:0 0 16px;}
+  .primer-section li{margin-bottom:6px;}
+
+  .next-link{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--orange);color:#000;border:none;border-radius:6px;
+    padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;
+    text-decoration:none;margin-top:16px;
+  }
+
+  @media(max-width:760px){
+    .primer-layout{flex-direction:column;}
+    .primer-nav{
+      flex-direction:row;position:static;width:100%;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      padding-bottom:6px;
+    }
+    .primer-nav button{white-space:nowrap;flex:0 0 auto;}
+  }
+
+  /* ---------- Widget panels (reused visual language) ---------- */
+  .widget-panel{
+    background:var(--bg-panel);border:1px solid var(--line);border-radius:10px;
+    padding:22px;margin-top:22px;
+  }
+  .widget-field{margin-bottom:16px;}
+  .widget-field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--ink-dim);margin-bottom:8px;
+  }
+  .widget-field label .val{color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums;}
+  .widget-field input[type=range]{width:100%;accent-color:var(--orange);}
+  .widget-hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
+  .widget-output{
+    background:var(--bg-panel-2);border:1px solid var(--orange-dim);border-radius:8px;
+    padding:16px 18px;margin-top:18px;text-align:center;
+  }
+  .widget-output .label{font-size:12px;color:var(--ink-faint);margin-bottom:4px;}
+  .widget-output .value{font-size:28px;font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums;}
+
+  footer{
+    border-top:1px solid var(--line);padding:28px 32px;
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;row-gap:10px;
+    color:var(--ink-faint);font-size:13px;
+  }
+  footer a{color:var(--orange-dim);text-decoration:none;}
+  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;font-size:15px;}
+  footer .brand-mark img{width:22px;height:22px;display:block;}
+  @media(max-width:640px){
+    footer{flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
+  <nav>
+    <a href="index.html">projector</a>
+    <a href="learn.html" style="color:var(--orange);">learn</a>
+    <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-eyebrow">The Options Primer</div>
+  <h1 class="page-title">Why this tool exists, why MSTR, and how options pricing actually works</h1>
+
+  <div class="primer-layout">
+    <div class="primer-nav" id="primerNav">
+      <button data-section="origin" class="active">Origin Story</button>
+      <button data-section="why">Why MSTR &amp; Calls</button>
+      <button data-section="options">How Options Work</button>
+      <button data-section="pricing">Pricing Factors</button>
+    </div>
+
+    <div class="primer-content">
+
+      <!-- SECTION A: ORIGIN STORY -->
+      <div class="primer-section active" id="section-origin">
+        <h2>Origin Story</h2>
+        <p>I hold MSTR calls — a real position, not a hypothetical one. And for a while, my routine was: pull up an AI chatbot, describe my contracts, and ask something like "if Bitcoin hits $150K, MSTR is probably around $400, and mNAV holds near 1.2x — what's my position worth?" Then do it again the next day with slightly different numbers. Every day, typing the same scenario out from scratch.</p>
+        <p>At some point I wanted something faster than re-explaining my position every morning — something I could just adjust and watch update. So I went looking for a dedicated tool instead.</p>
+        <p>I found a handful of calculators that would estimate MSTR's share price and mNAV at a given Bitcoin price — but that's where they stopped. None of them took the next step and actually priced an options contract. And the few "fair value per share" estimates I did find were often missing pieces of Strategy's real capital structure — convertible debt, preferred stock, the cash set aside to service both — which quietly skews the number, sometimes by a lot.</p>
+        <p>So there was a real gap: plenty of tools for "what's MSTR worth," nothing for "what's my actual options position worth." I built this to close that gap for myself first. Once I checked it against real market prices and it held up, it seemed worth sharing rather than keeping to myself.</p>
+        <button class="next-link" onclick="goToSection('why')">Next: Why MSTR &amp; Calls →</button>
+      </div>
+
+      <!-- SECTION B: WHY MSTR & WHY CALLS -->
+      <div class="primer-section" id="section-why">
+        <h2>Why MSTR &amp; Calls</h2>
+        <p>Why MSTR — and not one of the other 20+ companies now holding Bitcoin on their balance sheet? Two things mattered when I looked at the field.</p>
+        <p>First: how much of the company's value is actually tied to its Bitcoin holdings, versus some other business. MSTR remains the largest, most established name in this space, and its Bitcoin treasury has been central to its identity for years now — not a recent pivot.</p>
+        <p>Second, and just as important: does a real options market even exist for the stock? Most treasury companies — even ones holding a majority of their market cap in Bitcoin — have thin, sometimes practically nonexistent listed options markets. A model is only useful if there's a real market to check it against and real contracts to actually trade. MSTR isn't just the biggest name on that list; it's one of only two treasury-linked companies (alongside MARA, a Bitcoin miner) with genuinely deep, liquid options activity — millions of contracts, not thousands.</p>
+        <p>Even MARA comes with a catch: it's a mining company as much as a treasury play, meaning real value comes from its operations — hash rate, energy costs, hardware — not just its Bitcoin balance sheet. The clean "net Bitcoin per share" math that works for MSTR doesn't transfer cleanly to a business with that kind of operating complexity underneath it.</p>
+        <p>So MSTR isn't just familiar or convenient. It's the one name where a serious options-focused model is actually useful to someone holding a real position, not a theoretical one.</p>
+        <p>I should also be upfront about what this tool does and doesn't do: it prices long calls specifically — not puts, not spreads. That's not just a practical scope decision — it's a matter of principle. I believe Bitcoin, and logically following, MSTR, are going up and to the right. Forever (Laura). Puts can yield a profit given the right market conditions — that's just math, and I won't pretend otherwise. But as a permabull, I am and will always be, from a position of principle, long Bitcoin. That conviction is baked into what this tool models, not just an accident of what I happened to build first.</p>
+        <p>There's a practical side to this too, worth naming honestly: spreads are also a bigger step up in complexity — multiple contracts, a different risk shape entirely (lower cost, capped upside), built for more advanced, capital-efficient strategies. That's a legitimate approach for someone else. It's just not what this tool models right now, while it's still proving itself as a simple, accurate long-call calculator first.</p>
+        <button class="next-link" onclick="goToSection('options')">Next: How Options Work →</button>
+      </div>
+
+      <!-- SECTION C: HOW OPTIONS WORK -->
+      <div class="primer-section" id="section-options">
+        <h2>How Options Work</h2>
+        <p>So what exactly is a call option, and why use one instead of just buying the stock outright?</p>
+        <p>A call option gives you the right — not the obligation — to buy 100 shares of a stock at a fixed price (the "strike") by a certain date (expiration). You pay a premium upfront for that right. If MSTR never gets above your strike, you simply let the option expire, and the most you ever lose is that premium — nothing more, no matter how far the stock falls. If MSTR rises well above your strike, though, your gains scale with the stock's move, often far more dramatically than if you'd bought the shares directly — because you controlled 100 shares' worth of upside for a fraction of what those shares would actually cost.</p>
+        <p>That's the trade in one sentence: a call caps your downside at a known number, while leaving your upside open — in exchange for the fact that the position expires. Being right about direction eventually stops mattering if you're wrong about timing.</p>
+        <div class="callout">That downside cap deserves to be stated plainly, not softened: if MSTR closes below your strike at expiration, the option expires worthless — and the entire premium you paid is gone. Not most of it. All of it. This isn't a remote, theoretical edge case; it's a completely normal outcome, and it's a fundamentally different kind of risk than owning the stock outright, where a bad move still leaves you holding something of value. Anyone deciding whether options belong in their own portfolio, and how much of it, should weigh this specific risk seriously — not treat it as a footnote to the upside story.</div>
+
+        <div class="widget-panel">
+          <div class="widget-field">
+            <label>Strike price <span class="val" id="payoffStrikeLbl">$275</span></label>
+            <input type="range" id="payoffStrike" min="100" max="500" step="5" value="275">
+          </div>
+          <div class="widget-field">
+            <label>Premium paid per share <span class="val" id="payoffPremiumLbl">$25.00</span></label>
+            <input type="range" id="payoffPremium" min="1" max="80" step="0.5" value="25">
+          </div>
+          <svg id="payoffSvg" viewBox="0 0 600 300" style="width:100%;height:auto;background:var(--bg-panel-2);border-radius:8px;border:1px solid var(--line);"></svg>
+          <div class="widget-hint">Drag either slider — the breakeven point (where the line crosses zero) is marked on the chart. Everything to the left of it is a total loss of the premium; everything to the right is uncapped profit.</div>
+        </div>
+
+        <button class="next-link" onclick="goToSection('pricing')">Next: Pricing Factors →</button>
+      </div>
+
+      <!-- SECTION D: PRICING FACTORS -->
+      <div class="primer-section" id="section-pricing">
+        <h2>Pricing Factors</h2>
+        <p>Five things go into pricing your call option — each pushes the price in a specific, predictable direction, and once you see how, the calculator on this site stops feeling like a black box:</p>
+        <ul>
+          <li>The stock's current price</li>
+          <li>Your strike price</li>
+          <li>How much time is left until expiration</li>
+          <li>How volatile the stock is expected to be</li>
+          <li>Prevailing interest rates</li>
+        </ul>
+        <p>The stock price matters most, obviously — the higher MSTR is above your strike, the more your option is worth. But for MSTR specifically, that price isn't really the starting point; it's the output of the model. Bitcoin's price is the starting point. This tool derives MSTR's price from Bitcoin holdings, debt, preferred stock, and cash reserves — then applies the market's current premium (mNAV) on top of that. So when you move the Bitcoin slider, you're not just changing one number; you're changing the entire foundation everything else is built on.</p>
+        <p>Time works against you, structurally. Every option has an expiration date, and as that date approaches, the option loses value — even if the stock price doesn't move at all. This is called time decay, and it accelerates as expiration gets closer. It's the cost of the "right, not obligation" — you're renting optionality, and rent comes due.</p>
+        <p>Volatility — specifically, implied volatility (IV) — is the market's expectation of how much the stock might swing before expiration, in either direction. Higher expected volatility means a bigger chance of a large move in your favor, so options get more expensive as IV rises. This is also the single hardest input to pin down precisely, since it's a forward-looking guess, not a historical fact — which is exactly why this tool includes a way to calibrate it against a real, observed contract price rather than just guessing.</p>
+        <p>Interest rates play a smaller, subtler role — higher rates modestly increase call option value, since holding an option instead of the stock frees up cash that could otherwise earn interest elsewhere. It's a real factor, but a minor one next to the other four.</p>
+
+        <div class="widget-panel">
+          <div class="widget-field">
+            <label>Stock price <span class="val" id="playStockLbl">$275</span></label>
+            <input type="range" id="playStock" min="100" max="600" step="5" value="275">
+          </div>
+          <div class="widget-field">
+            <label>Days to expiration <span class="val" id="playDaysLbl">365</span></label>
+            <input type="range" id="playDays" min="1" max="1000" step="1" value="365">
+          </div>
+          <div class="widget-field">
+            <label>Implied volatility (IV) <span class="val" id="playIvLbl">84%</span></label>
+            <input type="range" id="playIv" min="20" max="150" step="1" value="84">
+          </div>
+          <div class="widget-field">
+            <label>Risk-free rate <span class="val" id="playRateLbl">4.2%</span></label>
+            <input type="range" id="playRate" min="0" max="8" step="0.1" value="4.2">
+          </div>
+          <div class="widget-hint">Strike is fixed at $275 (my own actual position) so you can isolate exactly what each of these four factors does on its own.</div>
+          <div class="widget-output">
+            <div class="label">Option price</div>
+            <div class="value" id="playOutput">—</div>
+          </div>
+        </div>
+
+        <p style="margin-top:24px;"><a href="index.html" style="color:var(--orange);text-decoration:none;font-weight:600;">← Back to the calculator</a></p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
+  <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
+</footer>
+
+<script>
+// ---------- Section navigation ----------
+function goToSection(name){
+  document.querySelectorAll('.primer-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.primer-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelector('.primer-nav button[data-section="' + name + '"]').classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+document.querySelectorAll('.primer-nav button').forEach(btn => {
+  btn.addEventListener('click', () => goToSection(btn.dataset.section));
+});
+
+// ---------- Normal CDF / PDF (same as main calculator) ----------
+function normPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
+function normCdf(x){
+  const b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429;
+  const p=0.2316419, c=0.39894228;
+  if(x>=0){
+    const t=1/(1+p*x);
+    return 1-c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
+  }else{
+    const t=1/(1-p*x);
+    return c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
+  }
+}
+function blackScholesCall(S,K,T,r,sigma){
+  if(T<=0){
+    const price=Math.max(S-K,0);
+    return {price};
+  }
+  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
+  const d2=d1-sigma*Math.sqrt(T);
+  const price=S*normCdf(d1)-K*Math.exp(-r*T)*normCdf(d2);
+  return {price};
+}
+function fmtUSD(n){ return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+// ---------- Payoff diagram widget ----------
+const payoffStrikeEl = document.getElementById('payoffStrike');
+const payoffPremiumEl = document.getElementById('payoffPremium');
+
+function drawPayoffDiagram(){
+  const strike = parseFloat(payoffStrikeEl.value);
+  const premium = parseFloat(payoffPremiumEl.value);
+  document.getElementById('payoffStrikeLbl').textContent = '$' + strike;
+  document.getElementById('payoffPremiumLbl').textContent = '$' + premium.toFixed(2);
+
+  const breakeven = strike + premium;
+  const minS = Math.max(0, strike - 150);
+  const maxS = strike + 200;
+
+  const svgW = 600, svgH = 300;
+  const padL = 55, padR = 20, padT = 20, padB = 40;
+  const plotW = svgW - padL - padR;
+  const plotH = svgH - padT - padB;
+
+  const maxProfit = (maxS - strike) - premium;
+  const minLoss = -premium;
+  const yRange = Math.max(maxProfit, 1) - minLoss;
+
+  function xToPx(s){ return padL + ((s - minS) / (maxS - minS)) * plotW; }
+  function yToPx(p){ return padT + plotH - ((p - minLoss) / yRange) * plotH; }
+
+  const zeroY = yToPx(0);
+
+  let path = 'M ' + xToPx(minS) + ' ' + yToPx(-premium);
+  path += ' L ' + xToPx(strike) + ' ' + yToPx(-premium);
+  path += ' L ' + xToPx(maxS) + ' ' + yToPx((maxS - strike) - premium);
+
+  const breakevenX = xToPx(breakeven);
+
+  let svg = '';
+  svg += '<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (svgW-padR) + '" y2="' + zeroY + '" stroke="#262b30" stroke-width="1"/>';
+  svg += '<path d="' + path + '" fill="none" stroke="#f7931a" stroke-width="3"/>';
+  svg += '<line x1="' + breakevenX + '" y1="' + padT + '" x2="' + breakevenX + '" y2="' + (svgH-padB) + '" stroke="#4caf7d" stroke-width="1" stroke-dasharray="4,4"/>';
+  svg += '<circle cx="' + breakevenX + '" cy="' + zeroY + '" r="5" fill="#4caf7d"/>';
+  svg += '<text x="' + breakevenX + '" y="' + (padT-6) + '" fill="#4caf7d" font-size="12" text-anchor="middle">Breakeven: $' + breakeven.toFixed(2) + '</text>';
+  svg += '<text x="' + padL + '" y="' + (svgH-14) + '" fill="#7f858b" font-size="11">$' + minS.toFixed(0) + '</text>';
+  svg += '<text x="' + (svgW-padR) + '" y="' + (svgH-14) + '" fill="#7f858b" font-size="11" text-anchor="end">$' + maxS.toFixed(0) + '</text>';
+  svg += '<text x="' + (padL-8) + '" y="' + zeroY + '" fill="#7f858b" font-size="11" text-anchor="end" dominant-baseline="middle">$0</text>';
+
+  document.getElementById('payoffSvg').innerHTML = svg;
+}
+payoffStrikeEl.addEventListener('input', drawPayoffDiagram);
+payoffPremiumEl.addEventListener('input', drawPayoffDiagram);
+drawPayoffDiagram();
+
+// ---------- Pricing factors playground ----------
+const FIXED_STRIKE = 275;
+const playStockEl = document.getElementById('playStock');
+const playDaysEl = document.getElementById('playDays');
+const playIvEl = document.getElementById('playIv');
+const playRateEl = document.getElementById('playRate');
+
+function recalcPlayground(){
+  const S = parseFloat(playStockEl.value);
+  const days = parseFloat(playDaysEl.value);
+  const iv = parseFloat(playIvEl.value);
+  const rate = parseFloat(playRateEl.value);
+
+  document.getElementById('playStockLbl').textContent = '$' + S;
+  document.getElementById('playDaysLbl').textContent = days;
+  document.getElementById('playIvLbl').textContent = iv + '%';
+  document.getElementById('playRateLbl').textContent = rate.toFixed(1) + '%';
+
+  const T = days / 365;
+  const result = blackScholesCall(S, FIXED_STRIKE, T, rate/100, iv/100);
+  document.getElementById('playOutput').textContent = fmtUSD(result.price);
+}
+[playStockEl, playDaysEl, playIvEl, playRateEl].forEach(el => el.addEventListener('input', recalcPlayground));
+recalcPlayground();
+</script>
+</body>
+</html>
