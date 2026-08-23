@@ -190,23 +190,6 @@
         <p>That's the trade in one sentence: a call caps your downside at a known number, while leaving your upside open — in exchange for the fact that the position expires. Being right about direction eventually stops mattering if you're wrong about timing.</p>
         <div class="callout">That downside cap deserves to be stated plainly, not softened: if MSTR closes below your strike at expiration, the option expires worthless — and the entire premium you paid is gone. Not most of it. All of it. This isn't a remote, theoretical edge case; it's a completely normal outcome, and it's a fundamentally different kind of risk than owning the stock outright, where a bad move still leaves you holding something of value. Anyone deciding whether options belong in their own portfolio, and how much of it, should weigh this specific risk seriously — not treat it as a footnote to the upside story.</div>
 
-        <div class="widget-panel">
-          <div class="widget-field">
-            <label>Strike price <span class="val" id="payoffStrikeLbl">$275</span></label>
-            <input type="range" id="payoffStrike" min="100" max="500" step="5" value="275">
-          </div>
-          <div class="widget-field">
-            <label>Premium paid per share <span class="val" id="payoffPremiumLbl">$25.00</span></label>
-            <input type="range" id="payoffPremium" min="1" max="80" step="0.5" value="25">
-          </div>
-          <svg id="payoffSvg" viewBox="0 0 600 340" style="width:100%;height:auto;background:var(--bg-panel-2);border-radius:8px;border:1px solid var(--line);"></svg>
-          <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--ink-dim);">
-            <span><span style="display:inline-block;width:14px;height:3px;background:var(--orange);vertical-align:middle;margin-right:6px;"></span>The call option</span>
-            <span><span style="display:inline-block;width:14px;height:3px;background:var(--ink-dim);vertical-align:middle;margin-right:6px;border-top:2px dashed var(--ink-dim);"></span>Buying the stock instead</span>
-          </div>
-          <div class="widget-hint">Drag either slider. Notice how the option's line goes flat and stays flat once you're below the strike — that's the capped loss. The stock's line just keeps falling. Above the strike, the two lines move together, just offset by the premium you paid.</div>
-        </div>
-
         <button class="next-link" onclick="goToSection('pricing')">Next: Pricing Factors →</button>
       </div>
 
@@ -268,8 +251,12 @@ function goToSection(name){
   document.querySelectorAll('.primer-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.primer-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
-  document.querySelector('.primer-nav button[data-section="' + name + '"]').classList.add('active');
+  const activeBtn = document.querySelector('.primer-nav button[data-section="' + name + '"]');
+  activeBtn.classList.add('active');
   window.scrollTo({top: 0, behavior: 'smooth'});
+  // On mobile, the nav is a horizontally-scrolling pill row — make sure the
+  // clicked/active tab scrolls fully into view rather than staying half cut off.
+  activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 document.querySelectorAll('.primer-nav button').forEach(btn => {
   btn.addEventListener('click', () => goToSection(btn.dataset.section));
@@ -299,94 +286,6 @@ function blackScholesCall(S,K,T,r,sigma){
   return {price};
 }
 function fmtUSD(n){ return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-
-// ---------- Payoff diagram widget ----------
-const payoffStrikeEl = document.getElementById('payoffStrike');
-const payoffPremiumEl = document.getElementById('payoffPremium');
-
-function drawPayoffDiagram(){
-  const strike = parseFloat(payoffStrikeEl.value);
-  const premium = parseFloat(payoffPremiumEl.value);
-  document.getElementById('payoffStrikeLbl').textContent = '$' + strike;
-  document.getElementById('payoffPremiumLbl').textContent = '$' + premium.toFixed(2);
-
-  const breakeven = strike + premium;
-  const minS = Math.max(0, strike - 150);
-  const maxS = strike + 200;
-
-  const svgW = 600, svgH = 340;
-  const padL = 68, padR = 20, padT = 34, padB = 56;
-  const plotW = svgW - padL - padR;
-  const plotH = svgH - padT - padB;
-
-  // Option payoff: flat at -premium below strike, then rises 1:1 above it.
-  const optionMax = (maxS - strike) - premium;
-  const optionMin = -premium;
-  // Stock-ownership comparison: as if you'd bought 1 share at the strike price instead.
-  const stockMax = maxS - strike;
-  const stockMin = minS - strike;
-
-  const yMax = Math.max(optionMax, stockMax);
-  const yMin = Math.min(optionMin, stockMin);
-  const yRange = yMax - yMin;
-
-  function xToPx(s){ return padL + ((s - minS) / (maxS - minS)) * plotW; }
-  function yToPx(p){ return padT + plotH - ((p - yMin) / yRange) * plotH; }
-
-  const zeroY = yToPx(0);
-
-  // Option path (solid orange, capped-loss hockey stick)
-  let optionPath = 'M ' + xToPx(minS) + ' ' + yToPx(-premium);
-  optionPath += ' L ' + xToPx(strike) + ' ' + yToPx(-premium);
-  optionPath += ' L ' + xToPx(maxS) + ' ' + yToPx(optionMax);
-
-  // Stock path (dashed, uncapped in both directions)
-  const stockPath = 'M ' + xToPx(minS) + ' ' + yToPx(stockMin) + ' L ' + xToPx(maxS) + ' ' + yToPx(stockMax);
-
-  const breakevenX = xToPx(breakeven);
-  const strikeX = xToPx(strike);
-  const maxLossY = yToPx(-premium);
-
-  let svg = '';
-  // Axis titles
-  svg += '<text x="' + (padL + plotW/2) + '" y="' + (svgH-10) + '" fill="#9aa0a6" font-size="12" text-anchor="middle">MSTR price at expiration →</text>';
-  svg += '<text x="16" y="' + (padT + plotH/2) + '" fill="#9aa0a6" font-size="12" text-anchor="middle" transform="rotate(-90 16 ' + (padT+plotH/2) + ')">Profit / loss per share</text>';
-
-  // Zero line
-  svg += '<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (svgW-padR) + '" y2="' + zeroY + '" stroke="#262b30" stroke-width="1"/>';
-
-  // Stock comparison line (drawn first, so the option line sits on top)
-  svg += '<path d="' + stockPath + '" fill="none" stroke="#9aa0a6" stroke-width="2" stroke-dasharray="6,5"/>';
-
-  // Strike marker
-  svg += '<line x1="' + strikeX + '" y1="' + padT + '" x2="' + strikeX + '" y2="' + (svgH-padB) + '" stroke="#7f858b" stroke-width="1" stroke-dasharray="2,3"/>';
-  svg += '<text x="' + strikeX + '" y="' + (padT-12) + '" fill="#9aa0a6" font-size="11" text-anchor="middle">Strike: $' + strike + '</text>';
-
-  // Option line
-  svg += '<path d="' + optionPath + '" fill="none" stroke="#f7931a" stroke-width="3"/>';
-
-  // Max loss label, pinned to the flat portion
-  svg += '<text x="' + ((padL + strikeX)/2) + '" y="' + (maxLossY - 10) + '" fill="#e0674a" font-size="11" text-anchor="middle">Max loss: $' + premium.toFixed(2) + '</text>';
-
-  // Breakeven marker
-  svg += '<line x1="' + breakevenX + '" y1="' + padT + '" x2="' + breakevenX + '" y2="' + (svgH-padB) + '" stroke="#4caf7d" stroke-width="1" stroke-dasharray="4,4"/>';
-  svg += '<circle cx="' + breakevenX + '" cy="' + zeroY + '" r="5" fill="#4caf7d"/>';
-  svg += '<text x="' + breakevenX + '" y="' + (padT-12) + '" fill="#4caf7d" font-size="11" text-anchor="middle">Breakeven: $' + breakeven.toFixed(2) + '</text>';
-
-  // X-axis price labels
-  svg += '<text x="' + padL + '" y="' + (svgH-padB+18) + '" fill="#7f858b" font-size="11">$' + minS.toFixed(0) + '</text>';
-  svg += '<text x="' + (svgW-padR) + '" y="' + (svgH-padB+18) + '" fill="#7f858b" font-size="11" text-anchor="end">$' + maxS.toFixed(0) + '</text>';
-
-  // Y-axis scale labels
-  svg += '<text x="' + (padL-8) + '" y="' + zeroY + '" fill="#7f858b" font-size="11" text-anchor="end" dominant-baseline="middle">$0</text>';
-  svg += '<text x="' + (padL-8) + '" y="' + (padT+4) + '" fill="#7f858b" font-size="11" text-anchor="end">$' + yMax.toFixed(0) + '</text>';
-  svg += '<text x="' + (padL-8) + '" y="' + (svgH-padB) + '" fill="#7f858b" font-size="11" text-anchor="end">$' + yMin.toFixed(0) + '</text>';
-
-  document.getElementById('payoffSvg').innerHTML = svg;
-}
-payoffStrikeEl.addEventListener('input', drawPayoffDiagram);
-payoffPremiumEl.addEventListener('input', drawPayoffDiagram);
-drawPayoffDiagram();
 
 // ---------- Pricing factors playground ----------
 const FIXED_STRIKE = 275;
