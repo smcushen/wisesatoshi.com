@@ -1,46 +1,38 @@
-name: Refresh Live Price Data
+name: Refresh MSTR Price
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # every 30 minutes, regardless of site traffic
+    - cron: '*/5 * * * *'  # every 5 minutes — direct from Finnhub, zero cost regardless of frequency
   workflow_dispatch:  # allows manual trigger anytime
 
 permissions:
   contents: write
 
 jobs:
-  refresh-data:
+  refresh-price:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fetch live MSTR price and Treasury rate
+      - name: Fetch MSTR price from Finnhub
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: |
-          MSTR_JSON=$(curl -s https://wisesatoshi.netlify.app/.netlify/functions/mstr-price)
-          RATE_JSON=$(curl -s https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate)
+          RESPONSE=$(curl -s "https://finnhub.io/api/v1/quote?symbol=MSTR&token=$FINNHUB_API_KEY")
+          PRICE=$(echo "$RESPONSE" | jq '.c')
 
-          MSTR_PRICE=$(echo "$MSTR_JSON" | jq '.price')
-          RATE=$(echo "$RATE_JSON" | jq '.rate')
-          RATE_DATE=$(echo "$RATE_JSON" | jq -r '.date')
-
-          # Guard against a failed fetch — never commit bad/empty data.
+          # Guard against a failed fetch or an empty/zero quote — never commit bad data.
           # If this run fails, the last known-good file just stays as-is.
-          if [ -z "$MSTR_PRICE" ] || [ "$MSTR_PRICE" == "null" ]; then
+          if [ -z "$PRICE" ] || [ "$PRICE" == "null" ] || [ "$PRICE" == "0" ]; then
             echo "Failed to fetch MSTR price — aborting without committing."
-            exit 1
-          fi
-          if [ -z "$RATE" ] || [ "$RATE" == "null" ]; then
-            echo "Failed to fetch Treasury rate — aborting without committing."
             exit 1
           fi
 
           mkdir -p data
-          cat > data/live-data.json << EOF
+          cat > data/mstr-price.json << EOF
           {
-            "mstrPrice": $MSTR_PRICE,
-            "treasuryRate": $RATE,
-            "treasuryRateDate": "$RATE_DATE",
+            "price": $PRICE,
             "lastFetched": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF
@@ -49,6 +41,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/live-data.json
-          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Refresh live price data"
+          git add data/mstr-price.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Refresh MSTR price"
           git push
