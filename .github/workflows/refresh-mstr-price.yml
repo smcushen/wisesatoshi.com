@@ -2,7 +2,11 @@ name: Refresh MSTR Price
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # every 5 minutes — direct from Finnhub, zero cost regardless of frequency
+    # Every 15 minutes — direct from Finnhub, zero cost regardless of frequency.
+    # Was 5 minutes, but GitHub's scheduler doesn't reliably honor sub-15-minute
+    # crons on public repos (observed real-world gaps of 20-100+ min); 15 is a
+    # more honest target for what actually fires.
+    - cron: '*/15 * * * *'
   workflow_dispatch:  # allows manual trigger anytime
 
 permissions:
