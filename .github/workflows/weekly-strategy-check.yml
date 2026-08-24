@@ -26,7 +26,7 @@ jobs:
               title: `📊 Weekly Strategy Fundamentals Check — ${today}`,
               body: `## WS Model — Weekly Data Verification
             
-            It's Tuesday. Strategy typically announces Bitcoin purchases on Mondays, so today is the right time to verify all model defaults.
+            Strategy typically announces Bitcoin purchases earlier today (Monday), so tonight's the right time to verify all model defaults before they go stale.
             
             ### Step 1 — Check strategy.com/shares
             - [ ] **BTC held** (current default: 840,447)
