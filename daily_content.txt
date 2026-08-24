@@ -6,3 +6,4 @@ TODAY_IN_BITCOIN=
 TREASURY_1=
 TREASURY_2=
 TREASURY_3=
+WEEK_AHEAD=After last week’s sharp rally and the subsequent long liquidation cascade, the market is now digesting a much higher range. Key focus remains on whether Bitcoin can hold above the mid-$70Ks and how Strategy’s improved mark-to-market position influences capital structure decisions. Quiet week on the calendar so far — positioning and flows will likely matter more than headlines.
