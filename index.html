@@ -640,11 +640,11 @@ async function fetchLiveBtcPrice() {
 // live mNAV: reads data/mstr-price.json, a static file kept fresh by a scheduled
 // GitHub Action (rather than hitting Netlify directly from every visitor's browser).
 
-function setMnavStatus(success, stamp, liveDisplayMnav) {
+function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; return mkt ? ' ' + mnavStr + '● live ('+stamp+')' : ' ' + mnavStr + '● Previous close (21:00 UTC) — Current time: ' + new Date().toISOString().slice(11,16) + ' UTC · Market closed · Use slider to estimate after-hours mNAV'; })();
-    el2.style.color = (()=>{ const h=new Date().getUTCHours(); const d=new Date().getUTCDay(); return 'var(--green)'; })();
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; const isStale = staleMinutes !== null && staleMinutes >= 45; if (isStale) { return ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using'; } return mkt ? ' ' + mnavStr + '● live (as of ' + stamp + ')' : ' ' + mnavStr + '● Previous close (as of ' + stamp + ') · Market closed · Use slider to estimate after-hours mNAV'; })();
+    el2.style.color = (staleMinutes !== null && staleMinutes >= 45) ? 'var(--red)' : 'var(--green)';
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
     el2.style.color = 'var(--red)';
@@ -681,9 +681,15 @@ async function fetchLiveMnav() {
       console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
     }
 
-    const stamp = new Date().toISOString().slice(11,16) + ' UTC';
+    // Use the JSON's own lastFetched timestamp, not the browser's current clock —
+    // the price can lag its nominal 5-minute refresh (a missed run, a failed
+    // Finnhub call, or a delayed GitHub Actions cron trigger), and labeling it
+    // "live" with the current time was masking that staleness entirely.
+    const fetchedAt = data.lastFetched ? new Date(data.lastFetched) : null;
+    const stamp = fetchedAt ? fetchedAt.toISOString().slice(11,16) + ' UTC' : new Date().toISOString().slice(11,16) + ' UTC';
+    const staleMinutes = fetchedAt ? Math.round((Date.now() - fetchedAt.getTime()) / 60000) : null;
     const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
-    setMnavStatus(true, stamp, liveDisplayMnav);
+    setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
   } catch (err) {
     setMnavStatus(false);
   }
