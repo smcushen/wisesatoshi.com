@@ -14,6 +14,7 @@ FIELD_MAP = {
     "Treasury Watch - Item 1": "TREASURY_1",
     "Treasury Watch - Item 2": "TREASURY_2",
     "Treasury Watch - Item 3": "TREASURY_3",
+    "Looking at the Week Ahead": "WEEK_AHEAD",
 }
 
 
