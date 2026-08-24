@@ -1,8 +1,8 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=77074
+PREVIOUS_CLOSE=77734
 TODAY_IN_BITCOIN=
-TREASURY_1=Strategy is back in unrealized profit for the first time in ~3 months: its 840,447 BTC (avg. cost $75,385/BTC, ~$63.36B basis) is now worth ~$64.71B at $77,000/BTC — a ~$1.36B unrealized gain. The rally is largely a short squeeze: $3B+ in liquidations across crypto, the largest in years. (BitcoinTreasuries.net, Aug 21) https://bitcointreasuries.net/news/strategy-back-in-profit-as-bitcoin-surges-above-dollar77000
-TREASURY_2=Gulf International Bank (UK), a Saudi government-owned bank, disclosed a $2.27 million stake in Strategy in a 13F filing, though it trimmed the position by 365 shares during the quarter. (BitcoinTreasuries.net, Aug 20) https://bitcointreasuries.net/news/saudi-government-owned-bank-discloses-stake-in-strategy
+TREASURY_1=
+TREASURY_2=
 TREASURY_3=
