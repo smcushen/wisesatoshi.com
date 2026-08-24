@@ -85,6 +85,8 @@
   .primer-section{display:none;}
   .primer-section.active{display:block;}
   .primer-section h2{font-size:22px;margin:0 0 18px;}
+  .primer-section h3{font-size:16px;margin:28px 0 10px;color:var(--ink);font-weight:600;}
+  .primer-section h3:first-of-type{margin-top:4px;}
   .primer-section p{color:var(--ink-dim);margin:0 0 16px;max-width:66ch;}
   .primer-section .callout{
     background:rgba(247,147,26,0.08);border-left:2px solid var(--orange);
@@ -199,13 +201,20 @@
       <!-- SECTION B: WHY MSTR & WHY CALLS -->
       <div class="primer-section" id="section-why">
         <h2>Why MSTR &amp; Calls</h2>
+        <h3>Why MSTR</h3>
         <p>Why MSTR — and not one of the other 20+ companies now holding Bitcoin on their balance sheet? Two things mattered when I looked at the field.</p>
         <p>First: how much of the company's value is actually tied to its Bitcoin holdings, versus some other business. MSTR remains the largest, most established name in this space, and its Bitcoin treasury has been central to its identity for years now — not a recent pivot.</p>
         <p>Second, and just as important: does a real options market even exist for the stock? Most treasury companies — even ones holding a majority of their market cap in Bitcoin — have thin, sometimes practically nonexistent listed options markets. A model is only useful if there's a real market to check it against and real contracts to actually trade. MSTR isn't just the biggest name on that list; it's one of only two treasury-linked companies (alongside MARA, a Bitcoin miner) with genuinely deep, liquid options activity — millions of contracts, not thousands.</p>
         <p>Even MARA comes with a catch: it's a mining company as much as a treasury play, meaning real value comes from its operations — hash rate, energy costs, hardware — not just its Bitcoin balance sheet. The clean "net Bitcoin per share" math that works for MSTR doesn't transfer cleanly to a business with that kind of operating complexity underneath it.</p>
         <p>So MSTR isn't just familiar or convenient. It's the one name where a serious options-focused model is actually useful to someone holding a real position, not a theoretical one.</p>
+        <h3>Why Calls, Not Puts or Spreads</h3>
         <p>I should also be upfront about what this tool does and doesn't do: it prices long calls specifically — not puts, not spreads. That's not just a practical scope decision — it's a matter of principle. I believe Bitcoin, and logically following, MSTR, are going up and to the right. Forever (Laura). Puts can yield a profit given the right market conditions — that's just math, and I won't pretend otherwise. But as a permabull, I am and will always be, from a position of principle, long Bitcoin. That conviction is baked into what this tool models, not just an accident of what I happened to build first.</p>
         <p>There's a practical side to this too, worth naming honestly: spreads are also a bigger step up in complexity — multiple contracts, a different risk shape entirely (lower cost, capped upside), built for more advanced, capital-efficient strategies. That's a legitimate approach for someone else. It's just not what this tool models right now, while it's still proving itself as a simple, accurate long-call calculator first.</p>
+        <h3>Why Long-Dated, Not Short-Dated</h3>
+        <p>One more scope note worth being upfront about: my own position is dated all the way out to December 2028, and the tool's defaults lean the same way — long-dated, not near-term. That's deliberate, for a few reasons.</p>
+        <p>Time decay is the big one. Every option loses value as expiration approaches, even if the stock hasn't moved — and that decay accelerates the closer you get to the date. A short-dated call has to be right almost immediately, or theta eats the position alive. A long-dated call buys years for the thesis to actually play out.</p>
+        <p>It also changes what you're really betting on. A short-dated call is a bet on timing nearly as much as direction — you need Bitcoin to move, and to move soon. A long-dated call is closer to a pure conviction bet: you don't need to guess the week of the breakout, just that the multi-year trend holds.</p>
+        <p>The tradeoff is real and worth naming: long-dated calls cost more upfront, since more time value is baked into the premium, and they tie up capital for longer. That's the price of not having to be right about timing — a trade I'm comfortable making, given the conviction behind it.</p>
         <div class="section-nav">
           <button class="prev-link" onclick="goToSection('origin')">← Previous: Origin Story</button>
           <button class="next-link" onclick="goToSection('options')">Next: How Options Work →</button>
@@ -239,10 +248,10 @@
           <li>How volatile the stock is expected to be</li>
           <li>Prevailing interest rates</li>
         </ul>
-        <p>The stock price matters most, obviously — the higher MSTR is above your strike, the more your option is worth. But for MSTR specifically, that price isn't really the starting point; it's the output of the model. Bitcoin's price is the starting point. This tool derives MSTR's price from Bitcoin holdings, debt, preferred stock, and cash reserves — then applies the market's current premium (mNAV) on top of that. So when you move the Bitcoin slider, you're not just changing one number; you're changing the entire foundation everything else is built on.</p>
-        <p>Time works against you, structurally. Every option has an expiration date, and as that date approaches, the option loses value — even if the stock price doesn't move at all. This is called time decay, and it accelerates as expiration gets closer. It's the cost of the "right, not obligation" — you're renting optionality, and rent comes due.</p>
-        <p>Volatility — specifically, implied volatility (IV) — is the market's expectation of how much the stock might swing before expiration, in either direction. Higher expected volatility means a bigger chance of a large move in your favor, so options get more expensive as IV rises. This is also the single hardest input to pin down precisely, since it's a forward-looking guess, not a historical fact — which is exactly why this tool includes a way to calibrate it against a real, observed contract price rather than just guessing.</p>
-        <p>Interest rates play a smaller, subtler role — higher rates modestly increase call option value, since holding an option instead of the stock frees up cash that could otherwise earn interest elsewhere. It's a real factor, but a minor one next to the other four.</p>
+        <p><strong>Stock price.</strong> Matters most, obviously — the higher MSTR is above your strike, the more your option is worth. But for MSTR specifically, that price isn't really the starting point; it's the output of the model. Bitcoin's price is the starting point. This tool derives MSTR's price from Bitcoin holdings, debt, preferred stock, and cash reserves — then applies the market's current premium (mNAV) on top of that. So when you move the Bitcoin slider, you're not just changing one number; you're changing the entire foundation everything else is built on.</p>
+        <p><strong>Time to expiration.</strong> Time works against you, structurally. Every option has an expiration date, and as that date approaches, the option loses value — even if the stock price doesn't move at all. This is called time decay, and it accelerates as expiration gets closer. It's the cost of the "right, not obligation" — you're renting optionality, and rent comes due.</p>
+        <p><strong>Implied volatility (IV).</strong> The market's expectation of how much the stock might swing before expiration, in either direction. Higher expected volatility means a bigger chance of a large move in your favor, so options get more expensive as IV rises. This is also the single hardest input to pin down precisely, since it's a forward-looking guess, not a historical fact — which is exactly why this tool includes a way to calibrate it against a real, observed contract price rather than just guessing.</p>
+        <p><strong>Interest rates.</strong> Play a smaller, subtler role — higher rates modestly increase call option value, since holding an option instead of the stock frees up cash that could otherwise earn interest elsewhere. It's a real factor, but a minor one next to the other four.</p>
 
         <div class="widget-panel">
           <div class="widget-field">
