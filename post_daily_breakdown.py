@@ -86,6 +86,11 @@ def build_post(content, live_price):
         for item in treasury_items:
             lines.append(f"\U0001F539 {item}")
 
+    week_ahead = content.get("WEEK_AHEAD", "").strip()
+    if week_ahead:
+        lines.append("")
+        lines.append(f"\U0001F52D Looking ahead: {week_ahead}")
+
     lines.append("")
     lines.append("wisesatoshi.com")
 
