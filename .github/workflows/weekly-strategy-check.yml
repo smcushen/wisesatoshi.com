@@ -1,8 +1,11 @@
 name: Weekly Strategy Fundamentals Check
 on:
   schedule:
-    # Every Tuesday at 9:00 AM Eastern (13:00 UTC during EDT)
-    - cron: '0 13 * * 2'
+    # Every Monday at 8:00 PM Alaska time (AKDT, UTC-8). Note: once Alaska
+    # shifts to AKST (UTC-9) around Nov 1, this will fire at 7:00 PM Alaska
+    # time instead of 8:00 PM — change to '0 5 * * 2' to hold 8:00 PM through
+    # the winter. Same DST caveat as the daily breakdown bot.
+    - cron: '0 4 * * 2'
   workflow_dispatch:  # allows manual trigger anytime
 jobs:
   create-reminder:
