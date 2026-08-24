@@ -38,3 +38,10 @@ body:
       label: Treasury Watch - Item 3
     validations:
       required: false
+  - type: input
+    id: week_ahead
+    attributes:
+      label: Looking at the Week Ahead
+      description: "Optional forward-looking note for quiet days (e.g., upcoming filing dates, events to watch). Leave blank to skip."
+    validations:
+      required: false
