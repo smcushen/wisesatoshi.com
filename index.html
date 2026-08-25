@@ -303,7 +303,7 @@
       </div>
       <div class="field">
         <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
-        <div><button type="button" class="return-live-btn" onclick="window._userMovedMnav=false; fetchLiveMnav();">Return to current mNAV</button></div>
+        <div><button type="button" class="return-live-btn" onclick="document.querySelector('[data-scenario=&quot;current&quot;]').click();">Return Bitcoin and mNAV to live values</button></div>
         <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
       </div>
     </div>
@@ -341,7 +341,7 @@
       </div>
       <div class="field">
         <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
-        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
+        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2" oninput="window._userMovedRate=true;">
       </div>
       <div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
         <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
@@ -777,8 +777,13 @@ async function fetchLiveRate() {
     const data = await resp.json();
     if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
 
-    el('rate').value = parseFloat(data.rate).toFixed(1);
-    el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
+    // Same principle as BTC price and mNAV: don't silently overwrite a value
+    // the user has manually dragged. Still update the status text either way
+    // so the live rate stays visible for reference even during a manual scenario.
+    if (!window._userMovedRate) {
+      el('rate').value = parseFloat(data.rate).toFixed(1);
+      el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
+    }
     if (rateStatus) {
       rateStatus.textContent = '● live (US Treasury, ' + data.date + ')';
       rateStatus.style.color = 'var(--green)';
