@@ -148,6 +148,13 @@
   .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
   .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
 
+  .return-live-btn{
+    display:inline-block;background:var(--orange);border:none;border-radius:999px;
+    color:#12100c;font-size:12px;font-weight:600;padding:6px 16px;
+    cursor:pointer;margin:8px 0 12px;
+  }
+  .return-live-btn:hover{background:var(--orange-dim);}
+
   .source-line{font-size:13px;color:var(--ink-faint);margin-top:-8px;margin-bottom:18px;}
 
   .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
@@ -295,7 +302,8 @@
         <div class="hint">Cash set aside for debt/preferred service — adds back.</div>
       </div>
       <div class="field">
-        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span> <button type="button" onclick="window._userMovedMnav=false; fetchLiveMnav();" style="background:none;border:none;color:var(--orange);font-size:12px;cursor:pointer;padding:0;margin-left:8px;text-decoration:underline;">↺ Return to live</button></label>
+        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
+        <div><button type="button" class="return-live-btn" onclick="window._userMovedMnav=false; fetchLiveMnav();">↺ Return to live</button></div>
         <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
       </div>
     </div>
