@@ -308,7 +308,7 @@
         <div class="hint">Pure Bitcoin-backed asset value — before the market's premium (mNAV) is applied.</div>
       </div>
       <div class="field">
-        <label>Derived MSTR share price</label>
+        <label id="derivedPriceLabel">Derived MSTR share price</label>
         <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
         <div class="hint">Net value/share × mNAV — what the model estimates MSTR should actually trade at.</div>
       </div>
@@ -498,6 +498,15 @@ function recalc(){
   const derivedPrice = netValuePerShare * mnav;
   el('derivedPrice').value = fmtUSD(derivedPrice);
   el('netValuePerShareDisplay').value = fmtUSD(netValuePerShare);
+
+  // Same market-hours check the mNAV badge already uses — the derived price is
+  // real-time-tracking during trading hours, but a live-BTC-adjusted estimate
+  // once the market's closed (MSTR's own price is frozen; only the Bitcoin
+  // math underneath keeps moving). Label it accordingly so it's never mistaken
+  // for an actual traded price after hours.
+  const nowForLabel = new Date();
+  const mktOpenForLabel = nowForLabel.getUTCDay() >= 1 && nowForLabel.getUTCDay() <= 5 && nowForLabel.getUTCHours() >= 14 && nowForLabel.getUTCHours() < 21;
+  el('derivedPriceLabel').textContent = mktOpenForLabel ? 'Derived MSTR share price' : 'Derived MSTR share price (estimate)';
 
   const manualOverride = el('manualPrice').value;
   const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
