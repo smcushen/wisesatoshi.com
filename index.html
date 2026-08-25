@@ -643,10 +643,23 @@ async function fetchLiveBtcPrice() {
 // live mNAV: reads data/mstr-price.json, a static file kept fresh by a scheduled
 // GitHub Action (rather than hitting Netlify directly from every visitor's browser).
 
+// ---------- mNAV close-time snapshot (captured server-side once/day, near market close) ----------
+async function fetchMnavCloseSnapshot() {
+  try {
+    const resp = await fetch('data/mnav-close-snapshot.json');
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (typeof data.mnav !== 'number' || !data.marketDate) throw new Error('malformed snapshot');
+    window._mnavCloseSnapshot = data;
+  } catch (err) {
+    window._mnavCloseSnapshot = null; // badge falls back to the generic "Previous close" text
+  }
+}
+
 function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; const isStale = staleMinutes !== null && staleMinutes >= 45; if (isStale) { return ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using'; } return mkt ? ' ' + mnavStr + '● live (as of ' + stamp + ')' : ' ' + mnavStr + '● Previous close (as of ' + stamp + ') · Market closed · Use slider to estimate after-hours mNAV'; })();
+    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; const isStale = staleMinutes !== null && staleMinutes >= 45; if (isStale) { return ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using'; } if (mkt) { return ' ' + mnavStr + '● live (as of ' + stamp + ')'; } const snap = window._mnavCloseSnapshot; if (snap) { return ' Close: ' + snap.mnav.toFixed(2) + '× (' + snap.marketDate + ') · orange shows a live BTC-adjusted estimate · Market closed'; } return ' ' + mnavStr + '● Previous close (as of ' + stamp + ') · Market closed · Use slider to estimate after-hours mNAV'; })();
     el2.style.color = (staleMinutes !== null && staleMinutes >= 45) ? 'var(--red)' : 'var(--green)';
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
@@ -912,6 +925,7 @@ function loadStrategyFundamentals() {
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
+fetchMnavCloseSnapshot(); // once per page load — the snapshot changes at most once per trading day
 
 recalc();
 
