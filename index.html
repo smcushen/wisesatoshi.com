@@ -366,6 +366,7 @@
 
   <div class="panel">
     <div class="panel-title">Results</div>
+    <div class="source-line" id="pricingBasisNote">Pricing based on: — </div>
     <div class="results-grid">
       <div class="result-card">
         <div class="label">Implied mNAV vs derived price</div>
@@ -510,6 +511,9 @@ function recalc(){
 
   const manualOverride = el('manualPrice').value;
   const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
+  el('pricingBasisNote').textContent = manualOverride
+    ? 'Pricing based on: ' + fmtUSD(S) + ' (manual override)'
+    : 'Pricing based on: ' + fmtUSD(S) + ' (model ' + (mktOpenForLabel ? 'derived price' : 'estimate') + ')';
 
   // time to expiry
   const expiry = new Date(el('expiryDate').value);
