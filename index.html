@@ -544,7 +544,6 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
       const livePrice = window._lastKnownLivePrice || 63063; // fallback only if no live fetch has ever completed
       el('btcPrice').value = Math.round(livePrice);
       window._liveBtcExact = livePrice;
-      fetchLiveBtcPrice(); // proactively re-check now, rather than waiting for the next scheduled interval
     } else {
       // Every other scenario is an explicit manual override — mark it so the
       // next background price refresh doesn't silently snap it back to live.
@@ -560,8 +559,12 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
     el('rate').value = 4.2;
 
     if (s === 'current') {
-      // mNAV should reflect the real live value here too, not a hardcoded guess.
-      fetchLiveMnav();
+      // Show the cached live price immediately for instant feedback, then re-check
+      // and recompute mNAV once the fresh fetch actually resolves — chained, not
+      // fired independently, so mNAV is never computed against a stale cached
+      // BTC price while a fresher one is still in flight. Same pattern already
+      // used on page load and in the background polling interval.
+      fetchLiveBtcPrice().then(fetchLiveMnav);
     } else {
       // Other scenarios are hypothetical, so a clean baseline assumption makes sense.
       el('mnav').value = 1.05;
