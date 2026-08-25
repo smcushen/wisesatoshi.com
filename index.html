@@ -672,8 +672,29 @@ async function fetchMnavCloseSnapshot() {
 function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   const el2 = el('mnavStatus');
   if (success) {
-    el2.textContent = (()=>{ const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21; const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : ''; const isStale = staleMinutes !== null && staleMinutes >= 45; if (isStale) { return ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using'; } if (mkt) { return ' ' + mnavStr + '● live (as of ' + stamp + ')'; } const snap = window._mnavCloseSnapshot; if (snap) { return ' Close: ' + snap.mnav.toFixed(2) + '× (' + snap.marketDate + ') · orange shows a live BTC-adjusted estimate · Market closed'; } return ' ' + mnavStr + '● Previous close (as of ' + stamp + ') · Market closed · Use slider to estimate after-hours mNAV'; })();
-    el2.style.color = (staleMinutes !== null && staleMinutes >= 45) ? 'var(--red)' : 'var(--green)';
+    const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21;
+    const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : '';
+    const isStale = staleMinutes !== null && staleMinutes >= 45;
+    // Closed-market messages split into two visual lines: a bold fact (green,
+    // matches the rest of this badge) and a muted instructional line (gray,
+    // matches the site's existing .source-line style used elsewhere) — kept
+    // as two separate colors deliberately so the instruction never gets
+    // mistaken for another live value or a different severity level.
+    if (isStale) {
+      el2.innerHTML = ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using';
+    } else if (mkt) {
+      el2.innerHTML = ' ' + mnavStr + '● live (as of ' + stamp + ')';
+    } else {
+      const snap = window._mnavCloseSnapshot;
+      if (snap) {
+        el2.innerHTML = ' Close: ' + snap.mnav.toFixed(2) + '× (' + snap.marketDate + ')<br>' +
+          '<span style="color:var(--ink-dim);">orange shows a live BTC-adjusted estimate · Market closed</span>';
+      } else {
+        el2.innerHTML = ' ' + mnavStr + '● Previous close (as of ' + stamp + ')<br>' +
+          '<span style="color:var(--ink-dim);">Market closed · Use slider to estimate after-hours mNAV</span>';
+      }
+    }
+    el2.style.color = isStale ? 'var(--red)' : 'var(--green)';
   } else {
     el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
     el2.style.color = 'var(--red)';
