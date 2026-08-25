@@ -154,6 +154,8 @@
     cursor:pointer;margin:8px 0 12px;
   }
   .return-live-btn:hover{background:var(--orange-dim);}
+  .mnav-reset-row{margin-top:20px;text-align:right;}
+  @media(max-width:640px){.mnav-reset-row{text-align:center;}}
 
   .source-line{font-size:13px;color:var(--ink-faint);margin-top:-8px;margin-bottom:18px;}
 
@@ -304,7 +306,7 @@
       <div class="field">
         <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
         <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
-        <div style="margin-top:20px;text-align:right;"><button type="button" class="return-live-btn" onclick="document.querySelector('[data-scenario=&quot;current&quot;]').click();">Return Bitcoin and mNAV to live values</button></div>
+        <div class="mnav-reset-row"><button type="button" class="return-live-btn" onclick="document.querySelector('[data-scenario=&quot;current&quot;]').click();">Return Bitcoin and mNAV to live values</button></div>
       </div>
     </div>
 
