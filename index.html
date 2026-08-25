@@ -263,6 +263,7 @@
 
   <div class="panel">
     <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag any slider below to explore a scenario — Bitcoin price and mNAV both update the model live until you do.</div>
 
     <div class="field">
       <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
@@ -294,8 +295,8 @@
         <div class="hint">Cash set aside for debt/preferred service — adds back.</div>
       </div>
       <div class="field">
-        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
-        <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05">
+        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span> <button type="button" onclick="window._userMovedMnav=false; fetchLiveMnav();" style="background:none;border:none;color:var(--orange);font-size:12px;cursor:pointer;padding:0;margin-left:8px;text-decoration:underline;">↺ Return to live</button></label>
+        <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
       </div>
     </div>
 
@@ -577,9 +578,15 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
       // fired independently, so mNAV is never computed against a stale cached
       // BTC price while a fresher one is still in flight. Same pattern already
       // used on page load and in the background polling interval.
+      // Also clear the manual-mNAV flag here — "Current" means fully live,
+      // so any earlier manual mNAV scenario shouldn't block the reset.
+      window._userMovedMnav = false;
       fetchLiveBtcPrice().then(fetchLiveMnav);
     } else {
-      // Other scenarios are hypothetical, so a clean baseline assumption makes sense.
+      // Other scenarios are hypothetical, so a clean baseline assumption makes
+      // sense — and mark it as user-controlled so a background live refresh
+      // doesn't silently overwrite this scenario's baseline a few minutes later.
+      window._userMovedMnav = true;
       el('mnav').value = 1.05;
     }
     recalc();
@@ -725,7 +732,13 @@ async function fetchLiveMnav() {
     // near-zero or negative, which would otherwise silently clamp the mNAV slider
     // to its minimum (0.5) rather than actually reflecting a real live value.
     if (isFinite(liveMnav) && liveMnav >= 0.5 && liveMnav <= 5.0) {
-      el('mnav').value = liveMnav.toFixed(2);
+      // Only overwrite the slider if the user hasn't taken manual control of
+      // it — same principle as the BTC price slider. Still recalc() either
+      // way, so the rest of the page (and the status badge's live reference
+      // number) stays current even while a manual mNAV scenario is active.
+      if (!window._userMovedMnav) {
+        el('mnav').value = liveMnav.toFixed(2);
+      }
       recalc();
     } else {
       console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
