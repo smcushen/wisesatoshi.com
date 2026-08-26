@@ -734,7 +734,7 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
 // existing staleness detection still applies since that path can lag.
 async function fetchMstrPriceData() {
   try {
-    const resp = await fetch('/.netlify/functions/mstr-price');
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
@@ -826,7 +826,7 @@ async function fetchLiveMnav() {
 // key or Netlify environment variable dependency at all.
 async function fetchTreasuryRateData() {
   try {
-    const resp = await fetch('/.netlify/functions/treasury-rate');
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
