@@ -328,7 +328,7 @@
       <div class="field">
         <label>Actual MSTR price</label>
         <input type="text" id="actualMstrPrice" readonly class="mono" style="color:var(--ink);font-size:18px;font-weight:600;">
-        <div class="hint" id="actualMstrPriceHint">What MSTR is really trading at — for comparison against the model's estimate above.</div>
+        <div class="hint" id="actualMstrPriceHint">What MSTR is really trading at — for comparison against the model's estimate.</div>
       </div>
     </div>
 
@@ -346,7 +346,7 @@
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
         <input type="range" id="iv" min="20" max="150" value="84">
-        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> if you already have one</div>
+        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> if you already have one.</div>
       </div>
       <div class="field">
         <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
@@ -797,15 +797,21 @@ async function fetchLiveMnav() {
     // doing" is visible at a glance instead of something you have to take on faith.
     const mktOpenNow = new Date().getUTCDay() >= 1 && new Date().getUTCDay() <= 5 && new Date().getUTCHours() >= 14 && new Date().getUTCHours() < 21;
     const closeSnap = window._mnavCloseSnapshot;
+    // Green matches every other "genuinely live right now" indicator on the page
+    // (BTC price's own live badge, the mNAV badge when fresh) — this field earns
+    // that same color only while it's actually tracking live trades. Once the
+    // market's closed it's a settled historical fact, not something moving, so
+    // it reverts to plain white rather than implying it's still updating.
+    el('actualMstrPrice').style.color = mktOpenNow ? 'var(--green)' : 'var(--ink)';
     if (mktOpenNow) {
       el('actualMstrPrice').value = fmtUSD(data.price);
-      el('actualMstrPriceHint').textContent = 'Live (as of ' + stamp + ') — for comparison against the model\'s estimate above.';
+      el('actualMstrPriceHint').textContent = 'Live (as of ' + stamp + ') — for comparison against the model\'s estimate.';
     } else if (closeSnap) {
       el('actualMstrPrice').value = fmtUSD(closeSnap.mstrClosePrice);
-      el('actualMstrPriceHint').textContent = 'Previous close (' + closeSnap.marketDate + ') — for comparison against the model\'s estimate above.';
+      el('actualMstrPriceHint').textContent = 'Previous close (' + closeSnap.marketDate + ') — for comparison against the model\'s estimate.';
     } else {
       el('actualMstrPrice').value = fmtUSD(data.price);
-      el('actualMstrPriceHint').textContent = 'Previous close (as of ' + stamp + ') — for comparison against the model\'s estimate above.';
+      el('actualMstrPriceHint').textContent = 'Previous close (as of ' + stamp + ') — for comparison against the model\'s estimate.';
     }
   } catch (err) {
     setMnavStatus(false);
