@@ -297,8 +297,13 @@
       </div>
       <div class="field">
         <label>USD Reserve ($B)</label>
-        <input type="number" id="usdReserve" value="4.65" step="0.01">
+        <input type="number" id="usdReserve" value="5.10" step="0.01">
         <div class="hint">Cash earmarked to cover debt and preferred stock payments — added to the total Bitcoin backing, partially counteracting what debt and preferred subtract from it.</div>
+      </div>
+      <div class="field">
+        <label>USD Cash ($B)</label>
+        <input type="number" id="usdCash" value="1.59" step="0.01">
+        <div class="hint">General-purpose liquidity — not earmarked for debt/preferred payments the way USD Reserve is, but added back to the total Bitcoin backing the same way.</div>
       </div>
       <div class="field">
         <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
@@ -341,28 +346,28 @@
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
         <input type="range" id="iv" min="20" max="150" value="84">
-        <div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> if you already have one.</div>
+        <div class="hint">IV varies by strike and expiration — 84% is just a starting assumption. If you have a brokerage account, check its live quote for your exact contract. If not, look it up free on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> (account required).</div>
       </div>
       <div class="field">
         <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
         <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2" oninput="window._userMovedRate=true;">
       </div>
-      <div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
-        <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input type="number" id="observedPrice" placeholder="e.g. 22.50" min="0.01" step="0.01"
-            style="width:110px;background:var(--bg-panel);border:1px solid var(--line);border-radius:4px;color:var(--ink);padding:10px 8px;font-size:16px;font-family:var(--mono);min-height:44px;">
-          <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Solve IV</button>
-          <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
-        </div>
-        <div id="ivSkewWarning" style="display:none;font-size:13px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
-          ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
-        </div>
-        <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
+    </div>
+    <div id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
+      <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="number" id="observedPrice" placeholder="e.g. 22.50" min="0.01" step="0.01"
+          style="width:110px;background:var(--bg-panel);border:1px solid var(--line);border-radius:4px;color:var(--ink);padding:10px 8px;font-size:16px;font-family:var(--mono);min-height:44px;">
+        <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Solve IV</button>
+        <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
       </div>
-      <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-        🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
+      <div id="ivSkewWarning" style="display:none;font-size:13px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
+        ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
       </div>
+      <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
+    </div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
+      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
     </div>
   </div>
 
@@ -474,17 +479,37 @@ const projDateInput = el('projDate');
 const today = new Date();
 projDateInput.value = today.toISOString().slice(0,10);
 
-function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM){
+// Whether NYSE/Nasdaq regular trading hours are open right now (9:30 AM-4:00 PM
+// Eastern, Mon-Fri, not accounting for market holidays). Uses Intl's timezone
+// database instead of a manual UTC offset, so it's correct across the EDT/EST
+// switch automatically — no seasonal comment reminding us to change a number,
+// unlike the GitHub Actions crons elsewhere in this project.
+function isMarketOpenNow(){
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false, weekday: 'short'
+  }).formatToParts(now);
+  const weekday = parts.find(p => p.type === 'weekday').value;
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  if (weekday === 'Sat' || weekday === 'Sun') return false;
+  const minutesSinceMidnight = hour * 60 + minute;
+  return minutesSinceMidnight >= (9*60+30) && minutesSinceMidnight < (16*60);
+}
+
+function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM){
   const shares = sharesM * 1e6;
   const debt = debtB * 1e9;
   const preferred = preferredB * 1e9;
   const usdReserve = usdReserveB * 1e9;
+  const usdCash = usdCashB * 1e9;
 
   const debtBtc = debt / btcPrice;
   const preferredBtc = preferred / btcPrice;
   const reserveBtc = usdReserve / btcPrice;
+  const cashBtc = usdCash / btcPrice;
 
-  const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc;
+  const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
   const netBtcPerShare = netBtc / shares;
   return netBtcPerShare * btcPrice;
 }
@@ -497,6 +522,7 @@ function recalc(){
   const debtB = parseFloat(el('debt').value);
   const preferredB = parseFloat(el('preferred').value);
   const usdReserveB = parseFloat(el('usdReserve').value);
+  const usdCashB = parseFloat(el('usdCash').value);
   const mnav = parseFloat(el('mnav').value);
   const strike = parseFloat(el('strike').value);
   const contracts = parseFloat(el('contracts').value);
@@ -508,7 +534,7 @@ function recalc(){
   el('lblIv').textContent = ivPct + '%';
   el('lblRate').textContent = ratePct.toFixed(1) + '%';
 
-  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
+  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
   const derivedPrice = netValuePerShare * mnav;
   el('derivedPrice').value = fmtUSD(derivedPrice);
   el('netValuePerShareDisplay').value = fmtUSD(netValuePerShare);
@@ -518,8 +544,7 @@ function recalc(){
   // once the market's closed (MSTR's own price is frozen; only the Bitcoin
   // math underneath keeps moving). Label it accordingly so it's never mistaken
   // for an actual traded price after hours.
-  const nowForLabel = new Date();
-  const mktOpenForLabel = nowForLabel.getUTCDay() >= 1 && nowForLabel.getUTCDay() <= 5 && nowForLabel.getUTCHours() >= 14 && nowForLabel.getUTCHours() < 21;
+  const mktOpenForLabel = isMarketOpenNow();
   el('derivedPriceLabel').textContent = mktOpenForLabel ? 'Derived MSTR share price' : 'Derived MSTR share price (estimate)';
 
   const manualOverride = el('manualPrice').value;
@@ -551,7 +576,7 @@ function recalc(){
 }
 
 // wire up all inputs
-['btcPrice','btcHeld','shares','debt','preferred','usdReserve','mnav',
+['btcPrice','btcHeld','shares','debt','preferred','usdReserve','usdCash','mnav',
  'strike','contracts','iv','rate','expiryDate','projDate','manualPrice']
  .forEach(id => el(id).addEventListener('input', recalc));
 
@@ -692,7 +717,7 @@ async function fetchMnavCloseSnapshot() {
 function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   const el2 = el('mnavStatus');
   if (success) {
-    const now=new Date(); const h=now.getUTCHours(); const d=now.getUTCDay(); const mkt=d>=1&&d<=5&&h>=14&&h<21;
+    const mkt = isMarketOpenNow();
     const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : '';
     const isStale = staleMinutes !== null && staleMinutes >= 45;
     // Closed-market messages split into two visual lines: a bold fact (green,
@@ -757,8 +782,9 @@ async function fetchLiveMnav() {
     const debtB = parseFloat(el('debt').value);
     const preferredB = parseFloat(el('preferred').value);
     const usdReserveB = parseFloat(el('usdReserve').value);
+    const usdCashB = parseFloat(el('usdCash').value);
 
-    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM);
+    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
     const liveMnav = data.price / netValuePerShare;
 
     // Sanity check before applying — if fundamentals are still mid-load (a race
@@ -790,7 +816,7 @@ async function fetchLiveMnav() {
     // Show the actual real-world MSTR price alongside the model's own output,
     // so the comparison between "what the model says" and "what MSTR is really
     // doing" is visible at a glance instead of something you have to take on faith.
-    const mktOpenNow = new Date().getUTCDay() >= 1 && new Date().getUTCDay() <= 5 && new Date().getUTCHours() >= 14 && new Date().getUTCHours() < 21;
+    const mktOpenNow = isMarketOpenNow();
     const closeSnap = window._mnavCloseSnapshot;
     // Green matches every other "genuinely live right now" indicator on the page
     // (BTC price's own live badge, the mNAV badge when fresh) — this field earns
@@ -901,8 +927,9 @@ function calibrateIV() {
     const debtForCalib = parseFloat(el('debt').value);
     const preferredForCalib = parseFloat(el('preferred').value);
     const usdReserveForCalib = parseFloat(el('usdReserve').value);
+    const usdCashForCalib = parseFloat(el('usdCash').value);
     const mnavForCalib = parseFloat(el('mnav').value);
-    const netValuePerShareForCalib = calcNetValuePerShare(btcHeldForCalib, btcPriceForCalib, debtForCalib, preferredForCalib, usdReserveForCalib, sharesForCalib);
+    const netValuePerShareForCalib = calcNetValuePerShare(btcHeldForCalib, btcPriceForCalib, debtForCalib, preferredForCalib, usdReserveForCalib, usdCashForCalib, sharesForCalib);
     useS = netValuePerShareForCalib * mnavForCalib;
   }
 
@@ -1033,6 +1060,10 @@ function loadStrategyFundamentals() {
       el('debt').value = data.convertibleDebtBillions;
       el('preferred').value = data.preferredStockBillions;
       el('usdReserve').value = data.usdReserveBillions;
+      // Defensive: if this file hasn't been updated with the new field yet
+      // (e.g. index.html and the JSON get uploaded out of sync), keep the
+      // HTML's own default rather than setting the input to "undefined".
+      if (data.usdCashBillions !== undefined) el('usdCash').value = data.usdCashBillions;
 
       const sourceLine = el('sourceLine');
       if (sourceLine) {
@@ -1066,14 +1097,49 @@ setInterval(() => {
 // hours since it barely moves intraday — a free static file, so client-side
 // polling can match freely. Both are paused while the tab is backgrounded, since
 // there's no reason to poll a tab nobody's watching.
-let mnavInterval, rateInterval;
+let mnavInterval, rateInterval, preciseRefreshInterval;
+// Precise refresh right at market open and close, on top of the regular 5-min
+// poll below. Uses a cheap local clock check every 30s (no network cost) rather
+// than pre-computing a distant future timestamp — simpler to get right, and
+// avoids the exact class of DST math bug this project has hit before.
+let _firedOpenRefreshToday = false;
+let _firedCloseRefreshToday = false;
+function checkPreciseRefreshTimes(){
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false, weekday: 'short'
+  }).formatToParts(new Date());
+  const weekday = parts.find(p => p.type === 'weekday').value;
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  if (weekday === 'Sat' || weekday === 'Sun') return;
+
+  if (hour === 0 && minute === 0) { _firedOpenRefreshToday = false; _firedCloseRefreshToday = false; }
+
+  if (hour === 9 && minute === 31 && !_firedOpenRefreshToday) {
+    _firedOpenRefreshToday = true;
+    fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveRate();
+  }
+  if (hour === 16 && minute === 1 && !_firedCloseRefreshToday) {
+    _firedCloseRefreshToday = true;
+    fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveRate();
+  }
+}
+
 function startDataPolling(){
-  mnavInterval = setInterval(fetchLiveMnav, 5 * 60 * 1000);
+  // Market-hours-only: the underlying price can't move once the market's
+  // closed, so there's no reason to make the network call at all outside
+  // trading hours — not really about cost (negligible either way), just not
+  // doing pointless work.
+  mnavInterval = setInterval(() => { if (isMarketOpenNow()) fetchLiveMnav(); }, 5 * 60 * 1000);
   rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
+  preciseRefreshInterval = setInterval(checkPreciseRefreshTimes, 30 * 1000);
 }
 function stopDataPolling(){
   clearInterval(mnavInterval);
   clearInterval(rateInterval);
+  clearInterval(preciseRefreshInterval);
 }
 startDataPolling();
 
