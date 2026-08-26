@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WS Model Pro — wisesatoshi.com</title>
+<style>
+  :root{
+    --bg:#0b0d0f;
+    --bg-panel:#131619;
+    --bg-panel-2:#181c20;
+    --line:#262b30;
+    --ink:#e9e6df;
+    --ink-dim:#9aa0a6;
+    --ink-faint:#7f858b;
+    --orange:#f7931a;
+    --orange-dim:#c9791a;
+    --green:#4caf7d;
+    --red:#e0674a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:32px 20px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 8px;}
+  .sub{color:var(--ink-dim);font-size:14px;margin:0 0 32px;}
+  .panel{
+    background:var(--bg-panel);border:1px solid var(--line);border-radius:10px;
+    padding:24px;margin-bottom:20px;
+  }
+  label{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;}
+  input{
+    width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:10px 12px;font-size:14px;
+    margin-bottom:14px;
+  }
+  button{
+    background:var(--orange);color:#12100c;border:none;border-radius:6px;
+    padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  button:hover{background:var(--orange-dim);}
+  button.secondary{background:var(--bg-panel-2);color:var(--ink);border:1px solid var(--line);}
+  .status{font-size:13px;margin-top:10px;min-height:18px;}
+  .status.error{color:var(--red);}
+  .status.ok{color:var(--green);}
+  .contract-row{
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;
+    padding:12px 14px;margin-bottom:8px;font-size:14px;
+  }
+  .hint{font-size:13px;color:var(--ink-faint);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WS Model Pro</h1>
+  <p class="sub">Skeleton build — proving login and saved-contract storage work end to end before the options selector is wired in.</p>
+
+  <!-- Logged OUT view -->
+  <div class="panel" id="authPanel">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="At least 6 characters">
+    <button onclick="signUp()">Sign Up</button>
+    <button class="secondary" onclick="signIn()">Log In</button>
+    <div class="status" id="authStatus"></div>
+  </div>
+
+  <!-- Logged IN view -->
+  <div class="panel" id="loggedInPanel" style="display:none;">
+    <p>Logged in as <strong id="userEmail"></strong></p>
+    <button class="secondary" onclick="signOut()">Log Out</button>
+  </div>
+
+  <div class="panel" id="contractsPanel" style="display:none;">
+    <h2 style="font-size:16px;margin:0 0 4px;">Your Saved Contracts</h2>
+    <p class="hint">This is a proof-of-concept save, not the real contract selector yet — that comes once Tradier's approved. This just confirms a logged-in user can write and read their own rows, and only their own.</p>
+    <button onclick="saveTestContract()">Save a Test Contract</button>
+    <div id="contractsList" style="margin-top:16px;"></div>
+    <div class="status" id="contractsStatus"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Publishable key — safe to be public, this is designed for client-side use
+  // as long as Row Level Security is enabled on every table (it is).
+  const SUPABASE_URL = 'https://oqtjogdgisbwsvgcmfos.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Sv9_EgWDNdgGb_R5s8W0lQ_XU32fk02';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  const el = id => document.getElementById(id);
+
+  function setStatus(elId, message, type) {
+    const node = el(elId);
+    node.textContent = message;
+    node.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  async function signUp() {
+    const email = el('email').value;
+    const password = el('password').value;
+    setStatus('authStatus', 'Creating account...', '');
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) {
+      setStatus('authStatus', error.message, 'error');
+      return;
+    }
+    setStatus('authStatus', 'Account created. Check your email to confirm, then log in.', 'ok');
+  }
+
+  async function signIn() {
+    const email = el('email').value;
+    const password = el('password').value;
+    setStatus('authStatus', 'Logging in...', '');
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      setStatus('authStatus', error.message, 'error');
+      return;
+    }
+    onLoggedIn(data.user);
+  }
+
+  async function signOut() {
+    await supabaseClient.auth.signOut();
+    el('authPanel').style.display = 'block';
+    el('loggedInPanel').style.display = 'none';
+    el('contractsPanel').style.display = 'none';
+    setStatus('authStatus', '', '');
+  }
+
+  function onLoggedIn(user) {
+    el('authPanel').style.display = 'none';
+    el('loggedInPanel').style.display = 'block';
+    el('contractsPanel').style.display = 'block';
+    el('userEmail').textContent = user.email;
+    loadContracts();
+  }
+
+  async function saveTestContract() {
+    setStatus('contractsStatus', 'Saving...', '');
+    // user_id is NOT set here — the table's default (auth.uid()) fills it in
+    // automatically from the logged-in session, so the client never needs to
+    // know or pass its own user ID.
+    const { error } = await supabaseClient.from('saved_contracts').insert({
+      strike: 275,
+      expiration_date: '2028-12-15',
+      notes: 'Test save from pro.html skeleton',
+      contract_data: { note: 'placeholder until Tradier is wired in' }
+    });
+    if (error) {
+      setStatus('contractsStatus', error.message, 'error');
+      return;
+    }
+    setStatus('contractsStatus', 'Saved.', 'ok');
+    loadContracts();
+  }
+
+  async function loadContracts() {
+    const { data, error } = await supabaseClient
+      .from('saved_contracts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setStatus('contractsStatus', error.message, 'error');
+      return;
+    }
+
+    const list = el('contractsList');
+    if (!data.length) {
+      list.innerHTML = '<p class="hint">No saved contracts yet.</p>';
+      return;
+    }
+    list.innerHTML = data.map(c =>
+      '<div class="contract-row">$' + c.strike + ' strike, exp ' + c.expiration_date +
+      (c.notes ? ' — ' + c.notes : '') + '</div>'
+    ).join('');
+  }
+
+  // On page load, check whether a session already exists (e.g. returning visitor)
+  supabaseClient.auth.getUser().then(({ data }) => {
+    if (data.user) onLoggedIn(data.user);
+  });
+</script>
+</body>
+</html>
