@@ -670,8 +670,9 @@ async function fetchLiveBtcPrice() {
   setPriceStatus(false);
 }
 
-// live mNAV: reads data/mstr-price.json, a static file kept fresh by a scheduled
-// GitHub Action (rather than hitting Netlify directly from every visitor's browser).
+// live mNAV: reads MSTR price from a live Netlify Function (fetchMstrPriceData
+// below), which proxies Finnhub directly with its own short server-side cache —
+// falls back to a GitHub-Action-refreshed static file only if that's unreachable.
 
 // ---------- mNAV close-time snapshot (captured server-side once/day, near market close) ----------
 async function fetchMnavCloseSnapshot() {
@@ -718,12 +719,33 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   }
 }
 
-async function fetchLiveMnav() {
+// ---------- MSTR price: live Netlify Function first, static file as fallback ----------
+// The live function proxies Finnhub directly (5-minute shared cache), so it has
+// no cron-reliability problem at all — every call gets a genuinely current
+// price. The static file (data/mstr-price.json, refreshed by a GitHub Action)
+// only gets used if the live function itself is unreachable, in which case the
+// existing staleness detection still applies since that path can lag.
+async function fetchMstrPriceData() {
   try {
-    const resp = await fetch('data/mstr-price.json');
+    const resp = await fetch('/.netlify/functions/mstr-price');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
+    return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
+  } catch (err) {
+    console.warn('Live MSTR price function unavailable, falling back to static snapshot:', err);
+  }
+
+  const resp = await fetch('data/mstr-price.json');
+  if (!resp.ok) throw new Error('bad response');
+  const data = await resp.json();
+  if (!data.price) throw new Error('no price');
+  return { price: data.price, lastFetched: data.lastFetched, isLive: false };
+}
+
+async function fetchLiveMnav() {
+  try {
+    const data = await fetchMstrPriceData();
 
     // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
     // are currently in the inputs (BTC price should already be live by this point).
@@ -754,13 +776,12 @@ async function fetchLiveMnav() {
       console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
     }
 
-    // Use the JSON's own lastFetched timestamp, not the browser's current clock —
-    // the price can lag its nominal 5-minute refresh (a missed run, a failed
-    // Finnhub call, or a delayed GitHub Actions cron trigger), and labeling it
-    // "live" with the current time was masking that staleness entirely.
+    // Staleness only applies to the fallback path — the live function is fresh
+    // by construction (at most 5 minutes old due to its own internal cache),
+    // so there's nothing meaningful to warn about on that path.
     const fetchedAt = data.lastFetched ? new Date(data.lastFetched) : null;
     const stamp = fetchedAt ? fetchedAt.toISOString().slice(11,16) + ' UTC' : new Date().toISOString().slice(11,16) + ' UTC';
-    const staleMinutes = fetchedAt ? Math.round((Date.now() - fetchedAt.getTime()) / 60000) : null;
+    const staleMinutes = (data.isLive || !fetchedAt) ? null : Math.round((Date.now() - fetchedAt.getTime()) / 60000);
     const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
     setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
   } catch (err) {
@@ -996,12 +1017,12 @@ setInterval(() => {
   fetchLiveBtcPrice();
 }, 60 * 1000);
 
-// mNAV now reads data/mstr-price.json, refreshed server-side every 5 minutes via
-// GitHub Actions calling Finnhub directly (free at any frequency). Rate reads
-// data/treasury-rate.json, refreshed every 6 hours since it barely moves intraday.
-// Both are free static files, so client-side polling can match freely — still
-// paused while the tab is backgrounded, since there's no reason to poll a tab
-// nobody's watching.
+// mNAV now reads MSTR price from a live Netlify Function (Finnhub proxy, 5-minute
+// server-side cache), with a GitHub-Action-refreshed static file as fallback only
+// if that's unreachable. Rate reads data/treasury-rate.json, refreshed every 6
+// hours since it barely moves intraday — a free static file, so client-side
+// polling can match freely. Both are paused while the tab is backgrounded, since
+// there's no reason to poll a tab nobody's watching.
 let mnavInterval, rateInterval;
 function startDataPolling(){
   mnavInterval = setInterval(fetchLiveMnav, 5 * 60 * 1000);
