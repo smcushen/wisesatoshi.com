@@ -820,14 +820,33 @@ async function fetchLiveMnav() {
 
 
 // Live risk-free rate — US 10-year Treasury yield, tries multiple sources.
+// ---------- Treasury rate: live Netlify Function first, static file as fallback ----------
+// Same pattern as MSTR price above. This one's even simpler — the underlying
+// source (yieldwatch.io) is a free, keyless public API, so there's no secret
+// key or Netlify environment variable dependency at all.
+async function fetchTreasuryRateData() {
+  try {
+    const resp = await fetch('/.netlify/functions/treasury-rate');
+    if (!resp.ok) throw new Error('bad response');
+    const data = await resp.json();
+    if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
+    return { rate: data.rate, date: data.date, isLive: true };
+  } catch (err) {
+    console.warn('Live treasury-rate function unavailable, falling back to static snapshot:', err);
+  }
+
+  const resp = await fetch('data/treasury-rate.json');
+  if (!resp.ok) throw new Error('bad response');
+  const data = await resp.json();
+  if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
+  return { rate: data.rate, date: data.date, isLive: false };
+}
+
 async function fetchLiveRate() {
   const rateStatus = document.getElementById('rateStatus');
 
   try {
-    const resp = await fetch('data/treasury-rate.json');
-    if (!resp.ok) throw new Error('bad response');
-    const data = await resp.json();
-    if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
+    const data = await fetchTreasuryRateData();
 
     // Same principle as BTC price and mNAV: don't silently overwrite a value
     // the user has manually dragged. Still update the status text either way
