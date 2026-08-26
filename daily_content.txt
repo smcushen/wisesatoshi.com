@@ -1,9 +1,9 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=78993
+PREVIOUS_CLOSE=78539
 TODAY_IN_BITCOIN=
-TREASURY_1=Strategy established a new flexible USD liquidity pool called "USD Cash," usable to buy more Bitcoin or for other capital actions, while raising its restricted USD Reserve to $5.10 billion. (BitcoinTreasuries.net, Aug 24) https://bitcointreasuries.net/news/strategy-announces-new-billion-dollar-fund-to-buy-more-btc
-TREASURY_2=Strive's SATA preferred stock returned to its $100 par value, closing at $100.01 on Aug 21, which reactivated the company's ATM issuance channel and has already translated into an estimated 440 additional BTC purchased. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/strives-sata-returns-to-par-and-buys-an-estimated-440-btc
+TREASURY_1=@British HODL, known for getting institutional figures on the record, was confirmed to speak at the Bitcoin Treasuries Conference 2026. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/british-hodl-to-speak-at-bitcoin-treasuries-conference-2026
+TREASURY_2=
 TREASURY_3=
-WEEK_AHEAD=
+WEEK_AHEAD=Bitcoin broke above $80,000 this week for the first time since mid-May, up roughly 28% in August — its strongest month since late 2024. Worth watching whether Strategy's next weekly 8-K (typically Mondays) reflects any capital activity tied to the rally.
