@@ -116,6 +116,8 @@
   .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
 
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;}
+  @media(max-width:640px){.grid-3{grid-template-columns:1fr;}}
   @media(max-width:640px){.grid{grid-template-columns:1fr;}}
 
   .field{margin-bottom:16px;}
@@ -312,7 +314,7 @@
 
     <div class="source-line" id="sourceLine">Defaults last updated: Aug 14, 2026 · Source: Strategy SEC 8-K (Aug 10) &amp; Investor Briefing (Aug 13) · Basic shares ≈401M · BTC: 840,447</div>
 
-    <div class="grid">
+    <div class="grid-3">
       <div class="field">
         <label>Net value/share</label>
         <input type="text" id="netValuePerShareDisplay" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
@@ -322,6 +324,11 @@
         <label id="derivedPriceLabel">Derived MSTR share price</label>
         <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
         <div class="hint">Net value/share × mNAV — what the model estimates MSTR should actually trade at.</div>
+      </div>
+      <div class="field">
+        <label>Actual MSTR price</label>
+        <input type="text" id="actualMstrPrice" readonly class="mono" style="color:var(--ink);font-size:18px;font-weight:600;">
+        <div class="hint" id="actualMstrPriceHint">What MSTR is really trading at — for comparison against the model's estimate above.</div>
       </div>
     </div>
 
@@ -706,7 +713,7 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
       const snap = window._mnavCloseSnapshot;
       if (snap) {
         el2.innerHTML = ' Close: ' + snap.mnav.toFixed(2) + '× (' + snap.marketDate + ')<br>' +
-          '<span style="color:var(--ink-dim);">orange shows a live BTC-adjusted estimate · Market closed</span>';
+          '<span style="color:var(--ink-dim);">Market closed · orange shows a live BTC-adjusted estimate</span>';
       } else {
         el2.innerHTML = ' ' + mnavStr + '● Previous close (as of ' + stamp + ')<br>' +
           '<span style="color:var(--ink-dim);">Market closed · Use slider to estimate after-hours mNAV</span>';
@@ -784,6 +791,22 @@ async function fetchLiveMnav() {
     const staleMinutes = (data.isLive || !fetchedAt) ? null : Math.round((Date.now() - fetchedAt.getTime()) / 60000);
     const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
     setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
+
+    // Show the actual real-world MSTR price alongside the model's own output,
+    // so the comparison between "what the model says" and "what MSTR is really
+    // doing" is visible at a glance instead of something you have to take on faith.
+    const mktOpenNow = new Date().getUTCDay() >= 1 && new Date().getUTCDay() <= 5 && new Date().getUTCHours() >= 14 && new Date().getUTCHours() < 21;
+    const closeSnap = window._mnavCloseSnapshot;
+    if (mktOpenNow) {
+      el('actualMstrPrice').value = fmtUSD(data.price);
+      el('actualMstrPriceHint').textContent = 'Live (as of ' + stamp + ') — for comparison against the model\'s estimate above.';
+    } else if (closeSnap) {
+      el('actualMstrPrice').value = fmtUSD(closeSnap.mstrClosePrice);
+      el('actualMstrPriceHint').textContent = 'Previous close (' + closeSnap.marketDate + ') — for comparison against the model\'s estimate above.';
+    } else {
+      el('actualMstrPrice').value = fmtUSD(data.price);
+      el('actualMstrPriceHint').textContent = 'Previous close (as of ' + stamp + ') — for comparison against the model\'s estimate above.';
+    }
   } catch (err) {
     setMnavStatus(false);
   }
