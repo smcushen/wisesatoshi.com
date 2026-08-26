@@ -53,18 +53,20 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Same formula as calc.js's calcNetValuePerShare() — this runs in
-            // a separate context (Node, not the browser) so it's a manual
-            // copy, kept in sync by hand rather than shared by import.
-            function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, sharesM){
+            // Same formula as index.html's inline calcNetValuePerShare() — this
+            // runs in a separate context (Node, not the browser) so it's a
+            // manual copy, kept in sync by hand rather than shared by import.
+            function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM){
               const shares = sharesM * 1e6;
               const debt = debtB * 1e9;
               const preferred = preferredB * 1e9;
               const usdReserve = usdReserveB * 1e9;
+              const usdCash = usdCashB * 1e9;
               const debtBtc = debt / btcPrice;
               const preferredBtc = preferred / btcPrice;
               const reserveBtc = usdReserve / btcPrice;
-              const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc;
+              const cashBtc = usdCash / btcPrice;
+              const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
               const netBtcPerShare = netBtc / shares;
               return netBtcPerShare * btcPrice;
             }
@@ -79,6 +81,7 @@ jobs:
               fundamentals.convertibleDebtBillions,
               fundamentals.preferredStockBillions,
               fundamentals.usdReserveBillions,
+              fundamentals.usdCashBillions || 0,
               fundamentals.sharesOutstandingMillions
             );
             const mnav = mstrPrice / netValuePerShare;
