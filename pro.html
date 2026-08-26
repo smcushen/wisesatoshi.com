@@ -108,7 +108,14 @@
     const email = el('email').value;
     const password = el('password').value;
     setStatus('authStatus', 'Creating account...', '');
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    // emailRedirectTo controls exactly where the confirmation link sends people —
+    // without this, it falls back to Supabase's dashboard-configured Site URL,
+    // which is easy to leave pointed at the bare domain instead of this page.
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'https://wisesatoshi.com/pro.html' }
+    });
     if (error) {
       setStatus('authStatus', error.message, 'error');
       return;
