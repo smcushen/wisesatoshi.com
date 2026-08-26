@@ -62,6 +62,15 @@
   <h1>WS Model Pro</h1>
   <p class="sub">Skeleton build — proving login and saved-contract storage work end to end before the options selector is wired in.</p>
 
+  <!-- Password recovery view -->
+  <div class="panel" id="recoveryPanel" style="display:none;">
+    <p>Set a new password for your account.</p>
+    <label>New Password</label>
+    <input type="password" id="newPassword" placeholder="At least 6 characters">
+    <button onclick="updatePassword()">Set New Password</button>
+    <div class="status" id="recoveryStatus"></div>
+  </div>
+
   <!-- Logged OUT view -->
   <div class="panel" id="authPanel">
     <label>Email</label>
@@ -95,6 +104,19 @@
   const SUPABASE_URL = 'https://oqtjogdgisbwsvgcmfos.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Sv9_EgWDNdgGb_R5s8W0lQ_XU32fk02';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  // Supabase fires this specific event when it detects a password-recovery
+  // session in the URL (the link from a "reset password" email) — this is the
+  // officially documented way to catch that case, rather than manually parsing
+  // the URL hash ourselves.
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      el('authPanel').style.display = 'none';
+      el('loggedInPanel').style.display = 'none';
+      el('contractsPanel').style.display = 'none';
+      el('recoveryPanel').style.display = 'block';
+    }
+  });
 
   const el = id => document.getElementById(id);
 
@@ -141,6 +163,19 @@
     el('loggedInPanel').style.display = 'none';
     el('contractsPanel').style.display = 'none';
     setStatus('authStatus', '', '');
+  }
+
+  async function updatePassword() {
+    const newPassword = el('newPassword').value;
+    setStatus('recoveryStatus', 'Updating...', '');
+    const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if (error) {
+      setStatus('recoveryStatus', error.message, 'error');
+      return;
+    }
+    setStatus('recoveryStatus', 'Password updated.', 'ok');
+    el('recoveryPanel').style.display = 'none';
+    onLoggedIn(data.user);
   }
 
   function onLoggedIn(user) {
