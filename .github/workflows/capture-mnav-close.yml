@@ -9,7 +9,7 @@ on:
     # A modest delay past the real close is harmless here: MSTR's closing
     # price is fixed once the market shuts, so only the BTC price gets
     # slightly less precise the later this actually runs.
-    - cron: '10 20 * * 1-5'
+    - cron: '20 20 * * 1-5'
   workflow_dispatch:  # allows manual trigger anytime
 
 permissions:
