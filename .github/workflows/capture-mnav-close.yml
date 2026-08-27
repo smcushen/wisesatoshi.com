@@ -2,9 +2,9 @@ name: Capture mNAV At Market Close
 
 on:
   schedule:
-    # Once per weekday, ~10 min after NYSE close (4:00 PM ET = 20:00 UTC
+    # Once per weekday, ~20 min after NYSE close (4:00 PM ET = 20:00 UTC
     # during EDT). Once Eastern time shifts to EST (~early Nov), this needs
-    # to move to '10 21 * * 1-5' to keep landing ~10 min after the real
+    # to move to '20 21 * * 1-5' to keep landing ~20 min after the real
     # close — same DST pattern as the other scheduled workflows in this repo.
     # A modest delay past the real close is harmless here: MSTR's closing
     # price is fixed once the market shuts, so only the BTC price gets
