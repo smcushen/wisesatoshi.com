@@ -1,9 +1,9 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=78539
-TODAY_IN_BITCOIN=
-TREASURY_1=@British HODL, known for getting institutional figures on the record, was confirmed to speak at the Bitcoin Treasuries Conference 2026. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/british-hodl-to-speak-at-bitcoin-treasuries-conference-2026
-TREASURY_2=
+PREVIOUS_CLOSE=79024
+TODAY_IN_BITCOIN=On August 27, 2015, Princeton University and Coursera launched the first free online course on Bitcoin. (BitcoinHistory.net)
+TREASURY_1=Strive's SATA preferred is "back in flywheel mode" — after returning to its $100 par value last week and reactivating its ATM issuance program, it's held at or a penny above par through three sessions this week, letting Strive buy an estimated 500+ additional Bitcoin. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/strive-sata-raised-enough-to-buy-an-estimated-500-bitcoin
+TREASURY_2=Dan Held, an early SpaceX backer, was confirmed to speak at the Bitcoin Treasuries Conference 2026. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/dan-held-confirmed-to-speak-at-bitcoin-treasuries-conference
 TREASURY_3=
-WEEK_AHEAD=Bitcoin broke above $80,000 this week for the first time since mid-May, up roughly 28% in August — its strongest month since late 2024. Worth watching whether Strategy's next weekly 8-K (typically Mondays) reflects any capital activity tied to the rally.
+WEEK_AHEAD=
