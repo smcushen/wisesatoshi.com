@@ -1,0 +1,104 @@
+name: Capture Live MSTR Price & mNAV
+
+on:
+  schedule:
+    # Every 5 min during market hours (14:30–21:00 UTC = 9:30 AM–4:00 PM ET,
+    # while UTC-4/EDT holds). Once Eastern shifts to EST (~early Nov), move
+    # to '*/5 14-21 * * 1-5' → '*/5 14:30-21:30' isn't valid cron syntax, so
+    # just shift the hour window to '*/5 15-22 * * 1-5' — same DST pattern
+    # as the other scheduled workflows in this repo.
+    - cron: '*/5 14-21 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture-live-price:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch MSTR price from Finnhub
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+        run: |
+          RESPONSE=$(curl -s "https://finnhub.io/api/v1/quote?symbol=MSTR&token=$FINNHUB_API_KEY")
+          PRICE=$(echo "$RESPONSE" | jq '.c')
+
+          if [ -z "$PRICE" ] || [ "$PRICE" == "null" ] || [ "$PRICE" == "0" ]; then
+            echo "Failed to fetch MSTR price — aborting without committing."
+            exit 1
+          fi
+          echo "MSTR_PRICE=$PRICE" >> "$GITHUB_ENV"
+
+      - name: Fetch BTC price from CoinGecko
+        run: |
+          RESPONSE=$(curl -s "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+          BTC_PRICE=$(echo "$RESPONSE" | jq '.bitcoin.usd')
+
+          if [ -z "$BTC_PRICE" ] || [ "$BTC_PRICE" == "null" ] || [ "$BTC_PRICE" == "0" ]; then
+            echo "Failed to fetch BTC price — aborting without committing."
+            exit 1
+          fi
+          echo "BTC_PRICE=$BTC_PRICE" >> "$GITHUB_ENV"
+
+      - name: Compute live mNAV and write snapshot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Same formula as index.html's calcNetValuePerShare() — kept in
+            // sync by hand across three copies now (index.html, this file,
+            // and capture-mnav-close.yml). Worth revisiting if it drifts again.
+            function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM){
+              const shares = sharesM * 1e6;
+              const debt = debtB * 1e9;
+              const preferred = preferredB * 1e9;
+              const usdReserve = usdReserveB * 1e9;
+              const usdCash = usdCashB * 1e9;
+              const debtBtc = debt / btcPrice;
+              const preferredBtc = preferred / btcPrice;
+              const reserveBtc = usdReserve / btcPrice;
+              const cashBtc = usdCash / btcPrice;
+              const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
+              const netBtcPerShare = netBtc / shares;
+              return netBtcPerShare * btcPrice;
+            }
+
+            const mstrPrice = parseFloat(process.env.MSTR_PRICE);
+            const btcPrice = parseFloat(process.env.BTC_PRICE);
+            const fundamentals = JSON.parse(fs.readFileSync('data/strategy-fundamentals.json', 'utf8'));
+
+            const netValuePerShare = calcNetValuePerShare(
+              fundamentals.btcHeld,
+              btcPrice,
+              fundamentals.convertibleDebtBillions,
+              fundamentals.preferredStockBillions,
+              fundamentals.usdReserveBillions,
+              fundamentals.usdCashBillions || 0,
+              fundamentals.sharesOutstandingMillions
+            );
+            const mnav = mstrPrice / netValuePerShare;
+
+            const now = new Date();
+            const snapshot = {
+              price: mstrPrice,
+              btcPriceAtCapture: btcPrice,
+              netValuePerShare: netValuePerShare,
+              mnav: mnav,
+              capturedAt: now.toISOString()
+            };
+
+            fs.mkdirSync('data', { recursive: true });
+            fs.writeFileSync('data/mstr-price-live.json', JSON.stringify(snapshot, null, 2) + '\n');
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/mstr-price-live.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Capture live MSTR price/mNAV"
+          git push
