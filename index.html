@@ -754,20 +754,20 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
 // existing staleness detection still applies since that path can lag.
 async function fetchMstrPriceData() {
   try {
-    const resp = await fetch('data/mstr-price.json');
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
-    return { price: data.price, lastFetched: data.lastFetched, isLive: false };
+    return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
   } catch (err) {
-    console.warn('Static MSTR price snapshot unavailable, falling back to live function:', err);
+    console.warn('Live MSTR price function unavailable, falling back to static snapshot:', err);
   }
 
-  const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
+  const resp = await fetch('data/mstr-price.json');
   if (!resp.ok) throw new Error('bad response');
   const data = await resp.json();
   if (!data.price) throw new Error('no price');
-  return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
+  return { price: data.price, lastFetched: data.lastFetched, isLive: false };
 }
 
 async function fetchLiveMnav() {
