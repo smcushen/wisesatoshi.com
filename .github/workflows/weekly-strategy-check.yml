@@ -1,52 +1,55 @@
 name: Weekly Strategy Fundamentals Check
 on:
   schedule:
-    # Every Monday at 8:00 PM Alaska time (AKDT, UTC-8). Note: once Alaska
-    # shifts to AKST (UTC-9) around Nov 1, this will fire at 7:00 PM Alaska
-    # time instead of 8:00 PM — change to '0 5 * * 2' to hold 8:00 PM through
-    # the winter. Same DST caveat as the daily breakdown bot.
     - cron: '0 4 * * 2'
-  workflow_dispatch:  # allows manual trigger anytime
+  workflow_dispatch:
 jobs:
   create-reminder:
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Create weekly fundamentals reminder issue
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const today = new Date().toISOString().slice(0, 10);
-            
+            const f = JSON.parse(fs.readFileSync('data/strategy-fundamentals.json', 'utf8'));
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `📊 Weekly Strategy Fundamentals Check — ${today}`,
               body: `## WS Model — Weekly Data Verification
-            
-            Strategy typically announces Bitcoin purchases earlier today (Monday), so tonight's the right time to verify all model defaults before they go stale.
-            
+
+            ### Step 0 — Confirm nothing new
+            - [ ] Checked strategy.com/shares, the investor briefing, and the latest 8-K — if nothing has changed since \`${f.lastUpdated}\`, close this issue with no edits needed.
+
             ### Step 1 — Check strategy.com/shares
-            - [ ] **BTC held** (current default: 840,447)
-            - [ ] **Basic shares outstanding** (current default: 401M)
-            
+            - [ ] **BTC held** (current: ${f.btcHeld.toLocaleString('en-US')})
+            - [ ] **Basic shares outstanding** (current: ${f.sharesOutstandingMillions}M)
+
             ### Step 2 — Check Strategy investor briefing
-            - [ ] **USD Reserve** (current default: $4.65B)
-            - [ ] **Preferred stock — STRK/STRF/STRD/STRC** (current default: $15.24B)
-            
+            - [ ] **USD Reserve** (current: $${f.usdReserveBillions}B)
+            - [ ] **USD Cash** (current: $${f.usdCashBillions ?? 'not set'}B)
+            - [ ] **Preferred stock — STRK/STRF/STRD/STRC** (current: $${f.preferredStockBillions}B)
+
             ### Step 3 — Check latest SEC 8-K filing
-            - [ ] **Convertible debt** (current default: $6.75B)
-            
+            - [ ] **Convertible debt** (current: $${f.convertibleDebtBillions}B)
+
             ### Update this week's numbers
-            👉 Ask Claude for this week's Strategy fundamentals JSON, then paste it directly into \`data/strategy-fundamentals.json\` on GitHub and commit.
-            
+            👉 If anything changed, ask Claude for this week's Strategy fundamentals JSON, then paste it directly into \`data/strategy-fundamentals.json\` on GitHub and commit.
+
             **Sources:**
             - [strategy.com/shares](https://strategy.com/shares)
             - [SEC EDGAR — MSTR filings](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=MSTR&type=8-K&dateb=&owner=include&count=10)
-            
-            *Close this issue manually once you've updated the file.*`,
+
+            *Close this issue manually once you've confirmed or updated the file.*`,
               labels: ['maintenance', 'data-update']
             });
-            
+
             console.log('Weekly reminder issue created successfully');
