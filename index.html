@@ -9,1168 +9,807 @@
 <meta property="og:title" content="MSTR Options Projector — wisesatoshi.com">
 <meta property="og:description" content="Model your MSTR call option value against any Bitcoin price scenario.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://wisesatoshi.com">
-<meta property="og:image" content="https://wisesatoshi.com/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="MSTR Options Projector — wisesatoshi.com">
-<meta name="twitter:description" content="Model your MSTR call option value against any Bitcoin price scenario.">
-<meta name="twitter:image" content="https://wisesatoshi.com/og-image.png">
 <style>
-  :root{
-    --bg:#0b0d0f;
-    --bg-panel:#131619;
-    --bg-panel-2:#181c20;
-    --line:#262b30;
-    --ink:#e9e6df;
-    --ink-dim:#9aa0a6;
-    --ink-faint:#7f858b;
-    --orange:#f7931a;
-    --orange-dim:#c9791a;
-    --green:#4caf7d;
-    --red:#e0674a;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    line-height:1.5;
-    -webkit-font-smoothing:antialiased;
-  }
-  .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
-
-  /* enso ring motif, used sparingly */
-  .enso{
-    position:absolute;
-    border-radius:50%;
-    border:1.5px solid var(--orange);
-    opacity:0.14;
-    border-right-color:transparent;
-    border-bottom-color:transparent;
-    transform:rotate(-35deg);
-    pointer-events:none;
-  }
-
-  header{
-    display:flex;align-items:center;justify-content:space-between;
-    flex-wrap:wrap;row-gap:10px;
-    padding:22px 32px;
-    border-bottom:1px solid var(--line);
-    position:relative;z-index:2;
-  }
-  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:18px;}
-  header .brand img{width:30px;height:30px;vertical-align:middle;margin-right:10px;position:relative;top:-1px;}
-  header .brand span{color:var(--orange);}
-  nav{display:flex;flex-wrap:wrap;row-gap:8px;}
-  nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
-  nav a:hover{color:var(--ink);}
-  nav a.x-link{color:var(--orange-dim);}
-  @media(max-width:480px){
-    header{padding:18px 20px;}
-    nav a{margin-left:0;margin-right:20px;}
-  }
-
-  .hero{
-    position:relative;
-    padding:64px 32px 40px;
-    max-width:900px;
-    overflow:hidden;
-  }
-  .hero .enso{width:520px;height:520px;top:-160px;right:-220px;}
-  .eyebrow{
-    font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
-    color:var(--orange);margin-bottom:14px;font-weight:600;
-  }
-  h1{
-    font-size:clamp(28px,4vw,42px);
-    line-height:1.15;
-    margin:0 0 16px;
-    font-weight:600;
-    max-width:16ch;
-  }
-  .lede{color:var(--ink-dim);font-size:16px;max-width:60ch;margin:0 0 28px;}
-  .badges{display:flex;flex-wrap:wrap;gap:10px;}
-  .badge{
-    font-size:12px;color:var(--ink-dim);
-    border:1px solid var(--line);border-radius:999px;
-    padding:6px 12px;
-  }
-
-  main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
-
-  .panel{
-    background:var(--bg-panel);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:26px;
-    margin-bottom:20px;
-  }
-  .panel-title{
-    font-size:14px;letter-spacing:0.1em;text-transform:uppercase;
-    color:var(--ink-dim);margin:0 0 20px;
-    display:flex;align-items:center;gap:10px;
-  }
-  .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
-
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
-  @media(max-width:640px){.grid-3{grid-template-columns:1fr;}}
-  @media(max-width:640px){.grid{grid-template-columns:1fr;}}
-
-  .field{margin-bottom:16px;}
-  .field label{
-    display:flex;justify-content:space-between;align-items:baseline;
-    font-size:13px;color:var(--ink-dim);margin-bottom:8px;
-  }
-  .field label .val{color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums;}
-  .field input[type=range]{
-    width:100%;accent-color:var(--orange);
-    height:4px;background:var(--line);
-  }
-  .field input[type=number],.field input[type=date],.field input[type=text]{
-    width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
-    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
-  }
-  .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
-
-
-  .toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
-  .toggle-row button{
-    background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink-dim);
-    font-size:13.5px;padding:11px 18px;border-radius:999px;cursor:pointer;
-    min-height:44px;
-  }
-  .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
-  .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
-
-  .return-live-btn{
-    display:inline-block;background:var(--orange);border:none;border-radius:999px;
-    color:#12100c;font-size:12px;font-weight:600;padding:6px 16px;
-    cursor:pointer;margin:8px 0 12px;
-  }
-  .return-live-btn:hover{background:var(--orange-dim);}
-  .mnav-reset-row{margin-top:20px;text-align:right;}
-  @media(max-width:640px){.mnav-reset-row{text-align:center;}}
-
-  .source-line{font-size:13px;color:var(--ink-faint);margin-top:-8px;margin-bottom:18px;}
-
-  .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
-  @media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
-  .result-card{
-    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
-  }
-  .result-card .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
-  .result-card .value{font-size:24px;font-weight:600;color:var(--orange);}
-  .result-card .sub{font-size:13px;color:var(--ink-faint);margin-top:4px;}
-  .result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
-  .result-card.total .value{font-size:32px;}
-  .result-card.highlight{border-color:var(--orange-dim);}
-
-  .greeks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-  @media(max-width:640px){.greeks-grid{grid-template-columns:repeat(2,1fr);}}
-  .greek-card{text-align:center;padding:14px 8px;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;}
-  .greek-card .sym{font-size:20px;color:var(--orange);margin-bottom:4px;}
-  .greek-card .gval{font-size:16px;font-weight:600;}
-  .greek-card .glabel{font-size:13px;color:var(--ink-faint);margin-top:3px;}
-
-  .methodology{
-    font-size:13px;color:var(--ink-dim);line-height:1.7;
-  }
-  .methodology code{
-    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:4px;
-    padding:1px 6px;color:var(--orange);font-size:12px;
-  }
-  .fix-note{
-    font-size:12px;color:var(--green);background:rgba(76,175,125,0.08);
-    border:1px solid rgba(76,175,125,0.3);border-radius:8px;padding:12px 16px;margin-bottom:18px;
-  }
-
-  .disclaimer{font-size:12px;color:var(--ink-faint);line-height:1.7;}
-
-  footer{
-    border-top:1px solid var(--line);padding:28px 32px;
-    display:flex;justify-content:space-between;align-items:center;
-    flex-wrap:wrap;row-gap:10px;
-    color:var(--ink-faint);font-size:13px;
-  }
-  footer a{color:var(--orange-dim);text-decoration:none;}
-  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;font-size:15px;}
-  footer .brand-mark img{width:22px;height:22px;display:block;}
-  @media(max-width:640px){
-    footer{
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:12px;
-      padding:20px;
-      text-align:center;
-    }
-  }
-
-  ::selection{background:var(--orange);color:#12100c;}
+:root{
+--bg:#0b0d0f;
+--bg-panel:#131619;
+--bg-panel-2:#181c20;
+--line:#262b30;
+--ink:#e9e6df;
+--ink-dim:#9aa0a6;
+--ink-faint:#5c6268;
+--orange:#f7931a;
+--orange-dim:#c9791a;
+--green:#4caf7d;
+--red:#e0674a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+background:var(--bg);
+color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+line-height:1.5;
+-webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
+.enso{
+position:absolute;
+border-radius:50%;
+border:1.5px solid var(--orange);
+opacity:0.14;
+border-right-color:transparent;
+border-bottom-color:transparent;
+transform:rotate(-35deg);
+pointer-events:none;
+}
+header{
+display:flex;align-items:center;justify-content:space-between;
+padding:22px 32px;
+border-bottom:1px solid var(--line);
+position:relative;z-index:2;
+}
+header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:15px;}
+header .brand img{width:24px;height:24px;vertical-align:middle;margin-right:9px;position:relative;top:-1px;}
+header .brand span{color:var(--orange);}
+nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
+nav a:hover{color:var(--ink);}
+nav a.x-link{color:var(--orange-dim);}
+.hero{
+position:relative;
+padding:64px 32px 40px;
+max-width:900px;
+overflow:hidden;
+}
+.hero .enso{width:520px;height:520px;top:-160px;right:-220px;}
+.eyebrow{
+font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
+color:var(--orange);margin-bottom:14px;font-weight:600;
+}
+h1{
+font-size:clamp(28px,4vw,42px);
+line-height:1.15;
+margin:0 0 16px;
+font-weight:600;
+max-width:16ch;
+}
+.lede{color:var(--ink-dim);font-size:16px;max-width:60ch;margin:0 0 28px;}
+.badges{display:flex;flex-wrap:wrap;gap:10px;}
+.badge{
+font-size:12px;color:var(--ink-dim);
+border:1px solid var(--line);border-radius:999px;
+padding:6px 12px;
+}
+main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
+.panel{
+background:var(--bg-panel);
+border:1px solid var(--line);
+border-radius:10px;
+padding:26px;
+margin-bottom:20px;
+}
+.panel-title{
+font-size:12px;letter-spacing:0.1em;text-transform:uppercase;
+color:var(--ink-faint);margin:0 0 20px;
+display:flex;align-items:center;gap:10px;
+}
+.panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:640px){.grid{grid-template-columns:1fr;}}
+.field{margin-bottom:16px;}
+.field label{
+display:flex;justify-content:space-between;align-items:baseline;
+font-size:13px;color:var(--ink-dim);margin-bottom:8px;
+}
+.field label .val{color:var(--orange);font-weight:600;}
+.field input[type=range]{
+width:100%;accent-color:var(--orange);
+height:4px;background:var(--line);
+}
+.field input[type=number],.field input[type=date],.field input[type=text]{
+width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
+color:var(--ink);border-radius:6px;padding:9px 11px;font-size:14px;
+}
+.field .hint{font-size:11px;color:var(--ink-faint);margin-top:6px;}
+.field.new label .val{color:var(--green);}
+.field.new{
+border-left:2px solid var(--orange);
+padding-left:12px;margin-left:-14px;
+}
+.toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.toggle-row button{
+background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink-dim);
+font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;
+}
+.toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
+.toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
+.source-line{font-size:11px;color:var(--ink-faint);letter-spacing:0.02em;margin-top:-8px;margin-bottom:18px;}
+.results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
+@media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
+.result-card{
+background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
+}
+.result-card .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+.result-card .value{font-size:24px;font-weight:600;color:var(--orange);}
+.result-card .sub{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+.result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
+.result-card.total .value{font-size:32px;}
+.greeks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media(max-width:640px){.greeks-grid{grid-template-columns:repeat(2,1fr);}}
+.greek-card{text-align:center;padding:14px 8px;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;}
+.greek-card .sym{font-size:20px;color:var(--orange);margin-bottom:4px;}
+.greek-card .gval{font-size:16px;font-weight:600;}
+.greek-card .glabel{font-size:10.5px;color:var(--ink-faint);margin-top:3px;}
+.methodology{
+font-size:13px;color:var(--ink-dim);line-height:1.7;
+}
+.methodology code{
+background:var(--bg-panel-2);border:1px solid var(--line);border-radius:4px;
+padding:1px 6px;color:var(--orange);font-size:12px;
+}
+.fix-note{
+font-size:12px;color:var(--green);background:rgba(76,175,125,0.08);
+border:1px solid rgba(76,175,125,0.3);border-radius:8px;padding:12px 16px;margin-bottom:18px;
+}
+.disclaimer{font-size:12px;color:var(--ink-faint);line-height:1.7;}
+footer{
+border-top:1px solid var(--line);padding:28px 32px;
+display:flex;justify-content:space-between;align-items:center;
+color:var(--ink-faint);font-size:13px;
+}
+footer a{color:var(--orange-dim);text-decoration:none;}
+footer .brand-mark{display:inline-flex;align-items:center;gap:8px;}
+footer .brand-mark img{width:18px;height:18px;display:block;}
+::selection{background:var(--orange);color:#12100c;}
 </style>
 </head>
 <body>
-
 <header>
-  <a class="brand" href="#"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
-  <nav>
-    <a href="#tool">projector</a>
-    <a href="#about">about</a>
-    <a href="learn.html">learn</a>
-    <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
-  </nav>
+<a class="brand" href="#"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
+<nav>
+<a href="#tool">projector</a>
+<a href="#about">about</a>
+<a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+</nav>
 </header>
-
 <section class="hero">
-  <div class="enso"></div>
-  <div class="eyebrow">MSTR options projector</div>
-  <h1>What is your MSTR position worth at any Bitcoin price?</h1>
-  <p class="lede">Model your MSTR call option value across any Bitcoin scenario. Adjust BTC price, holdings, capital structure, and time to expiration to see what your position could be worth.</p>
-  <div class="badges">
-    <span class="badge">Black-Scholes pricing</span>
-    <span class="badge">Full capital-stack mNAV</span>
-    <span class="badge">Greeks included</span>
-    <span class="badge">Any strike / expiry</span>
-    <span class="badge">Built by a Bitcoiner</span>
-  </div>
+<div class="enso"></div>
+<div class="eyebrow">MSTR options projector</div>
+<h1>What is your MSTR position worth at any Bitcoin price?</h1>
+<p class="lede">Model your MSTR call option value across any Bitcoin scenario. Adjust BTC price, holdings, capital structure, and time to expiration to see what your position could be worth.</p>
+<div class="badges">
+<span class="badge">Black-Scholes pricing</span>
+<span class="badge">Full capital-stack mNAV</span>
+<span class="badge">Greeks included</span>
+<span class="badge">Any strike / expiry</span>
+<span class="badge">Built by a Bitcoiner</span>
+</div>
 </section>
-
 <main id="tool">
-
-  <div class="fix-note">
-    Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve, matching the company's own published capital-structure math.
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Your position</div>
-    <div class="grid">
-      <div class="field">
-        <label>Number of contracts <span class="val" id="lblContracts">10</span></label>
-        <input type="range" id="contracts" min="1" max="200" value="10">
-      </div>
-      <div class="field">
-        <label>Strike price ($)</label>
-        <input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
-      </div>
-      <div class="field">
-        <label>Expiration date</label>
-        <input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
-      </div>
-      <div class="field">
-        <label>Projection date</label>
-        <input type="date" id="projDate">
-      </div>
-    </div>
-    <div class="hint">Want to pick from live available strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openWaitlistModal(); return false;" style="color:var(--orange);text-decoration:none;">Join the Pro waitlist →</a></div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag any slider below to explore a scenario — Bitcoin price and mNAV both update the model live until you do.</div>
-
-    <div class="field">
-      <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
-      <div id="priceStatus" style="font-size:13px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;"></div>
-      <input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="63063" oninput="window._liveBtcExact=null; window._userMovedBtcSlider=true; el('lblBtc').textContent='$'+parseInt(this.value).toLocaleString('en-US'); recalc();">
-    </div>
-
-    <div class="grid">
-      <div class="field">
-        <label>BTC held by Strategy</label>
-        <input type="number" id="btcHeld" value="840447">
-      </div>
-      <div class="field">
-        <label>Shares outstanding (millions)</label>
-        <input type="number" id="shares" value="401" step="0.1">
-      </div>
-      <div class="field">
-        <label>Convertible debt ($B)</label>
-        <input type="number" id="debt" value="6.75" step="0.01">
-      </div>
-      <div class="field">
-        <label>Preferred stock — STRK/STRF/STRD/STRC ($B)</label>
-        <input type="number" id="preferred" value="15.24" step="0.01">
-      </div>
-      <div class="field">
-        <label>USD Reserve ($B)</label>
-        <input type="number" id="usdReserve" value="5.10" step="0.01">
-        <div class="hint">Cash earmarked to cover debt and preferred stock payments — added to the total Bitcoin backing, partially counteracting what debt and preferred subtract from it.</div>
-      </div>
-      <div class="field">
-        <label>USD Cash ($B)</label>
-        <input type="number" id="usdCash" value="1.59" step="0.01">
-        <div class="hint">General-purpose liquidity — not earmarked for debt/preferred payments the way USD Reserve is, but added back to the total Bitcoin backing the same way.</div>
-      </div>
-      <div class="field">
-        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
-        <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
-        <div class="mnav-reset-row"><button type="button" class="return-live-btn" onclick="document.querySelector('[data-scenario=&quot;current&quot;]').click();">Return Bitcoin and mNAV to live values</button></div>
-      </div>
-    </div>
-
-    <div class="source-line" id="sourceLine">Defaults last updated: Aug 14, 2026 · Source: Strategy SEC 8-K (Aug 10) &amp; Investor Briefing (Aug 13) · Basic shares ≈401M · BTC: 840,447</div>
-
-    <div class="grid-3">
-      <div class="field">
-        <label>Net value/share</label>
-        <input type="text" id="netValuePerShareDisplay" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
-        <div class="hint">Pure Bitcoin-backed asset value — before the market's premium (mNAV) is applied.</div>
-      </div>
-      <div class="field">
-        <label id="derivedPriceLabel">Derived MSTR share price</label>
-        <input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
-        <div class="hint">Net value/share × mNAV — what the model estimates MSTR should actually trade at.</div>
-      </div>
-      <div class="field">
-        <label>Actual MSTR price</label>
-        <input type="text" id="actualMstrPrice" readonly class="mono" style="color:var(--ink);font-size:18px;font-weight:600;">
-        <div class="hint" id="actualMstrPriceHint">What MSTR is really trading at — for comparison against the model's estimate.</div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="field">
-        <label>Manual override — MSTR price ($, optional)</label>
-        <input type="number" id="manualPrice" placeholder="leave blank to use derived price">
-      </div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Volatility &amp; rate</div>
-    <div class="grid">
-      <div class="field">
-        <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
-        <input type="range" id="iv" min="20" max="150" value="84">
-        <div class="hint">IV varies by strike and expiration — 84% is just a starting assumption. If you have a brokerage account, check its live quote for your exact contract. If not, look it up free on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> (account required).</div>
-      </div>
-      <div class="field">
-        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
-        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2" oninput="window._userMovedRate=true;">
-      </div>
-    </div>
-    <div id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
-      <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <input type="number" id="observedPrice" placeholder="e.g. 22.50" min="0.01" step="0.01"
-          style="width:110px;background:var(--bg-panel);border:1px solid var(--line);border-radius:4px;color:var(--ink);padding:10px 8px;font-size:16px;font-family:var(--mono);min-height:44px;">
-        <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Solve IV</button>
-        <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
-      </div>
-      <div id="ivSkewWarning" style="display:none;font-size:13px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
-        ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
-      </div>
-      <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
-    </div>
-    <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Quick scenarios</div>
-    <div class="toggle-row">
-      <button data-scenario="current" class="active">Current (~$75K BTC)</button>
-      <button data-scenario="200k">BTC $200K</button>
-      <button data-scenario="500k">BTC $500K</button>
-      <button data-scenario="1m">BTC $1M</button>
-      <button data-scenario="bear">Bear ($40K BTC)</button>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Results</div>
-    <div class="source-line" id="pricingBasisNote">Pricing based on: — </div>
-    <div class="results-grid">
-      <div class="result-card">
-        <div class="label">Implied mNAV vs derived price</div>
-        <div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
-      </div>
-      <div class="result-card">
-        <div class="label">Intrinsic value / share</div>
-        <div class="value" id="outIntrinsic">—</div>
-      </div>
-      <div class="result-card">
-        <div class="label">Option price (Black-Scholes)</div>
-        <div class="value" id="outOptionPrice">—</div>
-      </div>
-      <div class="result-card highlight">
-        <div class="label">Value per contract</div>
-        <div class="value" id="outContractValue">—</div>
-        <div class="sub">100 shares × option price</div>
-      </div>
-      <div class="result-card total">
-        <div class="label">Total position value</div>
-        <div class="value" id="outTotal">—</div>
-      </div>
-    </div>
-
-    <div class="greeks-grid">
-      <div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
-      <div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
-      <div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
-      <div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
-    </div>
-  </div>
-
-  <div class="panel" id="about">
-    <div class="panel-title">Methodology</div>
-    <div class="methodology">
-      <p><strong>Net BTC per share</strong> is calculated as:</p>
-      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve) ÷ shares outstanding</code></p>
-      <p>This mirrors Strategy's own published capital-structure accounting: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack. Earlier versions of this tool only netted out convertible debt, which overstated fair value per share by roughly 30% at current prices.</p>
-      <p>The derived MSTR price is then <code>net value per share × mNAV multiple</code>. Option pricing uses Black-Scholes as a European-style approximation for MSTR's American-style calls — early exercise is rarely optimal for a non-dividend-paying stock, so the approximation is close in practice.</p>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Disclaimer</div>
-    <p class="disclaimer">This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ. MSTR price is derived from BTC holdings and a user-supplied mNAV multiple — this is a model assumption, not a prediction. Implied volatility for long-dated, deep out-of-the-money contracts is illiquid and can vary meaningfully from theoretical values — check a live quote where possible. Nothing here constitutes financial advice. Do your own research.</p>
-  </div>
-
+<div class="fix-note">
+Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve and USD Cash, matching the company's own published capital-structure math.
+</div>
+<div class="panel">
+<div class="panel-title">Your position</div>
+<div class="grid">
+<div class="field">
+<label>Number of contracts <span class="val" id="lblContracts">10</span></label>
+<input type="range" id="contracts" min="1" max="200" value="10">
+</div>
+<div class="field">
+<label>Strike price ($)</label>
+<input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
+</div>
+<div class="field">
+<label>Expiration date</label>
+<input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
+</div>
+<div class="field">
+<label>Projection date</label>
+<input type="date" id="projDate">
+</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
+<div class="field">
+<label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
+<div id="priceStatus" style="font-size:11px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;"></div>
+<input type="range" id="btcPrice" min="20000" max="1000000" step="1000" value="63063" oninput="window._liveBtcExact=null; window._userMovedBtcSlider=true; el('lblBtc').textContent='$'+parseInt(this.value).toLocaleString('en-US'); recalc();">
+</div>
+<div class="grid">
+<div class="field">
+<label>BTC held by Strategy</label>
+<input type="number" id="btcHeld" value="840447">
+</div>
+<div class="field">
+<label>Shares outstanding (millions)</label>
+<input type="number" id="shares" value="401" step="0.1">
+</div>
+<div class="field">
+<label>Convertible debt ($B)</label>
+<input type="number" id="debt" value="6.75" step="0.01">
+</div>
+<div class="field new">
+<label>Preferred stock — STRK/STRF/STRD/STRC ($B) <span class="val">new</span></label>
+<input type="number" id="preferred" value="15.24" step="0.01">
+<div class="hint">Previously missing — this is the accuracy fix.</div>
+</div>
+<div class="field new">
+<label>USD Reserve ($B) <span class="val">new</span></label>
+<input type="number" id="usdReserve" value="4.65" step="0.01">
+<div class="hint">Cash set aside for debt/preferred service — adds back.</div>
+</div>
+<div class="field new">
+<label>USD Cash ($B) <span class="val">new</span></label>
+<input type="number" id="usdCash" value="1.59" step="0.01">
+<div class="hint">Additional unrestricted cash on hand — adds back.</div>
+</div>
+<div class="field">
+<label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
+<input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnavSlider=true;">
+</div>
+</div>
+<div class="source-line" id="sourceLine">DEFAULTS LAST UPDATED: AUG 14, 2026 · SOURCE: STRATEGY SEC 8-K (AUG 10) &amp; INVESTOR BRIEFING (AUG 13) · BASIC SHARES ≈401M · BTC: 840,447</div>
+<div class="field">
+<label>Derived MSTR share price</label>
+<input type="text" id="derivedPrice" readonly class="mono" style="color:var(--orange);font-size:18px;font-weight:600;">
+</div>
+<div class="field">
+<label>Manual override — MSTR price ($, optional)</label>
+<input type="number" id="manualPrice" placeholder="leave blank to use derived price">
+</div>
+</div>
+<div class="panel">
+<div class="panel-title">Volatility &amp; rate</div>
+<div class="grid">
+<div class="field">
+<label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
+<input type="range" id="iv" min="20" max="150" value="84">
+<div class="hint">Deep OTM LEAPS — calibrate against your broker's live quote if you have one. Find your contract on <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a></div>
+</div>
+<div class="field" id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
+<label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from observed market price</label>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="number" id="observedPrice" placeholder="e.g. 22.50" min="0.01" step="0.01"
+style="width:110px;background:var(--bg-panel);border:1px solid var(--line);border-radius:4px;color:var(--ink);padding:6px 8px;font-size:13px;font-family:var(--mono);">
+<button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Solve IV</button>
+<span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
+</div>
+<div id="ivSkewWarning" style="display:none;font-size:11px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
+⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
+</div>
+<div style="font-size:11px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
+</div>
+<div style="font-size:11px;color:var(--ink-faint);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
+🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
+</div>
+<div class="field">
+<label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:11px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
+<input type="range" id="rate" min="0" max="8" step="0.1" value="4.2">
+</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-title">Quick scenarios</div>
+<div class="toggle-row">
+<button data-scenario="current" class="active">Current (~$75K BTC)</button>
+<button data-scenario="200k">BTC $200K</button>
+<button data-scenario="500k">BTC $500K</button>
+<button data-scenario="1m">BTC $1M</button>
+<button data-scenario="bear">Bear ($40K BTC)</button>
+</div>
+</div>
+<div class="panel">
+<div class="panel-title">Results</div>
+<div class="results-grid">
+<div class="result-card">
+<div class="label">Intrinsic value / share</div>
+<div class="value" id="outIntrinsic">—</div>
+</div>
+<div class="result-card">
+<div class="label">Option price (Black-Scholes)</div>
+<div class="value" id="outOptionPrice">—</div>
+</div>
+<div class="result-card">
+<div class="label">Value per contract</div>
+<div class="value" id="outContractValue">—</div>
+<div class="sub">100 shares × option price</div>
+</div>
+<div class="result-card">
+<div class="label">Implied mNAV vs derived price</div>
+<div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
+</div>
+<div class="result-card total">
+<div class="label">Total position value</div>
+<div class="value" id="outTotal">—</div>
+</div>
+</div>
+<div class="greeks-grid">
+<div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
+<div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
+<div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
+<div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
+</div>
+</div>
+<div class="panel" id="about">
+<div class="panel-title">Methodology</div>
+<div class="methodology">
+<p><strong>Net BTC per share</strong> is calculated as:</p>
+<p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve + USD cash) ÷ shares outstanding</code></p>
+<p>This mirrors Strategy's own published capital-structure accounting: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack. Earlier versions of this tool only netted out convertible debt, which overstated fair value per share by roughly 30% at current prices.</p>
+<p>The derived MSTR price is then <code>net value per share × mNAV multiple</code>. Option pricing uses Black-Scholes as a European-style approximation for MSTR's American-style calls — early exercise is rarely optimal for a non-dividend-paying stock, so the approximation is close in practice.</p>
+<p>The mNAV multiple defaults to a snapshot captured every few minutes during market hours from an independent price source — it is not recomputed from this page's own live Bitcoin price feed, so the derived price above will not exactly equal the actual market price except by coincidence. Move the mNAV slider yourself to project a hypothetical scenario rather than the observed market snapshot.</p>
+</div>
+</div>
+<div class="panel">
+<div class="panel-title">Disclaimer</div>
+<p class="disclaimer">This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ. MSTR price is derived from BTC holdings and an mNAV multiple — this is a model assumption, not a prediction, even when that multiple starts from a recent market snapshot. Implied volatility for long-dated, deep out-of-the-money contracts is illiquid and can vary meaningfully from theoretical values — check a live quote where possible. Nothing here constitutes financial advice. Do your own research.</p>
+</div>
 </main>
-
 <footer>
-  <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
-  <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
+<span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
+<span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
 </footer>
-
 <script>
 // ---------- Normal CDF / PDF ----------
 function normPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
 function normCdf(x){
-  // Abramowitz-Stegun approximation
-  const b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429;
-  const p=0.2316419, c=0.39894228;
-  if(x>=0){
-    const t=1/(1+p*x);
-    return 1-c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
-  }else{
-    const t=1/(1-p*x);
-    return c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
-  }
+const b1=0.319381530,b2=-0.356563782,b3=1.781477937,b4=-1.821255978,b5=1.330274429;
+const p=0.2316419, c=0.39894228;
+if(x>=0){
+const t=1/(1+p*x);
+return 1-c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
+}else{
+const t=1/(1-p*x);
+return c*Math.exp(-x*x/2)*t*(t*(t*(t*(t*b5+b4)+b3)+b2)+b1);
 }
-
+}
 function blackScholesCall(S,K,T,r,sigma){
-  if(T<=0){
-    const price=Math.max(S-K,0);
-    return {price, delta: S>K?1:0, gamma:0, vega:0, theta:0};
-  }
-  const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
-  const d2=d1-sigma*Math.sqrt(T);
-  const price=S*normCdf(d1)-K*Math.exp(-r*T)*normCdf(d2);
-  const delta=normCdf(d1);
-  const gamma=normPdf(d1)/(S*sigma*Math.sqrt(T));
-  const vega=S*normPdf(d1)*Math.sqrt(T)/100;
-  const theta=(-(S*normPdf(d1)*sigma)/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*normCdf(d2))/365;
-  return {price,delta,gamma,vega,theta};
+if(T<=0){
+const price=Math.max(S-K,0);
+return {price, delta: S>K?1:0, gamma:0, vega:0, theta:0};
 }
-
+const d1=(Math.log(S/K)+(r+0.5*sigma*sigma)*T)/(sigma*Math.sqrt(T));
+const d2=d1-sigma*Math.sqrt(T);
+const price=S*normCdf(d1)-K*Math.exp(-r*T)*normCdf(d2);
+const delta=normCdf(d1);
+const gamma=normPdf(d1)/(S*sigma*Math.sqrt(T));
+const vega=S*normPdf(d1)*Math.sqrt(T)/100;
+const theta=(-(S*normPdf(d1)*sigma)/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*normCdf(d2))/365;
+return {price,delta,gamma,vega,theta};
+}
 // ---------- Elements ----------
 const el = id => document.getElementById(id);
 const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
 const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
-
 const projDateInput = el('projDate');
 const today = new Date();
 projDateInput.value = today.toISOString().slice(0,10);
 
-// Whether NYSE/Nasdaq regular trading hours are open right now (9:30 AM-4:00 PM
-// Eastern, Mon-Fri, not accounting for market holidays). Uses Intl's timezone
-// database instead of a manual UTC offset, so it's correct across the EDT/EST
-// switch automatically — no seasonal comment reminding us to change a number,
-// unlike the GitHub Actions crons elsewhere in this project.
-function isMarketOpenNow(){
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false, weekday: 'short'
-  }).formatToParts(now);
-  const weekday = parts.find(p => p.type === 'weekday').value;
-  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
-  if (weekday === 'Sat' || weekday === 'Sun') return false;
-  const minutesSinceMidnight = hour * 60 + minute;
-  return minutesSinceMidnight >= (9*60+30) && minutesSinceMidnight < (16*60);
-}
-
 function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM){
-  const shares = sharesM * 1e6;
-  const debt = debtB * 1e9;
-  const preferred = preferredB * 1e9;
-  const usdReserve = usdReserveB * 1e9;
-  const usdCash = usdCashB * 1e9;
-
-  const debtBtc = debt / btcPrice;
-  const preferredBtc = preferred / btcPrice;
-  const reserveBtc = usdReserve / btcPrice;
-  const cashBtc = usdCash / btcPrice;
-
-  const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
-  const netBtcPerShare = netBtc / shares;
-  return netBtcPerShare * btcPrice;
+const shares = sharesM * 1e6;
+const debt = debtB * 1e9;
+const preferred = preferredB * 1e9;
+const usdReserve = usdReserveB * 1e9;
+const usdCash = usdCashB * 1e9;
+const debtBtc = debt / btcPrice;
+const preferredBtc = preferred / btcPrice;
+const reserveBtc = usdReserve / btcPrice;
+const cashBtc = usdCash / btcPrice;
+const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
+const netBtcPerShare = netBtc / shares;
+return netBtcPerShare * btcPrice;
 }
 
 function recalc(){
-  const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
-  el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
-  const btcHeld = parseFloat(el('btcHeld').value);
-  const sharesM = parseFloat(el('shares').value);
-  const debtB = parseFloat(el('debt').value);
-  const preferredB = parseFloat(el('preferred').value);
-  const usdReserveB = parseFloat(el('usdReserve').value);
-  const usdCashB = parseFloat(el('usdCash').value);
-  const mnav = parseFloat(el('mnav').value);
-  const strike = parseFloat(el('strike').value);
-  const contracts = parseFloat(el('contracts').value);
-  const ivPct = parseFloat(el('iv').value);
-  const ratePct = parseFloat(el('rate').value);
+const btcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
 
-  el('lblContracts').textContent = contracts;
-  el('lblMnav').textContent = mnav.toFixed(2) + '×';
-  el('lblIv').textContent = ivPct + '%';
-  el('lblRate').textContent = ratePct.toFixed(1) + '%';
+const btcHeld = parseFloat(el('btcHeld').value);
+const sharesM = parseFloat(el('shares').value);
+const debtB = parseFloat(el('debt').value);
+const preferredB = parseFloat(el('preferred').value);
+const usdReserveB = parseFloat(el('usdReserve').value);
+const usdCashB = parseFloat(el('usdCash').value);
+const mnav = parseFloat(el('mnav').value);
+const strike = parseFloat(el('strike').value);
+const contracts = parseFloat(el('contracts').value);
+const ivPct = parseFloat(el('iv').value);
+const ratePct = parseFloat(el('rate').value);
 
-  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
-  const derivedPrice = netValuePerShare * mnav;
-  el('derivedPrice').value = fmtUSD(derivedPrice);
-  el('netValuePerShareDisplay').value = fmtUSD(netValuePerShare);
+el('lblContracts').textContent = contracts;
+el('lblMnav').textContent = mnav.toFixed(2) + '×';
+el('lblIv').textContent = ivPct + '%';
+el('lblRate').textContent = ratePct.toFixed(1) + '%';
 
-  // Same market-hours check the mNAV badge already uses — the derived price is
-  // real-time-tracking during trading hours, but a live-BTC-adjusted estimate
-  // once the market's closed (MSTR's own price is frozen; only the Bitcoin
-  // math underneath keeps moving). Label it accordingly so it's never mistaken
-  // for an actual traded price after hours.
-  const mktOpenForLabel = isMarketOpenNow();
-  el('derivedPriceLabel').textContent = mktOpenForLabel ? 'Derived MSTR share price' : 'Derived MSTR share price (estimate)';
+const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
+const derivedPrice = netValuePerShare * mnav;
+el('derivedPrice').value = fmtUSD(derivedPrice) + ' (net value/share: ' + fmtUSD(netValuePerShare) + ')';
 
-  const manualOverride = el('manualPrice').value;
-  const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
-  el('pricingBasisNote').textContent = manualOverride
-    ? 'Pricing based on: ' + fmtUSD(S) + ' (manual override)'
-    : 'Pricing based on: ' + fmtUSD(S) + ' (model ' + (mktOpenForLabel ? 'derived price' : 'estimate') + ')';
+const manualOverride = el('manualPrice').value;
+const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
 
-  // time to expiry
-  const expiry = new Date(el('expiryDate').value);
-  const proj = new Date(el('projDate').value);
-  const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
-  const r = ratePct/100;
-  const sigma = ivPct/100;
+const expiry = new Date(el('expiryDate').value);
+const proj = new Date(el('projDate').value);
+const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
 
-  const {price, delta, gamma, vega, theta} = blackScholesCall(S, strike, T, r, sigma);
-  const intrinsic = Math.max(S - strike, 0);
+const r = ratePct/100;
+const sigma = ivPct/100;
 
-  el('outIntrinsic').textContent = fmtUSD(intrinsic);
-  el('outOptionPrice').textContent = fmtUSD(price);
-  el('outContractValue').textContent = fmtUSD0(price*100);
-  el('outTotal').textContent = fmtUSD0(price*100*contracts);
-  el('outMnavCheck').textContent = (S/netValuePerShare).toFixed(3) + '×';
+const {price, delta, gamma, vega, theta} = blackScholesCall(S, strike, T, r, sigma);
+const intrinsic = Math.max(S - strike, 0);
 
-  el('outDelta').textContent = delta.toFixed(3);
-  el('outTheta').textContent = fmtUSD(theta);
-  el('outVega').textContent = fmtUSD(vega);
-  el('outGamma').textContent = gamma.toFixed(5);
+el('outIntrinsic').textContent = fmtUSD(intrinsic);
+el('outOptionPrice').textContent = fmtUSD(price);
+el('outContractValue').textContent = fmtUSD0(price*100);
+el('outTotal').textContent = fmtUSD0(price*100*contracts);
+
+if (manualOverride) {
+el('outMnavCheck').textContent = (S/netValuePerShare).toFixed(3) + '×';
+el('outMnavCheck').title = 'mNAV implied by your entered price';
+} else {
+el('outMnavCheck').textContent = '— (matches input)';
+el('outMnavCheck').title = 'Enter a manual price above to see its implied mNAV independently';
+}
+
+el('outDelta').textContent = delta.toFixed(3);
+el('outTheta').textContent = fmtUSD(theta);
+el('outVega').textContent = fmtUSD(vega);
+el('outGamma').textContent = gamma.toFixed(5);
 }
 
 // wire up all inputs
 ['btcPrice','btcHeld','shares','debt','preferred','usdReserve','usdCash','mnav',
- 'strike','contracts','iv','rate','expiryDate','projDate','manualPrice']
- .forEach(id => el(id).addEventListener('input', recalc));
+'strike','contracts','iv','rate','expiryDate','projDate','manualPrice']
+.forEach(id => el(id).addEventListener('input', recalc));
 
 // quick scenarios
 document.querySelectorAll('.toggle-row button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.toggle-row button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const s = btn.dataset.scenario;
-    const map = {'200k':200000, '500k':500000, '1m':1000000, bear:40000};
-
-    if (s === 'current') {
-      // "Current" means follow the live price, not a stale snapshot from page-load.
-      // Resume live tracking rather than treating this as a manual override.
-      window._userMovedBtcSlider = false;
-      const livePrice = window._lastKnownLivePrice || 63063; // fallback only if no live fetch has ever completed
-      el('btcPrice').value = Math.round(livePrice);
-      window._liveBtcExact = livePrice;
-    } else {
-      // Every other scenario is an explicit manual override — mark it so the
-      // next background price refresh doesn't silently snap it back to live.
-      window._userMovedBtcSlider = true;
-      window._liveBtcExact = null;
-      el('btcPrice').value = map[s];
-    }
-    el('lblBtc').textContent = '$' + Math.round(parseFloat(el('btcPrice').value)).toLocaleString('en-US');
-
-    el('manualPrice').value = '';
-    // IV and rate reset to sensible baseline assumptions on every scenario click.
-    el('iv').value = 84;
-    el('rate').value = 4.2;
-
-    if (s === 'current') {
-      // Show the cached live price immediately for instant feedback, then re-check
-      // and recompute mNAV once the fresh fetch actually resolves — chained, not
-      // fired independently, so mNAV is never computed against a stale cached
-      // BTC price while a fresher one is still in flight. Same pattern already
-      // used on page load and in the background polling interval.
-      // Also clear the manual-mNAV flag here — "Current" means fully live,
-      // so any earlier manual mNAV scenario shouldn't block the reset.
-      window._userMovedMnav = false;
-      fetchLiveBtcPrice().then(fetchLiveMnav);
-    } else {
-      // Other scenarios are hypothetical, so a clean baseline assumption makes
-      // sense — and mark it as user-controlled so a background live refresh
-      // doesn't silently overwrite this scenario's baseline a few minutes later.
-      window._userMovedMnav = true;
-      el('mnav').value = 1.05;
-    }
-    recalc();
-  });
+btn.addEventListener('click', ()=>{
+document.querySelectorAll('.toggle-row button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const s = btn.dataset.scenario;
+const map = {current:63063, '200k':200000, '500k':500000, '1m':1000000, bear:40000};
+el('btcPrice').value = map[s];
+el('manualPrice').value = '';
+el('mnav').value = 1.05;
+el('iv').value = 84;
+el('rate').value = 4.2;
+recalc();
+});
 });
 
 // live BTC price fetch -- tries three independent sources in order, and always
 // tells the visitor plainly whether it succeeded or is showing a manual default.
 function setPriceStatus(success, sourceName, exactPrice) {
-  const el2 = el('priceStatus');
-  if (success) {
-    const now = new Date();
-    const stamp = now.toISOString().slice(11,16) + ' UTC';
-    const priceStr = exactPrice ? '$' + Math.round(exactPrice).toLocaleString('en-US') + ' ' : '';
-    el2.textContent = priceStr + '● live (' + sourceName + ', ' + stamp + ')';
-    el2.style.color = 'var(--green)';
-  } else {
-    el2.textContent = '⚠ live price unavailable — showing manual default, verify before using';
-    el2.style.color = 'var(--red)';
-  }
+const el2 = el('priceStatus');
+if (success) {
+const now = new Date();
+const stamp = now.toISOString().slice(11,16) + ' UTC';
+const priceStr = exactPrice ? '$' + Math.round(exactPrice).toLocaleString('en-US') + ' ' : '';
+el2.textContent = priceStr + '● live (' + sourceName + ', ' + stamp + ')';
+el2.style.color = 'var(--green)';
+} else {
+el2.textContent = '⚠ live price unavailable — showing manual default, verify before using';
+el2.style.color = 'var(--red)';
+}
 }
 
 async function fetchLiveBtcPrice() {
-  const sources = [
-    {
-      name: 'CoinGecko',
-      url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
-      extract: d => d.bitcoin.usd
-    },
-    {
-      name: 'Coinbase',
-      url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
-      extract: d => parseFloat(d.data.amount)
-    },
-    {
-      name: 'Binance',
-      url: 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT',
-      extract: d => parseFloat(d.price)
-    }
-  ];
+const sources = [
+{
+name: 'CoinGecko',
+url: 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd',
+extract: d => d.bitcoin.usd
+},
+{
+name: 'Coinbase',
+url: 'https://api.coinbase.com/v2/prices/BTC-USD/spot',
+extract: d => parseFloat(d.data.amount)
+},
+{
+name: 'Binance',
+url: 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT',
+extract: d => parseFloat(d.price)
+}
+];
 
-  for (const source of sources) {
-    try {
-      const resp = await fetch(source.url);
-      if (!resp.ok) continue;
-      const data = await resp.json();
-      const price = source.extract(data);
-      if (price && !isNaN(price)) {
-        window._lastKnownLivePrice = price; // never cleared by manual overrides — always the freshest fetch
-        // Only reset slider if user hasn't manually moved it
-        if (!window._userMovedBtcSlider) {
-          el('btcPrice').value = Math.round(price);
-          window._liveBtcExact = price;
-          recalc();
-        } else {
-          // Still store exact price and update status/button — just don't touch the slider
-          window._liveBtcExact = price;
-        }
-        setPriceStatus(true, source.name, price);
-        const kLabel = '$' + Math.round(price).toLocaleString('en-US');
-        const btn = document.querySelector('[data-scenario="current"]');
-        if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
-        return;
-      }
-    } catch (err) {
-      // this source failed -- silently try the next one
-      continue;
-    }
-  }
-  // every source failed
-  setPriceStatus(false);
+for (const source of sources) {
+try {
+const resp = await fetch(source.url);
+if (!resp.ok) continue;
+const data = await resp.json();
+const price = source.extract(data);
+if (price && !isNaN(price)) {
+if (!window._userMovedBtcSlider) {
+el('btcPrice').value = Math.round(price);
+window._liveBtcExact = price;
+recalc();
+} else {
+window._liveBtcExact = price;
+}
+setPriceStatus(true, source.name, price);
+const kLabel = '$' + Math.round(price).toLocaleString('en-US');
+const btn = document.querySelector('[data-scenario="current"]');
+if (btn) btn.textContent = 'Current (' + kLabel + ' BTC)';
+return;
+}
+} catch (err) {
+continue;
+}
+}
+setPriceStatus(false);
 }
 
-// live mNAV: reads MSTR price from a live Netlify Function (fetchMstrPriceData
-// below), which proxies Finnhub directly with its own short server-side cache —
-// falls back to a GitHub-Action-refreshed static file only if that's unreachable.
+// Live mNAV comes from data/mstr-price-live.json, written every 5 min during
+// market hours by a GitHub Action (capture-mstr-live.yml). This is a real,
+// independently-captured snapshot — not recomputed from this page's own
+// continuously-live BTC price — so plugging it back into the derived-price
+// formula no longer reconstructs the actual price by construction. It'll be
+// close, but it won't be exact, and that inexactness is the honest result.
+window._userMovedMnavSlider = false;
 
-// ---------- mNAV close-time snapshot (captured server-side once/day, near market close) ----------
-async function fetchMnavCloseSnapshot() {
-  try {
-    const resp = await fetch('data/mnav-close-snapshot.json');
-    if (!resp.ok) throw new Error('bad response');
-    const data = await resp.json();
-    if (typeof data.mnav !== 'number' || !data.marketDate) throw new Error('malformed snapshot');
-    window._mnavCloseSnapshot = data;
-  } catch (err) {
-    window._mnavCloseSnapshot = null; // badge falls back to the generic "Previous close" text
-  }
+function setMnavStatus(success, stamp, liveDisplayMnav) {
+const el2 = el('mnavStatus');
+if (success) {
+const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : '';
+el2.textContent = ' ' + mnavStr + '● market mNAV, captured ' + stamp;
+el2.style.color = 'var(--green)';
+} else {
+el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
+el2.style.color = 'var(--red)';
 }
-
-function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
-  const el2 = el('mnavStatus');
-  if (success) {
-    const mkt = isMarketOpenNow();
-    const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : '';
-    const isStale = staleMinutes !== null && staleMinutes >= 45;
-    // Closed-market messages split into two visual lines: a bold fact (green,
-    // matches the rest of this badge) and a muted instructional line (gray,
-    // matches the site's existing .source-line style used elsewhere) — kept
-    // as two separate colors deliberately so the instruction never gets
-    // mistaken for another live value or a different severity level.
-    if (isStale) {
-      el2.innerHTML = ' ' + mnavStr + '⚠ data is ' + staleMinutes + ' min old (as of ' + stamp + ') — verify before using';
-    } else if (mkt) {
-      el2.innerHTML = ' ' + mnavStr + '● live (as of ' + stamp + ')';
-    } else {
-      const snap = window._mnavCloseSnapshot;
-      if (snap) {
-        el2.innerHTML = ' Close: ' + snap.mnav.toFixed(2) + '× (' + snap.marketDate + ')<br>' +
-          '<span style="color:var(--ink-dim);">Market closed · orange shows a live BTC-adjusted estimate</span>';
-      } else {
-        el2.innerHTML = ' ' + mnavStr + '● Previous close (as of ' + stamp + ')<br>' +
-          '<span style="color:var(--ink-dim);">Market closed · Use slider to estimate after-hours mNAV</span>';
-      }
-    }
-    el2.style.color = isStale ? 'var(--red)' : 'var(--green)';
-  } else {
-    el2.textContent = '⚠ live mNAV unavailable -- showing manual default, verify before using';
-    el2.style.color = 'var(--red)';
-  }
-}
-
-// ---------- MSTR price: live Netlify Function first, static file as fallback ----------
-// The live function proxies Finnhub directly (5-minute shared cache), so it has
-// no cron-reliability problem at all — every call gets a genuinely current
-// price. The static file (data/mstr-price.json, refreshed by a GitHub Action)
-// only gets used if the live function itself is unreachable, in which case the
-// existing staleness detection still applies since that path can lag.
-async function fetchMstrPriceData() {
-  try {
-    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
-    if (!resp.ok) throw new Error('bad response');
-    const data = await resp.json();
-    if (!data.price) throw new Error('no price');
-    return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
-  } catch (err) {
-    console.warn('Live MSTR price function unavailable, falling back to static snapshot:', err);
-  }
-
-  const resp = await fetch('data/mstr-price.json');
-  if (!resp.ok) throw new Error('bad response');
-  const data = await resp.json();
-  if (!data.price) throw new Error('no price');
-  return { price: data.price, lastFetched: data.lastFetched, isLive: false };
 }
 
 async function fetchLiveMnav() {
-  try {
-    const data = await fetchMstrPriceData();
+try {
+const resp = await fetch('data/mstr-price-live.json');
+if (!resp.ok) throw new Error('bad response');
+const data = await resp.json();
+if (!data.mnav) throw new Error('no mnav');
 
-    // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
-    // are currently in the inputs (BTC price should already be live by this point).
-    const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
-    const btcHeld = parseFloat(el('btcHeld').value);
-    const sharesM = parseFloat(el('shares').value);
-    const debtB = parseFloat(el('debt').value);
-    const preferredB = parseFloat(el('preferred').value);
-    const usdReserveB = parseFloat(el('usdReserve').value);
-    const usdCashB = parseFloat(el('usdCash').value);
-
-    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
-    const liveMnav = data.price / netValuePerShare;
-
-    // Sanity check before applying — if fundamentals are still mid-load (a race
-    // condition with loadStrategyFundamentals()), netValuePerShare can briefly be
-    // near-zero or negative, which would otherwise silently clamp the mNAV slider
-    // to its minimum (0.5) rather than actually reflecting a real live value.
-    if (isFinite(liveMnav) && liveMnav >= 0.5 && liveMnav <= 5.0) {
-      // Only overwrite the slider if the user hasn't taken manual control of
-      // it — same principle as the BTC price slider. Still recalc() either
-      // way, so the rest of the page (and the status badge's live reference
-      // number) stays current even while a manual mNAV scenario is active.
-      if (!window._userMovedMnav) {
-        el('mnav').value = liveMnav.toFixed(2);
-      }
-      recalc();
-    } else {
-      console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
-    }
-
-    // Staleness only applies to the fallback path — the live function is fresh
-    // by construction (at most 5 minutes old due to its own internal cache),
-    // so there's nothing meaningful to warn about on that path.
-    const fetchedAt = data.lastFetched ? new Date(data.lastFetched) : null;
-    const stamp = fetchedAt ? fetchedAt.toISOString().slice(11,16) + ' UTC' : new Date().toISOString().slice(11,16) + ' UTC';
-    const staleMinutes = (data.isLive || !fetchedAt) ? null : Math.round((Date.now() - fetchedAt.getTime()) / 60000);
-    const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
-    setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
-
-    // Show the actual real-world MSTR price alongside the model's own output,
-    // so the comparison between "what the model says" and "what MSTR is really
-    // doing" is visible at a glance instead of something you have to take on faith.
-    const mktOpenNow = isMarketOpenNow();
-    const closeSnap = window._mnavCloseSnapshot;
-    // Green matches every other "genuinely live right now" indicator on the page
-    // (BTC price's own live badge, the mNAV badge when fresh) — this field earns
-    // that same color only while it's actually tracking live trades. Once the
-    // market's closed it's a settled historical fact, not something moving, so
-    // it reverts to plain white rather than implying it's still updating.
-    el('actualMstrPrice').style.color = mktOpenNow ? 'var(--green)' : 'var(--ink)';
-    if (mktOpenNow) {
-      el('actualMstrPrice').value = fmtUSD(data.price);
-      el('actualMstrPriceHint').textContent = 'Live (as of ' + stamp + ') — for comparison against the model\'s estimate.';
-    } else if (closeSnap) {
-      el('actualMstrPrice').value = fmtUSD(closeSnap.mstrClosePrice);
-      el('actualMstrPriceHint').textContent = 'Previous close (' + closeSnap.marketDate + ') — for comparison against the model\'s estimate.';
-    } else {
-      el('actualMstrPrice').value = fmtUSD(data.price);
-      el('actualMstrPriceHint').textContent = 'Previous close (as of ' + stamp + ') — for comparison against the model\'s estimate.';
-    }
-  } catch (err) {
-    setMnavStatus(false);
-  }
+if (!window._userMovedMnavSlider) {
+el('mnav').value = data.mnav.toFixed(2);
+recalc();
 }
 
+const stamp = new Date(data.capturedAt).toISOString().slice(11,16) + ' UTC';
+setMnavStatus(true, stamp, data.mnav.toFixed(2));
+} catch (err) {
+setMnavStatus(false);
+}
+}
 
 // Live risk-free rate — US 10-year Treasury yield, tries multiple sources.
-// ---------- Treasury rate: live Netlify Function first, static file as fallback ----------
-// Same pattern as MSTR price above. This one's even simpler — the underlying
-// source (yieldwatch.io) is a free, keyless public API, so there's no secret
-// key or Netlify environment variable dependency at all.
-async function fetchTreasuryRateData() {
-  try {
-    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
-    if (!resp.ok) throw new Error('bad response');
-    const data = await resp.json();
-    if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
-    return { rate: data.rate, date: data.date, isLive: true };
-  } catch (err) {
-    console.warn('Live treasury-rate function unavailable, falling back to static snapshot:', err);
-  }
-
-  const resp = await fetch('data/treasury-rate.json');
-  if (!resp.ok) throw new Error('bad response');
-  const data = await resp.json();
-  if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
-  return { rate: data.rate, date: data.date, isLive: false };
-}
-
 async function fetchLiveRate() {
-  const rateStatus = document.getElementById('rateStatus');
-
-  try {
-    const data = await fetchTreasuryRateData();
-
-    // Same principle as BTC price and mNAV: don't silently overwrite a value
-    // the user has manually dragged. Still update the status text either way
-    // so the live rate stays visible for reference even during a manual scenario.
-    if (!window._userMovedRate) {
-      el('rate').value = parseFloat(data.rate).toFixed(1);
-      el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
-    }
-    if (rateStatus) {
-      rateStatus.textContent = '● live (US Treasury, ' + data.date + ')';
-      rateStatus.style.color = 'var(--green)';
-    }
-    recalc();
-  } catch(e) {
-    if (rateStatus) {
-      rateStatus.textContent = '○ using default (4.2%)';
-      rateStatus.style.color = 'var(--ink-faint)';
-    }
-  }
+const rateStatus = document.getElementById('rateStatus');
+try {
+const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
+if (!resp.ok) throw new Error('bad response');
+const data = await resp.json();
+if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
+el('rate').value = parseFloat(data.rate).toFixed(1);
+el('lblRate').textContent = parseFloat(data.rate).toFixed(2) + '%';
+if (rateStatus) {
+rateStatus.textContent = '● live (US Treasury, ' + data.date + ')';
+rateStatus.style.color = 'var(--green)';
 }
-
-
+recalc();
+} catch(e) {
+if (rateStatus) {
+rateStatus.textContent = '○ using default (4.2%)';
+rateStatus.style.color = 'var(--ink-faint)';
+}
+}
+}
 
 // Show IV skew warning when strike or expiry differs from defaults
 function checkIvWarning() {
-  const strike = parseFloat(el('strike').value);
-  const expiry = el('expiryDate').value;
-  const warning = document.getElementById('ivSkewWarning');
-  if (!warning) return;
-  const changed = (strike !== 275 || expiry !== '2028-12-15');
-  warning.style.display = changed ? 'block' : 'none';
+const strike = parseFloat(el('strike').value);
+const expiry = el('expiryDate').value;
+const warning = document.getElementById('ivSkewWarning');
+if (!warning) return;
+const changed = (strike !== 275 || expiry !== '2028-12-15');
+warning.style.display = changed ? 'block' : 'none';
 }
 
 // IV Calibration — back-solves Black-Scholes to find implied volatility
 // from a real observed market price for the contract.
 function calibrateIV() {
-  const observed = parseFloat(document.getElementById('observedPrice').value);
-  const resultEl = document.getElementById('ivCalibResult');
-  const stampEl = document.getElementById('ivCalibStamp');
+const observed = parseFloat(document.getElementById('observedPrice').value);
+const resultEl = document.getElementById('ivCalibResult');
+const stampEl = document.getElementById('ivCalibStamp');
 
-  if (!observed || observed <= 0) {
-    resultEl.textContent = '⚠ Enter a valid observed price first.';
-    resultEl.style.color = 'var(--red)';
-    return;
-  }
-
-  // Get current model inputs — recompute the derived MSTR price the same way
-  // recalc() does, unless the user has entered a manual price override.
-  const manualOverride = el('manualPrice').value;
-  let useS;
-  if (manualOverride) {
-    useS = parseFloat(manualOverride);
-  } else {
-    const btcPriceForCalib = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
-    const btcHeldForCalib = parseFloat(el('btcHeld').value);
-    const sharesForCalib = parseFloat(el('shares').value);
-    const debtForCalib = parseFloat(el('debt').value);
-    const preferredForCalib = parseFloat(el('preferred').value);
-    const usdReserveForCalib = parseFloat(el('usdReserve').value);
-    const usdCashForCalib = parseFloat(el('usdCash').value);
-    const mnavForCalib = parseFloat(el('mnav').value);
-    const netValuePerShareForCalib = calcNetValuePerShare(btcHeldForCalib, btcPriceForCalib, debtForCalib, preferredForCalib, usdReserveForCalib, usdCashForCalib, sharesForCalib);
-    useS = netValuePerShareForCalib * mnavForCalib;
-  }
-
-  const K = parseFloat(el('strike').value);
-  const ratePct = parseFloat(el('rate').value);
-  const r = ratePct / 100;
-  const expiry = new Date(el('expiry').value);
-  const proj = new Date(el('projDate').value);
-  const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
-
-  if (!useS || !K || !T) {
-    resultEl.textContent = '⚠ Model inputs incomplete.';
-    resultEl.style.color = 'var(--red)';
-    return;
-  }
-
-  // Binary search for sigma that produces the observed price
-  let lo = 0.01, hi = 5.0, mid, bsPrice, iter = 0;
-  while (iter < 200) {
-    mid = (lo + hi) / 2;
-    bsPrice = blackScholesCall(useS, K, T, r, mid).price;
-    if (Math.abs(bsPrice - observed) < 0.001) break;
-    if (bsPrice < observed) lo = mid;
-    else hi = mid;
-    iter++;
-  }
-
-  const impliedIvPct = Math.round(mid * 100);
-
-  if (impliedIvPct < 20 || impliedIvPct > 300) {
-    resultEl.textContent = '⚠ Result out of range — check your inputs.';
-    resultEl.style.color = 'var(--red)';
-    return;
-  }
-
-  resultEl.innerHTML = 'Implied IV: <strong style="color:var(--orange);">' + impliedIvPct + '%</strong> &nbsp;';
-
-  // Add "Use this IV" button inline
-  const useBtn = document.createElement('button');
-  useBtn.textContent = 'Use this IV';
-  useBtn.style.cssText = 'background:var(--orange);color:#000;border:none;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;';
-  useBtn.onclick = function() {
-    el('iv').value = impliedIvPct;
-    el('lblIv').textContent = impliedIvPct + '%';
-    recalc();
-    resultEl.innerHTML += ' <span style="color:var(--green);">✓ applied</span>';
-  };
-  resultEl.appendChild(useBtn);
-  resultEl.style.color = 'var(--ink)';
-
-  const now = new Date();
-  stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
+if (!observed || observed <= 0) {
+resultEl.textContent = '⚠ Enter a valid observed price first.';
+resultEl.style.color = 'var(--red)';
+return;
 }
 
+const S = parseFloat(el('derivedPrice').value) || window._liveMstrPrice;
+const manualOverride = el('manualPrice').value;
+const useS = manualOverride ? parseFloat(manualOverride) : (window._liveMstrPrice || parseFloat(el('btcPrice').value));
+const K = parseFloat(el('strike').value);
+const ratePct = parseFloat(el('rate').value);
+const r = ratePct / 100;
+const expiry = new Date(el('expiry').value);
+const proj = new Date(el('projDate').value);
+const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
+
+if (!useS || !K || !T) {
+resultEl.textContent = '⚠ Model inputs incomplete.';
+resultEl.style.color = 'var(--red)';
+return;
+}
+
+let lo = 0.01, hi = 5.0, mid, bsPrice, iter = 0;
+while (iter < 200) {
+mid = (lo + hi) / 2;
+bsPrice = blackScholesCall(useS, K, T, r, mid).price;
+if (Math.abs(bsPrice - observed) < 0.001) break;
+if (bsPrice < observed) lo = mid;
+else hi = mid;
+iter++;
+}
+
+const impliedIvPct = Math.round(mid * 100);
+
+if (impliedIvPct < 20 || impliedIvPct > 300) {
+resultEl.textContent = '⚠ Result out of range — check your inputs.';
+resultEl.style.color = 'var(--red)';
+return;
+}
+
+resultEl.innerHTML = 'Implied IV: <strong style="color:var(--orange);">' + impliedIvPct + '%</strong> &nbsp;';
+
+const useBtn = document.createElement('button');
+useBtn.textContent = 'Use this IV';
+useBtn.style.cssText = 'background:var(--orange);color:#000;border:none;border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;';
+useBtn.onclick = function() {
+el('iv').value = impliedIvPct;
+el('lblIv').textContent = impliedIvPct + '%';
+recalc();
+resultEl.innerHTML += ' <span style="color:var(--green);">✓ applied</span>';
+};
+resultEl.appendChild(useBtn);
+resultEl.style.color = 'var(--ink)';
+
+const now = new Date();
+stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
+}
 
 // Waitlist Modal
 function openWaitlistModal() {
-  const modal = document.getElementById('waitlistModal');
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+const modal = document.getElementById('waitlistModal');
+modal.style.display = 'flex';
+document.body.style.overflow = 'hidden';
 }
 
 function closeWaitlistModal() {
-  document.getElementById('waitlistModal').style.display = 'none';
-  document.body.style.overflow = '';
+document.getElementById('waitlistModal').style.display = 'none';
+document.body.style.overflow = '';
 }
 
-// Close on backdrop click
 document.addEventListener('DOMContentLoaded', function() {
-  var modal = document.getElementById('waitlistModal');
-  if (modal) modal.addEventListener('click', function(e) {
-    if (e.target === this) closeWaitlistModal();
-  });
+var modal = document.getElementById('waitlistModal');
+if (modal) modal.addEventListener('click', function(e) {
+if (e.target === this) closeWaitlistModal();
+});
 });
 
 async function submitWaitlist() {
-  const firstName = document.getElementById('waitlistFirstName').value.trim();
-  const email = document.getElementById('waitlistEmail').value.trim();
-  const msg = document.getElementById('waitlistMsg');
+const firstName = document.getElementById('waitlistFirstName').value.trim();
+const email = document.getElementById('waitlistEmail').value.trim();
+const msg = document.getElementById('waitlistMsg');
 
-  if (!email || !email.includes('@')) {
-    msg.textContent = 'Please enter a valid email address.';
-    msg.style.color = 'var(--red)';
-    return;
-  }
-
-  msg.textContent = 'Submitting...';
-  msg.style.color = 'var(--ink-dim)';
-
-  try {
-    const formData = new FormData();
-    formData.append('email_address', email);
-    if (firstName) formData.append('first_name', firstName);
-    formData.append('tags[]', 'ws-pro-waitlist');
-
-    const resp = await fetch('https://app.kit.com/forms/9832811/subscriptions', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json' },
-      body: formData
-    });
-
-    if (resp.ok || resp.status === 200 || resp.status === 201) {
-       document.getElementById("waitlistForm").innerHTML = `<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You are on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We will email you when WS Model Pro launches.</div></div>`;
-    } else {
-      throw new Error('submission failed');
-    }
-  } catch(e) {
-    msg.textContent = 'Something went wrong — try again or email hello@wisesatoshi.com';
-    msg.style.color = 'var(--red)';
-  }
+if (!email || !email.includes('@')) {
+msg.textContent = 'Please enter a valid email address.';
+msg.style.color = 'var(--red)';
+return;
 }
 
-// Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
+msg.textContent = 'Submitting...';
+msg.style.color = 'var(--ink-dim)';
+
+try {
+const formData = new FormData();
+formData.append('email_address', email);
+if (firstName) formData.append('first_name', firstName);
+formData.append('tags[]', 'ws-pro-waitlist');
+
+const resp = await fetch('https://app.kit.com/forms/9831141/subscriptions', {
+method: 'POST',
+headers: { 'Accept': 'application/json' },
+body: formData
+});
+
+if (resp.ok || resp.status === 200 || resp.status === 201) {
+document.getElementById("waitlistForm").innerHTML = `<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You are on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We will email you when WS Model Pro launches.</div></div>`;
+} else {
+throw new Error('submission failed');
+}
+} catch(e) {
+msg.textContent = 'Something went wrong — try again or email hello@wisesatoshi.com';
+msg.style.color = 'var(--red)';
+}
+}
+
+// Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve, USD cash)
 // from the JSON file the weekly update-form automation writes to. Falls back to the
 // hardcoded defaults above if the file is missing or the fetch fails.
 function loadStrategyFundamentals() {
-  function formatDate(iso) {
-    const d = new Date(iso + 'T00:00:00');
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-  }
+function formatDate(iso) {
+const d = new Date(iso + 'T00:00:00');
+const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
 
-  fetch('data/strategy-fundamentals.json')
-    .then(res => res.json())
-    .then(data => {
-      el('btcHeld').value = data.btcHeld;
-      el('shares').value = data.sharesOutstandingMillions;
-      el('debt').value = data.convertibleDebtBillions;
-      el('preferred').value = data.preferredStockBillions;
-      el('usdReserve').value = data.usdReserveBillions;
-      // Defensive: if this file hasn't been updated with the new field yet
-      // (e.g. index.html and the JSON get uploaded out of sync), keep the
-      // HTML's own default rather than setting the input to "undefined".
-      if (data.usdCashBillions !== undefined) el('usdCash').value = data.usdCashBillions;
+fetch('data/strategy-fundamentals.json')
+.then(res => res.json())
+.then(data => {
+el('btcHeld').value = data.btcHeld;
+el('shares').value = data.sharesOutstandingMillions;
+el('debt').value = data.convertibleDebtBillions;
+el('preferred').value = data.preferredStockBillions;
+el('usdReserve').value = data.usdReserveBillions;
+el('usdCash').value = data.usdCashBillions;
 
-      const sourceLine = el('sourceLine');
-      if (sourceLine) {
-        sourceLine.textContent =
-          `Defaults last updated: ${formatDate(data.lastUpdated)} · Source: Strategy SEC 8-K & Investor Briefing · Basic shares ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
-      }
+const sourceLine = el('sourceLine');
+if (sourceLine) {
+sourceLine.textContent =
+`DEFAULTS LAST UPDATED: ${formatDate(data.lastUpdated)} · SOURCE: STRATEGY SEC 8-K & INVESTOR BRIEFING · BASIC SHARES ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
+}
 
-      recalc();
-    })
-    .catch(err => {
-      console.warn('Could not load live fundamentals, keeping hardcoded defaults.', err);
-    });
+recalc();
+})
+.catch(err => {
+console.warn('Could not load live fundamentals, keeping hardcoded defaults.', err);
+});
 }
 
 // Run BTC price first, then mNAV (which depends on BTC price being current).
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
-fetchMnavCloseSnapshot(); // once per page load — the snapshot changes at most once per trading day
-
 recalc();
 
-// Auto-refresh: BTC every 60 seconds (external APIs, no Netlify cost either way).
+// Auto-refresh: BTC every 60 seconds, mNAV every 5 minutes.
 setInterval(() => {
-  fetchLiveBtcPrice();
+fetchLiveBtcPrice();
 }, 60 * 1000);
 
-// mNAV now reads MSTR price from a live Netlify Function (Finnhub proxy, 5-minute
-// server-side cache), with a GitHub-Action-refreshed static file as fallback only
-// if that's unreachable. Rate reads data/treasury-rate.json, refreshed every 6
-// hours since it barely moves intraday — a free static file, so client-side
-// polling can match freely. Both are paused while the tab is backgrounded, since
-// there's no reason to poll a tab nobody's watching.
-let mnavInterval, rateInterval, preciseRefreshInterval;
-// Precise refresh right at market open and close, on top of the regular 5-min
-// poll below. Uses a cheap local clock check every 30s (no network cost) rather
-// than pre-computing a distant future timestamp — simpler to get right, and
-// avoids the exact class of DST math bug this project has hit before.
-let _firedOpenRefreshToday = false;
-let _firedCloseRefreshToday = false;
-function checkPreciseRefreshTimes(){
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false, weekday: 'short'
-  }).formatToParts(new Date());
-  const weekday = parts.find(p => p.type === 'weekday').value;
-  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
-  if (weekday === 'Sat' || weekday === 'Sun') return;
+setInterval(() => {
+fetchLiveMnav();
+}, 5 * 60 * 1000);
 
-  if (hour === 0 && minute === 0) { _firedOpenRefreshToday = false; _firedCloseRefreshToday = false; }
+// Risk-free rate refreshes once per hour (Treasury data updates daily).
+setInterval(() => {
+fetchLiveRate();
+}, 60 * 60 * 1000);
 
-  if (hour === 9 && minute === 31 && !_firedOpenRefreshToday) {
-    _firedOpenRefreshToday = true;
-    fetchLiveBtcPrice().then(fetchLiveMnav);
-    fetchLiveRate();
-  }
-  if (hour === 16 && minute === 1 && !_firedCloseRefreshToday) {
-    _firedCloseRefreshToday = true;
-    fetchLiveBtcPrice().then(fetchLiveMnav);
-    fetchLiveRate();
-  }
-}
-
-function startDataPolling(){
-  // Market-hours-only: the underlying price can't move once the market's
-  // closed, so there's no reason to make the network call at all outside
-  // trading hours — not really about cost (negligible either way), just not
-  // doing pointless work.
-  mnavInterval = setInterval(() => { if (isMarketOpenNow()) fetchLiveMnav(); }, 5 * 60 * 1000);
-  rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
-  preciseRefreshInterval = setInterval(checkPreciseRefreshTimes, 30 * 1000);
-}
-function stopDataPolling(){
-  clearInterval(mnavInterval);
-  clearInterval(rateInterval);
-  clearInterval(preciseRefreshInterval);
-}
-startDataPolling();
-
-// Also refresh when user returns to the tab after being away — and pause/resume
-// polling based on whether the tab is actually visible.
+// Also refresh when user returns to the tab after being away.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    fetchLiveBtcPrice().then(fetchLiveMnav);
-    fetchLiveRate();
-    startDataPolling();
-  } else {
-    stopDataPolling();
-  }
+if (document.visibilityState === 'visible') {
+fetchLiveBtcPrice().then(fetchLiveMnav);
+fetchLiveRate();
+}
 });
 </script>
-
-
 <!-- Waitlist Modal -->
 <div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
-  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
-    <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
-    <div style="font-size:20px;margin-bottom:4px;text-align:center;">🚀&nbsp;&nbsp;WS Model Pro</div>
-    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
-    <div id="waitlistForm">
-      <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-      <input type="email" id="waitlistEmail" placeholder="Email address" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
-      <button onclick="submitWaitlist()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.03em;">Join the Waitlist</button>
-      <div id="waitlistMsg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--ink-dim);"></div>
-    </div>
-    <div style="font-size:10px;color:var(--ink-faint);margin-top:12px;text-align:center;">No spam. Unsubscribe anytime.</div>
-  </div>
+<div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
+<button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
+<div style="font-size:20px;margin-bottom:4px;">🔒 WS Model Pro</div>
+<div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
+<div id="waitlistForm">
+<input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+<input type="email" id="waitlistEmail" placeholder="Email address" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
+<button onclick="submitWaitlist()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.03em;">Join the Waitlist</button>
+<div id="waitlistMsg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--ink-dim);"></div>
+</div>
+<div style="font-size:10px;color:var(--ink-faint);margin-top:12px;text-align:center;">No spam. Unsubscribe anytime.</div>
+</div>
 </div>
 </body>
 </html>
