@@ -270,7 +270,7 @@
 
   <div class="panel">
     <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag any slider below to explore a scenario — Bitcoin price and mNAV both update the model live until you do.</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag a slider, or type into any field below, to explore a scenario — Bitcoin price, mNAV, and the six fundamentals below all update the model live until you do.</div>
 
     <div class="field">
       <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
@@ -311,6 +311,8 @@
         <div class="mnav-reset-row"><button type="button" class="return-live-btn" onclick="document.querySelector('[data-scenario=&quot;current&quot;]').click();">Return Bitcoin and mNAV to live values</button></div>
       </div>
     </div>
+
+    <div class="mnav-reset-row"><button type="button" class="return-live-btn" onclick="loadStrategyFundamentals();">Reset fundamentals to live values</button></div>
 
     <div class="source-line" id="sourceLine">Defaults last updated: Aug 14, 2026 · Source: Strategy SEC 8-K (Aug 10) &amp; Investor Briefing (Aug 13) · Basic shares ≈401M · BTC: 840,447</div>
 
