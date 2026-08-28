@@ -1,9 +1,9 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=79024
-TODAY_IN_BITCOIN=On August 27, 2015, Princeton University and Coursera launched the first free online course on Bitcoin. (BitcoinHistory.net)
-TREASURY_1=Strive's SATA preferred is "back in flywheel mode" — after returning to its $100 par value last week and reactivating its ATM issuance program, it's held at or a penny above par through three sessions this week, letting Strive buy an estimated 500+ additional Bitcoin. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/strive-sata-raised-enough-to-buy-an-estimated-500-bitcoin
-TREASURY_2=Dan Held, an early SpaceX backer, was confirmed to speak at the Bitcoin Treasuries Conference 2026. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/dan-held-confirmed-to-speak-at-bitcoin-treasuries-conference
+PREVIOUS_CLOSE=80250
+TODAY_IN_BITCOIN=
+TREASURY_1=Singapore-based Genius Group (GNS) announced a $1.2B five-year capital plan targeting $827M in Bitcoin and $800M in AI assets, aiming for $2B total assets by FY2031 — a restart after selling its entire prior BTC stack in Q1 to repay debt. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/singapore-based-genius-group-to-buy-dollar827-million-bitcoin
+TREASURY_2=Strive's SATA preferred has held at/above its $100 par all week, letting the company convert ATM proceeds into Bitcoin — an estimated 510+ BTC (~$40.35M) raised so far this week alone, already ahead of last week's comparable 2-day total. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/strive-sata-raised-enough-to-buy-an-estimated-500-bitcoin
 TREASURY_3=
 WEEK_AHEAD=
