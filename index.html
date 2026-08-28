@@ -716,7 +716,7 @@ async function fetchLiveBtcPrice() {
 // ---------- mNAV close-time snapshot (captured server-side once/day, near market close) ----------
 async function fetchMnavCloseSnapshot() {
   try {
-    const resp = await fetch('data/mnav-close-snapshot.json');
+    const resp = await fetch('data/mnav-close-snapshot.json?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (typeof data.mnav !== 'number' || !data.marketDate) throw new Error('malformed snapshot');
@@ -1094,7 +1094,7 @@ function loadStrategyFundamentals() {
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
-fetchMnavCloseSnapshot(); // once per page load — the snapshot changes at most once per trading day
+fetchMnavCloseSnapshot(); // also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
 
 recalc();
 
@@ -1109,7 +1109,7 @@ setInterval(() => {
 // hours since it barely moves intraday — a free static file, so client-side
 // polling can match freely. Both are paused while the tab is backgrounded, since
 // there's no reason to poll a tab nobody's watching.
-let mnavInterval, rateInterval, preciseRefreshInterval;
+let mnavInterval, rateInterval, preciseRefreshInterval, mnavCloseInterval;
 // Precise refresh right at market open and close, on top of the regular 5-min
 // poll below. Uses a cheap local clock check every 30s (no network cost) rather
 // than pre-computing a distant future timestamp — simpler to get right, and
@@ -1147,11 +1147,16 @@ function startDataPolling(){
   mnavInterval = setInterval(() => { if (isMarketOpenNow()) fetchLiveMnav(); }, 5 * 60 * 1000);
   rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
   preciseRefreshInterval = setInterval(checkPreciseRefreshTimes, 30 * 1000);
+  // Re-checks the close snapshot every 20 min so a stuck CDN/browser cache
+  // self-heals on its own — this file changes at most once per trading day,
+  // so the poll frequency here is about masking a caching bug, not freshness.
+  mnavCloseInterval = setInterval(fetchMnavCloseSnapshot, 20 * 60 * 1000);
 }
 function stopDataPolling(){
   clearInterval(mnavInterval);
   clearInterval(rateInterval);
   clearInterval(preciseRefreshInterval);
+  clearInterval(mnavCloseInterval);
 }
 startDataPolling();
 
