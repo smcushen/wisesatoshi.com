@@ -71,6 +71,25 @@ jobs:
               return netBtcPerShare * btcPrice;
             }
 
+            // Trading-day label uses the US Eastern calendar date, not UTC.
+            // Reason: this job is scheduled ~20 min after the 4:00 PM ET close,
+            // but can run hours late during a GitHub Actions incident (as
+            // happened Aug 26 — scheduled 12:20 PM, actually ran 3:22 PM). US
+            // Eastern doesn't roll into the next UTC calendar day until 8:00 PM
+            // ET, so a UTC-based date label only mislabels the trading day if
+            // the job runs more than ~4 hours late — not a hypothetical edge
+            // case for this repo, given the incident above. Eastern-calendar
+            // labeling pushes that buffer out to a full 24 hours instead.
+            function easternDateString(date) {
+              const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+              }).formatToParts(date);
+              const y = parts.find(p => p.type === 'year').value;
+              const m = parts.find(p => p.type === 'month').value;
+              const d = parts.find(p => p.type === 'day').value;
+              return `${y}-${m}-${d}`;
+            }
+
             const mstrPrice = parseFloat(process.env.MSTR_PRICE);
             const btcPrice = parseFloat(process.env.BTC_PRICE);
             const fundamentals = JSON.parse(fs.readFileSync('data/strategy-fundamentals.json', 'utf8'));
@@ -92,7 +111,7 @@ jobs:
               btcPriceAtClose: btcPrice,
               netValuePerShareAtClose: netValuePerShare,
               mnav: mnav,
-              marketDate: now.toISOString().slice(0, 10),
+              marketDate: easternDateString(now),
               capturedAt: now.toISOString()
             };
 
