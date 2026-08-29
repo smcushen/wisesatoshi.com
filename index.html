@@ -528,6 +528,13 @@
     </div>
   </div>
 
+  <div class="panel" id="upgradePanel" style="display:none;">
+    <div class="panel-title">Your Pro Trial Has Ended</div>
+    <p class="hint" style="margin-top:-8px;">Your 7-day trial ended on <span id="trialEndedDate"></span>. Subscribe to keep saving, loading, and comparing scenarios.</p>
+    <button type="button" onclick="startCheckout()" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Subscribe to WS Model Pro — $14.99/mo</button>
+    <div id="checkoutStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
+  </div>
+
   <div class="panel" id="about">
     <div class="panel-title">Methodology</div>
     <div class="methodology">
@@ -595,6 +602,7 @@ const SUPABASE_URL = 'https://oqtjogdgisbwsvgcmfos.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Sv9_EgWDNdgGb_R5s8W0lQ_XU32fk02';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 let currentUser = null;
+let currentProfile = null;
 
 // Supabase fires this specific event when it detects a password-recovery
 // session in the URL (the link from a "reset password" email) — catching it
@@ -675,25 +683,94 @@ async function authUpdatePassword() {
 async function signOutNav() {
   await supabaseClient.auth.signOut();
   currentUser = null;
+  currentProfile = null;
   el('navLoginLink').style.display = 'inline';
   el('navLoggedIn').style.display = 'none';
   el('proPanel').style.display = 'none';
   el('proQuickBar').style.display = 'none';
+  el('upgradePanel').style.display = 'none';
   el('positionWaitlistHint').style.display = 'block';
   el('ivWaitlistHint').style.display = 'block';
 }
 
-function onLoggedIn(user) {
+// Checks the server-side profile row (created automatically at signup by a
+// Postgres trigger, never written by the browser) to decide whether this
+// user still has trial or paid access. Fails safe: if the row can't be
+// loaded for any reason, access is denied rather than silently granted.
+async function onLoggedIn(user) {
   currentUser = user;
   el('navLoginLink').style.display = 'none';
   el('navLoggedIn').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
-  el('proPanel').style.display = 'block';
-  el('proQuickBar').style.display = 'block';
-  el('quickBarEmail').textContent = '— logged in as ' + user.email;
   el('positionWaitlistHint').style.display = 'none';
   el('ivWaitlistHint').style.display = 'none';
-  loadSavedPositions();
+
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('trial_ends_at, subscription_status')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !profile) {
+    console.warn('Could not load subscription status:', error);
+    showUpgradePrompt(null);
+    return;
+  }
+
+  currentProfile = profile;
+  const trialEndsAt = new Date(profile.trial_ends_at);
+  const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt;
+
+  if (hasAccess) {
+    el('proPanel').style.display = 'block';
+    el('proQuickBar').style.display = 'block';
+    el('upgradePanel').style.display = 'none';
+    const trialNote = profile.subscription_status === 'active'
+      ? ''
+      : ' (trial ends ' + trialEndsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ')';
+    el('quickBarEmail').textContent = '— logged in as ' + user.email + trialNote;
+    loadSavedPositions();
+  } else {
+    showUpgradePrompt(trialEndsAt);
+  }
+}
+
+function showUpgradePrompt(trialEndsAt) {
+  el('proPanel').style.display = 'none';
+  el('proQuickBar').style.display = 'none';
+  el('upgradePanel').style.display = 'block';
+  el('trialEndedDate').textContent = trialEndsAt
+    ? trialEndsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : 'recently';
+}
+
+// Calls a Supabase Edge Function (never Stripe directly from the browser --
+// the secret key that creates a Checkout Session can't safely live client-side)
+// which verifies the logged-in user server-side and returns a real Checkout
+// URL to redirect to.
+async function startCheckout() {
+  const statusEl = el('checkoutStatus');
+  statusEl.textContent = 'Redirecting to checkout...';
+  statusEl.style.color = 'var(--ink-dim)';
+
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) throw new Error('Please log in again.');
+
+    const resp = await fetch(SUPABASE_URL + '/functions/v1/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      }
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.url) throw new Error(data.error || 'Could not start checkout.');
+    window.location.href = data.url;
+  } catch (err) {
+    statusEl.textContent = err.message;
+    statusEl.style.color = 'var(--red)';
+  }
 }
 
 // Checked once on page load — if a session already exists (a returning,
