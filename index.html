@@ -136,6 +136,24 @@
   }
   .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
 
+  .quick-select{position:relative;}
+  .quick-select > button{
+    width:100%;text-align:left;background:var(--bg-panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    font-family:inherit;
+  }
+  .quick-select > button:hover{border-color:var(--orange-dim);}
+  .quick-select-caret{color:var(--ink-faint);font-size:12px;}
+  .quick-select-menu{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;
+    max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .quick-select-item{padding:10px 12px;font-size:14px;color:var(--ink);cursor:pointer;}
+  .quick-select-item:hover{background:rgba(247,147,26,0.12);}
+  .quick-select-empty{padding:10px 12px;font-size:13px;color:var(--ink-faint);}
+
 
   .toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .toggle-row button{
@@ -258,9 +276,13 @@
     <div class="panel-title">Pro <span id="quickBarEmail" style="font-size:12px;color:var(--ink-dim);text-transform:none;letter-spacing:normal;margin-left:8px;"></span></div>
     <div class="field" style="margin-bottom:0;">
       <label>Load a saved scenario</label>
-      <select id="quickLoadSelect" onchange="if(this.value){ loadSavedPosition(this.value); this.value=''; }" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;">
-        <option value="">— Select a saved scenario —</option>
-      </select>
+      <div class="quick-select" id="quickLoadWrap">
+        <button type="button" id="quickLoadButton" onclick="toggleQuickLoadMenu()">
+          <span>— Select a saved scenario —</span>
+          <span class="quick-select-caret">▾</span>
+        </button>
+        <div id="quickLoadMenu" class="quick-select-menu" style="display:none;"></div>
+      </div>
       <div class="hint">Loads the saved strike, expiry, BTC price, mNAV, IV, and rate into the fields below. <a href="#proPanel" style="color:var(--orange);text-decoration:none;">Manage saved scenarios ↓</a></div>
     </div>
   </div>
@@ -693,7 +715,7 @@ async function loadSavedPositions() {
     .order('created_at', { ascending: false });
 
   const list = el('savedPositionsList');
-  const quickSelect = el('quickLoadSelect');
+  const quickMenu = el('quickLoadMenu');
 
   if (error) {
     list.innerHTML = '<p class="hint">' + error.message + '</p>';
@@ -705,12 +727,13 @@ async function loadSavedPositions() {
   // reconstruct a scenario instantly, without a second network round trip.
   window._savedPositions = data;
 
-  if (quickSelect) {
-    quickSelect.innerHTML = '<option value="">— Select a saved scenario —</option>' +
-      data.map(c => {
-        const label = (c.notes ? c.notes + ' — ' : '') + '$' + c.strike + ' strike, exp ' + c.expiration_date;
-        return '<option value="' + c.id + '">' + label + '</option>';
-      }).join('');
+  if (quickMenu) {
+    quickMenu.innerHTML = data.length
+      ? data.map(c => {
+          const label = (c.notes ? c.notes + ' — ' : '') + '$' + c.strike + ' strike, exp ' + c.expiration_date;
+          return '<div class="quick-select-item" onclick="selectQuickLoad(\'' + c.id + '\')">' + label + '</div>';
+        }).join('')
+      : '<div class="quick-select-empty">No saved scenarios yet.</div>';
   }
 
   if (!data.length) {
@@ -731,6 +754,23 @@ async function loadSavedPositions() {
       '</div>';
   }).join('');
 }
+
+function toggleQuickLoadMenu() {
+  const menu = el('quickLoadMenu');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+function closeQuickLoadMenu() {
+  const menu = el('quickLoadMenu');
+  if (menu) menu.style.display = 'none';
+}
+function selectQuickLoad(id) {
+  closeQuickLoadMenu();
+  loadSavedPosition(id);
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('quickLoadWrap');
+  if (wrap && !wrap.contains(e.target)) closeQuickLoadMenu();
+});
 
 // Reconstructs a saved scenario back into the actual input fields and
 // recalculates — this is what "Save" was always missing a counterpart for.
