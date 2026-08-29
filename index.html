@@ -136,8 +136,24 @@
   }
   .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
 
-  .clear-btn::before{content:"( ";color:var(--orange);}
-  .clear-btn::after{content:" )";color:var(--orange);}
+  .list-tooltip{position:relative;}
+  .list-tooltip::after{
+    content:attr(data-tooltip);
+    position:absolute;bottom:100%;left:0;margin-bottom:6px;
+    background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);
+    padding:6px 10px;border-radius:6px;font-size:12px;white-space:normal;
+    max-width:320px;width:max-content;opacity:0;pointer-events:none;
+    transition:opacity 0.1s ease;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  }
+  .list-tooltip:hover::after{opacity:1;}
+
+  .clear-btn{position:relative;}
+  .clear-btn::before,.clear-btn::after{
+    content:"";position:absolute;top:-3px;bottom:-3px;width:3px;
+    background:var(--orange);border-radius:2px;
+  }
+  .clear-btn::before{left:-2px;}
+  .clear-btn::after{right:-2px;}
 
   .quick-select{position:relative;}
   .quick-select > button{
@@ -779,7 +795,7 @@ async function loadSavedPositions() {
     return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
       '<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
       '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0;">' +
-      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + label.replace(/"/g, '&quot;') + '">' + label + '</span>' +
+      '<span class="list-tooltip" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" data-tooltip="' + label.replace(/"/g, '&quot;') + '">' + label + '</span>' +
       '</span>' +
       '<span style="display:flex;gap:8px;flex-shrink:0;">' +
       '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
@@ -969,7 +985,7 @@ function renderComparisonTable(comparisons) {
   ];
 
   const metricColWidth = 190;
-  const scenarioColWidth = 170;
+  const scenarioColWidth = 145;
   const totalWidth = metricColWidth + comparisons.length * scenarioColWidth;
 
   let html = '<table style="width:' + totalWidth + 'px;table-layout:fixed;border-collapse:collapse;font-size:13px;">';
