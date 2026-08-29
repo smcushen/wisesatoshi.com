@@ -75,15 +75,19 @@ jobs:
               return;
             }
 
+            const bodyLines = [
+              'None of today\'s scheduled capture attempts in `capture-mnav-close.yml` succeeded — the live site is still showing the close from **' + existing + '**.',
+              '',
+              '**To fix now:** go to Actions -> Capture mNAV At Market Close -> Run workflow.',
+              '',
+              '**To investigate:** check the run history for today\'s four scheduled attempts (20:20, 20:35, 20:50, 21:00 UTC) and see whether they failed or never started -- the latter usually means githubstatus.com/history shows an Actions incident today.'
+            ];
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `⚠ mNAV close snapshot missing for ${today}`,
-              body: `None of today's scheduled capture attempts in \`capture-mnav-close.yml\` succeeded — the live site is still showing the close from **${existing}**.
-
-**To fix now:** go to Actions → Capture mNAV At Market Close → Run workflow.
-
-**To investigate:** check the run history for today's four scheduled attempts (20:20, 20:35, 20:50, 21:00 UTC) and see whether they failed or never started — the latter usually means [githubstatus.com](https://www.githubstatus.com/history) shows an Actions incident today.`,
+              title: '⚠ mNAV close snapshot missing for ' + today,
+              body: bodyLines.join('\n'),
               labels: ['bug', 'data-freshness']
             });
 
