@@ -139,26 +139,26 @@
   .list-tooltip{position:relative;}
   .list-tooltip::after{
     content:attr(data-tooltip);
-    position:absolute;bottom:100%;left:0;margin-bottom:6px;
+    position:absolute;top:100%;left:0;margin-top:6px;
     background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);
     padding:6px 10px;border-radius:6px;font-size:12px;white-space:normal;
     max-width:320px;width:max-content;opacity:0;pointer-events:none;
-    transition:opacity 0.1s ease;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    transition:opacity 0.15s ease 300ms;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.4);
   }
   .list-tooltip:hover::after{opacity:1;}
 
   .clear-btn{
     position:relative;
     background:none;
-    border:2px solid var(--orange);
+    border:1px solid var(--orange-dim);
     border-radius:6px;
   }
   .clear-btn::before,.clear-btn::after{
-    content:"";position:absolute;left:9px;right:9px;height:4px;
+    content:"";position:absolute;left:9px;right:9px;height:3px;
     background:var(--bg-panel);
   }
-  .clear-btn::before{top:-2px;}
-  .clear-btn::after{bottom:-2px;}
+  .clear-btn::before{top:-1px;}
+  .clear-btn::after{bottom:-1px;}
 
   .quick-select{position:relative;}
   .quick-select > button{
@@ -809,6 +809,18 @@ async function loadSavedPositions() {
       '</span>' +
       '</div>';
   }).join('');
+
+  // The ellipsis CSS truncates visually regardless of whether text actually
+  // overflows — but the tooltip should only exist where it's needed. Measured
+  // here, after render, since scrollWidth vs clientWidth only means anything
+  // once the real DOM layout exists.
+  list.querySelectorAll('.list-tooltip').forEach(wrapper => {
+    const inner = wrapper.querySelector('span');
+    if (!(inner && inner.scrollWidth > inner.clientWidth)) {
+      wrapper.classList.remove('list-tooltip');
+      wrapper.removeAttribute('data-tooltip');
+    }
+  });
 
   el('comparisonPanel').style.display = 'none';
   el('updateSelectedBtn').style.display = 'none';
