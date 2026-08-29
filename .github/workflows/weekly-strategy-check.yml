@@ -2,7 +2,7 @@ name: Weekly Strategy Fundamentals Check
 on:
   schedule:
     - cron: '0 4 * * 2'
-  workflow_dispatch:
+  workflow_dispatch:  # allows manual trigger anytime
 jobs:
   create-reminder:
     runs-on: ubuntu-latest
@@ -19,6 +19,23 @@ jobs:
             const fs = require('fs');
             const today = new Date().toISOString().slice(0, 10);
             const f = JSON.parse(fs.readFileSync('data/strategy-fundamentals.json', 'utf8'));
+
+            // Checks whether the hardcoded NYSE holiday lists in
+            // capture-mnav-close.yml still cover next year. Those lists need
+            // a human to extend them once a year — this just makes sure that
+            // never gets forgotten by piggybacking on a reminder that's
+            // already running weekly, rather than needing its own schedule.
+            const captureWorkflowPath = '.github/workflows/capture-mnav-close.yml';
+            const captureWorkflowText = fs.existsSync(captureWorkflowPath)
+              ? fs.readFileSync(captureWorkflowPath, 'utf8')
+              : '';
+            const nextYear = new Date().getFullYear() + 1;
+            const holidayListCoversNextYear = captureWorkflowText.includes(`HOLIDAYS_${nextYear}`);
+
+            const holidaySection = holidayListCoversNextYear ? '' : `
+            ### ⚠ Holiday list needs updating
+            - [ ] \`capture-mnav-close.yml\` and \`check-mnav-close-captured.yml\` don't yet have an \`HOLIDAYS_${nextYear}\` entry. Check [NYSE's published holiday calendar](https://www.nyse.com/markets/hours-calendars) (usually out ~13 months ahead) and add ${nextYear}'s dates to the \`HOLIDAYS_${nextYear}\` list in both files.
+            `;
 
             await github.rest.issues.create({
               owner: context.repo.owner,
@@ -40,7 +57,7 @@ jobs:
 
             ### Step 3 — Check latest SEC 8-K filing
             - [ ] **Convertible debt** (current: $${f.convertibleDebtBillions}B)
-
+            ${holidaySection}
             ### Update this week's numbers
             👉 If anything changed, ask Claude for this week's Strategy fundamentals JSON, then paste it directly into \`data/strategy-fundamentals.json\` on GitHub and commit.
 
