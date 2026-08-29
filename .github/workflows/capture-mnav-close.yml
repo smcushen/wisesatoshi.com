@@ -2,15 +2,30 @@ name: Capture mNAV At Market Close
 
 on:
   schedule:
-    # Once per weekday, ~20 min after NYSE close (4:00 PM ET = 20:00 UTC
-    # during EDT). Once Eastern time shifts to EST (~early Nov), this needs
-    # to move to '20 21 * * 1-5' to keep landing ~20 min after the real
-    # close — same DST pattern as the other scheduled workflows in this repo.
-    # A modest delay past the real close is harmless here: MSTR's closing
-    # price is fixed once the market shuts, so only the BTC price gets
-    # slightly less precise the later this actually runs.
+    # Four attempts spread across the post-close window, not just one. This
+    # week alone showed scheduled triggers can run anywhere from 19 minutes
+    # to ~8 hours late, or not fire at all — spreading attempts out gives
+    # GitHub's scheduler several independent chances to actually fire before
+    # the day is lost. The idempotency guard below (see "Skip if already
+    # captured" step) makes this safe: the first attempt that succeeds wins,
+    # and every later attempt that day becomes a no-op.
+    #
+    # Times are ~20/35/50/60 min after the 4:00 PM ET close, written in UTC
+    # while ET is UTC-4 (EDT). Once ET shifts to UTC-5 (EST, ~early Nov),
+    # shift all four to '20 21 * * 1-5', '35 21 * * 1-5', '50 21 * * 1-5',
+    # '0 22 * * 1-5' — same DST pattern as the other scheduled workflows in
+    # this repo.
     - cron: '20 20 * * 1-5'
+    - cron: '35 20 * * 1-5'
+    - cron: '50 20 * * 1-5'
+    - cron: '0 21 * * 1-5'
   workflow_dispatch:  # allows manual trigger anytime
+    inputs:
+      force:
+        description: 'Force re-capture even if today already has a snapshot'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,7 +37,25 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Skip if already captured for today
+        id: guard
+        run: |
+          TODAY_ET=$(TZ='America/New_York' date +%F)
+          if [ -f data/mnav-close-snapshot.json ]; then
+            EXISTING_DATE=$(jq -r '.marketDate // empty' data/mnav-close-snapshot.json)
+          else
+            EXISTING_DATE=""
+          fi
+
+          if [ "$EXISTING_DATE" == "$TODAY_ET" ] && [ "${{ github.event.inputs.force }}" != "true" ]; then
+            echo "Already have a snapshot dated $TODAY_ET — skipping this attempt."
+            echo "already_captured=true" >> "$GITHUB_ENV"
+          else
+            echo "already_captured=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Fetch MSTR closing price from Finnhub
+        if: env.already_captured != 'true'
         env:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: |
@@ -37,6 +70,7 @@ jobs:
           echo "MSTR_PRICE=$PRICE" >> "$GITHUB_ENV"
 
       - name: Fetch BTC price from CoinGecko
+        if: env.already_captured != 'true'
         run: |
           RESPONSE=$(curl -s "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
           BTC_PRICE=$(echo "$RESPONSE" | jq '.bitcoin.usd')
@@ -48,6 +82,7 @@ jobs:
           echo "BTC_PRICE=$BTC_PRICE" >> "$GITHUB_ENV"
 
       - name: Compute close-time mNAV and write snapshot
+        if: env.already_captured != 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -71,15 +106,10 @@ jobs:
               return netBtcPerShare * btcPrice;
             }
 
-            // Trading-day label uses the US Eastern calendar date, not UTC.
-            // Reason: this job is scheduled ~20 min after the 4:00 PM ET close,
-            // but can run hours late during a GitHub Actions incident (as
-            // happened Aug 26 — scheduled 12:20 PM, actually ran 3:22 PM). US
-            // Eastern doesn't roll into the next UTC calendar day until 8:00 PM
-            // ET, so a UTC-based date label only mislabels the trading day if
-            // the job runs more than ~4 hours late — not a hypothetical edge
-            // case for this repo, given the incident above. Eastern-calendar
-            // labeling pushes that buffer out to a full 24 hours instead.
+            // Trading-day label uses the US Eastern calendar date, not UTC —
+            // see the "Skip if already captured" step above for why this
+            // matters: it's the same date this workflow itself compares
+            // against to decide whether to skip.
             function easternDateString(date) {
               const parts = new Intl.DateTimeFormat('en-CA', {
                 timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
@@ -119,6 +149,7 @@ jobs:
             fs.writeFileSync('data/mnav-close-snapshot.json', JSON.stringify(snapshot, null, 2) + '\n');
 
       - name: Commit and push if changed
+        if: env.already_captured != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
