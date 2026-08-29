@@ -7,8 +7,8 @@ on:
     # to ~8 hours late, or not fire at all — spreading attempts out gives
     # GitHub's scheduler several independent chances to actually fire before
     # the day is lost. The idempotency guard below (see "Skip if already
-    # captured" step) makes this safe: the first attempt that succeeds wins,
-    # and every later attempt that day becomes a no-op.
+    # captured or market holiday" step) makes this safe: the first attempt
+    # that succeeds wins, and every later attempt that day becomes a no-op.
     #
     # Times are ~20/35/50/60 min after the 4:00 PM ET close, written in UTC
     # while ET is UTC-4 (EDT). Once ET shifts to UTC-5 (EST, ~early Nov),
@@ -37,10 +37,36 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Skip if already captured for today
+      - name: Skip if already captured or market holiday
         id: guard
         run: |
           TODAY_ET=$(TZ='America/New_York' date +%F)
+
+          # NYSE full-day closures. Confirmed directly against NYSE's own
+          # published holiday calendar, not estimated — the weekday cron
+          # alone (1-5) can't know about these, so a holiday Monday-Friday
+          # would otherwise still trigger this workflow and try to capture
+          # a "close" for a day nothing traded. Needs a fresh set of dates
+          # appended once a year — NYSE typically publishes ~13 months out,
+          # so check back whenever this list runs short.
+          HOLIDAYS_2026="2026-01-01 2026-01-19 2026-02-16 2026-04-03 2026-05-25 2026-06-19 2026-07-03 2026-09-07 2026-11-26 2026-12-25"
+          HOLIDAYS_2027="2027-01-01 2027-01-18 2027-02-15 2027-03-26 2027-05-31 2027-06-18 2027-07-05 2027-09-06 2027-11-25 2027-12-24"
+          HOLIDAYS="$HOLIDAYS_2026 $HOLIDAYS_2027"
+
+          IS_HOLIDAY="false"
+          for d in $HOLIDAYS; do
+            if [ "$d" == "$TODAY_ET" ]; then
+              IS_HOLIDAY="true"
+              break
+            fi
+          done
+
+          if [ "$IS_HOLIDAY" == "true" ]; then
+            echo "$TODAY_ET is an NYSE holiday — market didn't trade, skipping."
+            echo "already_captured=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
           if [ -f data/mnav-close-snapshot.json ]; then
             EXISTING_DATE=$(jq -r '.marketDate // empty' data/mnav-close-snapshot.json)
           else
@@ -107,9 +133,9 @@ jobs:
             }
 
             // Trading-day label uses the US Eastern calendar date, not UTC —
-            // see the "Skip if already captured" step above for why this
-            // matters: it's the same date this workflow itself compares
-            // against to decide whether to skip.
+            // see the "Skip if already captured or market holiday" step above
+            // for why this matters: it's the same date this workflow itself
+            // compares against to decide whether to skip.
             function easternDateString(date) {
               const parts = new Intl.DateTimeFormat('en-CA', {
                 timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
