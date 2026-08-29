@@ -1497,26 +1497,28 @@ async function fetchLiveMnav() {
 
 
 // Live risk-free rate — US 10-year Treasury yield, tries multiple sources.
-// ---------- Treasury rate: live Netlify Function first, static file as fallback ----------
-// Same pattern as MSTR price above. This one's even simpler — the underlying
-// source (yieldwatch.io) is a free, keyless public API, so there's no secret
-// key or Netlify environment variable dependency at all.
+// ---------- Treasury rate: static file first (direct from Treasury via GitHub Action), Netlify Function as last-resort fallback ----------
+// Flipped from Netlify-first once a GitHub Action (capture-treasury-rate.yml)
+// started fetching this directly from Treasury's own public feed, 4x/day,
+// completely bypassing Netlify — same migration MSTR price already went
+// through. The Netlify path is kept only as a safety net for the rare case
+// this file is somehow missing or stale.
 async function fetchTreasuryRateData() {
   try {
-    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
+    const resp = await fetch('data/treasury-rate.json');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
-    return { rate: data.rate, date: data.date, isLive: true };
+    return { rate: data.rate, date: data.date, isLive: false };
   } catch (err) {
-    console.warn('Live treasury-rate function unavailable, falling back to static snapshot:', err);
+    console.warn('Static treasury-rate snapshot unavailable, falling back to live function:', err);
   }
 
-  const resp = await fetch('data/treasury-rate.json');
+  const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/treasury-rate');
   if (!resp.ok) throw new Error('bad response');
   const data = await resp.json();
   if (!data.rate || isNaN(data.rate)) throw new Error('no rate');
-  return { rate: data.rate, date: data.date, isLive: false };
+  return { rate: data.rate, date: data.date, isLive: true };
 }
 
 async function fetchLiveRate() {
