@@ -317,6 +317,13 @@
     </div>
   </div>
 
+  <div class="panel" id="upgradePanel" style="display:none;">
+    <div class="panel-title">Your Pro Trial Has Ended</div>
+    <p class="hint" style="margin-top:-8px;">Your 7-day trial ended on <span id="trialEndedDate"></span>. Subscribe to keep saving, loading, and comparing scenarios.</p>
+    <button type="button" onclick="startCheckout()" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Subscribe to WS Model Pro — $14.99/mo</button>
+    <div id="checkoutStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
+  </div>
+
   <div class="fix-note">
     Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve, matching the company's own published capital-structure math.
   </div>
@@ -527,13 +534,6 @@
       <div id="comparisonTableWrap" style="overflow-x:auto;"></div>
       <div id="comparisonChartWrap" style="display:none;"></div>
     </div>
-  </div>
-
-  <div class="panel" id="upgradePanel" style="display:none;">
-    <div class="panel-title">Your Pro Trial Has Ended</div>
-    <p class="hint" style="margin-top:-8px;">Your 7-day trial ended on <span id="trialEndedDate"></span>. Subscribe to keep saving, loading, and comparing scenarios.</p>
-    <button type="button" onclick="startCheckout()" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Subscribe to WS Model Pro — $14.99/mo</button>
-    <div id="checkoutStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
   </div>
 
   <div class="panel" id="about">
