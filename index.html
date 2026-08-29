@@ -709,10 +709,13 @@ async function saveScenario() {
 }
 
 async function loadSavedPositions() {
+  // Sorted by strike then expiration, not creation order — makes the list
+  // scannable at a glance rather than jumbled by whenever each was saved.
   const { data, error } = await supabaseClient
     .from('saved_contracts')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('strike', { ascending: true })
+    .order('expiration_date', { ascending: true });
 
   const list = el('savedPositionsList');
   const quickMenu = el('quickLoadMenu');
@@ -723,14 +726,14 @@ async function loadSavedPositions() {
     return;
   }
 
-  // Kept in memory so both the top dropdown and the Load buttons below can
-  // reconstruct a scenario instantly, without a second network round trip.
+  // Kept in memory so both the top dropdown and the Load/Edit buttons below
+  // can act instantly, without a second network round trip.
   window._savedPositions = data;
 
   if (quickMenu) {
     quickMenu.innerHTML = data.length
       ? data.map(c => {
-          const label = (c.notes ? c.notes + ' — ' : '') + '$' + c.strike + ' strike, exp ' + c.expiration_date;
+          const label = '$' + c.strike + ' strike, exp ' + c.expiration_date + (c.notes ? ' — ' + c.notes : '');
           return '<div class="quick-select-item" onclick="selectQuickLoad(\'' + c.id + '\')">' + label + '</div>';
         }).join('')
       : '<div class="quick-select-empty">No saved scenarios yet.</div>';
@@ -742,17 +745,43 @@ async function loadSavedPositions() {
   }
   list.innerHTML = data.map(c => {
     const cd = c.contract_data || {};
-    const label = (c.notes ? c.notes + ' — ' : '') +
-      '$' + c.strike + ' strike, exp ' + c.expiration_date +
+    const label = '$' + c.strike + ' strike, exp ' + c.expiration_date +
+      (c.notes ? ' — ' + c.notes : '') +
       (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
-    return '<div style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
+    return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
       '<span>' + label + '</span>' +
       '<span style="display:flex;gap:8px;">' +
       '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
+      '<button onclick="startEditNote(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Edit</button>' +
       '<button onclick="deleteSavedPosition(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Delete</button>' +
       '</span>' +
       '</div>';
   }).join('');
+}
+
+// Swaps a saved-scenario row into an inline text field for editing its note,
+// in place — no separate modal, matching the site's other inline-edit
+// patterns (like the IV calibration panel) rather than a native prompt().
+function startEditNote(id) {
+  const row = (window._savedPositions || []).find(c => c.id === id);
+  const rowEl = document.getElementById('savedRow-' + id);
+  if (!row || !rowEl) return;
+  const safeValue = (row.notes || '').replace(/"/g, '&quot;');
+  rowEl.innerHTML =
+    '<input type="text" id="editNoteInput-' + id + '" value="' + safeValue + '" placeholder="Note" style="flex:1;min-width:140px;background:var(--bg-panel);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:8px 10px;font-size:14px;">' +
+    '<span style="display:flex;gap:8px;">' +
+    '<button onclick="saveEditedNote(\'' + id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Save</button>' +
+    '<button onclick="loadSavedPositions()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Cancel</button>' +
+    '</span>';
+  document.getElementById('editNoteInput-' + id).focus();
+}
+
+async function saveEditedNote(id) {
+  const input = document.getElementById('editNoteInput-' + id);
+  const newNote = input.value.trim();
+  const { error } = await supabaseClient.from('saved_contracts').update({ notes: newNote || null }).eq('id', id);
+  if (error) { alert(error.message); return; }
+  loadSavedPositions();
 }
 
 function toggleQuickLoadMenu() {
