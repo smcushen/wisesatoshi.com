@@ -845,14 +845,23 @@ function compareSelectedScenarios() {
 
   const liveBtcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
   const now = new Date();
+  const skipped = [];
 
   const comparisons = checked.map(id => {
     const c = (window._savedPositions || []).find(row => row.id === id);
     if (!c) return null;
     const cd = c.contract_data || {};
 
+    // Older test saves (from before saveScenario() captured the full
+    // snapshot) don't carry the fields a live recompute needs — skip those
+    // with an explanation rather than crashing on a missing value.
+    if (cd.mnav == null || cd.shares == null || cd.btcHeld == null) {
+      skipped.push(c.notes || ('$' + c.strike + ' strike, exp ' + c.expiration_date));
+      return null;
+    }
+
     const netValuePerShare = calcNetValuePerShare(
-      cd.btcHeld, liveBtcPrice, cd.debt, cd.preferred, cd.usdReserve, cd.usdCash || 0, cd.shares
+      cd.btcHeld, liveBtcPrice, cd.debt || 0, cd.preferred || 0, cd.usdReserve || 0, cd.usdCash || 0, cd.shares
     );
     const derivedPriceLive = netValuePerShare * cd.mnav;
     const T = Math.max((new Date(c.expiration_date) - now) / (1000 * 60 * 60 * 24 * 365), 0.0001);
@@ -879,6 +888,14 @@ function compareSelectedScenarios() {
     };
   }).filter(Boolean);
 
+  if (skipped.length) {
+    alert('Skipped (saved before full scenario data was captured, so there\'s not enough to recompute): ' + skipped.join(', '));
+  }
+  if (comparisons.length < 2) {
+    if (!skipped.length) alert('Select at least two saved scenarios to compare.');
+    return;
+  }
+
   window._comparisons = comparisons;
   renderComparisonTable(comparisons);
   renderComparisonChart(comparisons);
@@ -901,8 +918,8 @@ function renderComparisonTable(comparisons) {
     ['Strike', c => '$' + c.strike],
     ['Expiration', c => c.expiration],
     ['Days to expiry', c => c.daysToExpiry.toLocaleString('en-US')],
-    ['mNAV assumption', c => c.mnav.toFixed(2) + '×'],
-    ['IV assumption', c => c.iv + '%'],
+    ['mNAV assumption', c => (c.mnav || 0).toFixed(2) + '×'],
+    ['IV assumption', c => (c.iv || 0) + '%'],
     ['Derived MSTR price (live)', c => fmtUSD(c.derivedPriceLive)],
     ['Option price (live)', c => fmtUSD(c.price)],
     ['Delta', c => c.delta.toFixed(3)],
