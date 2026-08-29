@@ -55,6 +55,11 @@
     padding:12px 14px;margin-bottom:8px;font-size:14px;
   }
   .hint{font-size:13px;color:var(--ink-faint);margin-top:4px;}
+  .forgot-link{
+    display:inline-block;font-size:13px;color:var(--ink-dim);
+    text-decoration:underline;cursor:pointer;margin-top:12px;
+  }
+  .forgot-link:hover{color:var(--ink);}
 </style>
 </head>
 <body>
@@ -79,6 +84,9 @@
     <input type="password" id="password" placeholder="At least 6 characters">
     <button onclick="signUp()">Sign Up</button>
     <button class="secondary" onclick="signIn()">Log In</button>
+    <div>
+      <span class="forgot-link" onclick="forgotPassword()">Forgot password?</span>
+    </div>
     <div class="status" id="authStatus"></div>
   </div>
 
@@ -155,6 +163,26 @@
       return;
     }
     onLoggedIn(data.user);
+  }
+
+  async function forgotPassword() {
+    const email = el('email').value;
+    if (!email) {
+      setStatus('authStatus', 'Enter your email above first, then click "Forgot password?"', 'error');
+      return;
+    }
+    setStatus('authStatus', 'Sending reset link...', '');
+    // redirectTo matches signUp()'s emailRedirectTo for the same reason: without
+    // it, this falls back to Supabase's dashboard Site URL setting instead of
+    // reliably landing back on this page.
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://wisesatoshi.com/pro.html'
+    });
+    if (error) {
+      setStatus('authStatus', error.message, 'error');
+      return;
+    }
+    setStatus('authStatus', 'Check your email for a password reset link.', 'ok');
   }
 
   async function signOut() {
