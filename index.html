@@ -591,7 +591,7 @@ async function authSignUp() {
     options: { emailRedirectTo: 'https://wisesatoshi.com/' }
   });
   if (error) { setAuthStatus(error.message, 'error'); return; }
-  setAuthStatus('Account created. Check your email to confirm, then log in.', 'ok');
+  setAuthStatus('Account created. Check your email (including spam/junk) to confirm, then log in.', 'ok');
 }
 
 async function authSignIn() {
@@ -615,7 +615,7 @@ async function authForgotPassword() {
     redirectTo: 'https://wisesatoshi.com/'
   });
   if (error) { setAuthStatus(error.message, 'error'); return; }
-  setAuthStatus('Check your email for a password reset link.', 'ok');
+  setAuthStatus('Check your email (including spam/junk) for a password reset link.', 'ok');
 }
 
 async function authUpdatePassword() {
