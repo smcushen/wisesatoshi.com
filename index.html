@@ -230,6 +230,11 @@
     <a href="#about">about</a>
     <a href="learn.html">learn</a>
     <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+    <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;">log in</a>
+    <span id="navLoggedIn" style="display:none;">
+      <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;margin-left:28px;"></span>
+      <a href="#" onclick="signOutNav(); return false;">log out</a>
+    </span>
   </nav>
 </header>
 
@@ -429,6 +434,18 @@
     </div>
   </div>
 
+  <div class="panel" id="proPanel" style="display:none;">
+    <div class="panel-title">Your Saved Positions</div>
+    <p class="hint" style="margin-top:-8px;">Save the exact scenario currently set above — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Note (optional)</label>
+      <input type="text" id="scenarioNotes" placeholder="e.g. Bull case for December">
+    </div>
+    <button type="button" onclick="saveScenario()" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Save this scenario</button>
+    <div id="saveScenarioStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
+    <div id="savedPositionsList" style="margin-top:16px;"></div>
+  </div>
+
   <div class="panel" id="about">
     <div class="panel-title">Methodology</div>
     <div class="methodology">
@@ -451,6 +468,7 @@
   <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ---------- Normal CDF / PDF ----------
 function normPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
@@ -486,6 +504,202 @@ function blackScholesCall(S,K,T,r,sigma){
 const el = id => document.getElementById(id);
 const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
 const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
+
+// ---------- Supabase auth & saved positions (Pro) ----------
+// Publishable key — safe to be public, this is designed for client-side use
+// as long as Row Level Security is enabled on every table (it is, confirmed
+// working end to end against this same project via pro.html).
+const SUPABASE_URL = 'https://oqtjogdgisbwsvgcmfos.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Sv9_EgWDNdgGb_R5s8W0lQ_XU32fk02';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let currentUser = null;
+
+// Supabase fires this specific event when it detects a password-recovery
+// session in the URL (the link from a "reset password" email) — catching it
+// opens the same modal straight into the recovery view.
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    openAuthModal('recovery');
+  }
+});
+
+function openAuthModal(view) {
+  showAuthView(view || 'login');
+  el('authModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeAuthModal() {
+  el('authModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function showAuthView(view) {
+  el('authViewLogin').style.display = view === 'login' ? 'block' : 'none';
+  el('authViewRecovery').style.display = view === 'recovery' ? 'block' : 'none';
+}
+function setAuthStatus(message, type) {
+  const node = el('authStatus');
+  node.textContent = message;
+  node.style.color = type === 'error' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--ink-dim)';
+}
+
+async function authSignUp() {
+  const email = el('authEmail').value;
+  const password = el('authPassword').value;
+  setAuthStatus('Creating account...', '');
+  // emailRedirectTo sends the confirmation link back to the bare domain, since
+  // logging in happens right on this page now rather than a separate pro.html.
+  const { data, error } = await supabaseClient.auth.signUp({
+    email, password,
+    options: { emailRedirectTo: 'https://wisesatoshi.com/' }
+  });
+  if (error) { setAuthStatus(error.message, 'error'); return; }
+  setAuthStatus('Account created. Check your email to confirm, then log in.', 'ok');
+}
+
+async function authSignIn() {
+  const email = el('authEmail').value;
+  const password = el('authPassword').value;
+  setAuthStatus('Logging in...', '');
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) { setAuthStatus(error.message, 'error'); return; }
+  closeAuthModal();
+  onLoggedIn(data.user);
+}
+
+async function authForgotPassword() {
+  const email = el('authEmail').value;
+  if (!email) {
+    setAuthStatus('Enter your email above first, then click "Forgot password?"', 'error');
+    return;
+  }
+  setAuthStatus('Sending reset link...', '');
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://wisesatoshi.com/'
+  });
+  if (error) { setAuthStatus(error.message, 'error'); return; }
+  setAuthStatus('Check your email for a password reset link.', 'ok');
+}
+
+async function authUpdatePassword() {
+  const newPassword = el('authNewPassword').value;
+  setAuthStatus('Updating...', '');
+  const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+  if (error) { setAuthStatus(error.message, 'error'); return; }
+  setAuthStatus('Password updated.', 'ok');
+  closeAuthModal();
+  onLoggedIn(data.user);
+}
+
+async function signOutNav() {
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  el('navLoginLink').style.display = 'inline';
+  el('navLoggedIn').style.display = 'none';
+  el('proPanel').style.display = 'none';
+}
+
+function onLoggedIn(user) {
+  currentUser = user;
+  el('navLoginLink').style.display = 'none';
+  el('navLoggedIn').style.display = 'inline';
+  el('navUserEmail').textContent = user.email;
+  el('proPanel').style.display = 'block';
+  loadSavedPositions();
+}
+
+// Checked once on page load — if a session already exists (a returning,
+// still-logged-in visitor), the Pro panel appears immediately with no extra
+// click required, matching the "just go to wisesatoshi.com" flow.
+function checkExistingSession() {
+  supabaseClient.auth.getUser().then(({ data }) => {
+    if (data.user) onLoggedIn(data.user);
+  });
+}
+
+async function saveScenario() {
+  if (!currentUser) { openAuthModal(); return; }
+  const statusEl = el('saveScenarioStatus');
+  statusEl.textContent = 'Saving...';
+  statusEl.style.color = 'var(--ink-dim)';
+
+  const strike = parseFloat(el('strike').value);
+  const expirationDate = el('expiryDate').value;
+  const notes = el('scenarioNotes').value.trim();
+
+  // Snapshot every input the calculator currently has, plus its computed
+  // outputs — not just the strike/expiry columns — so a saved scenario
+  // reflects exactly what was on screen, not just what could be re-derived
+  // from strike/expiry alone.
+  const contractData = {
+    btcPrice: parseFloat(el('btcPrice').value),
+    btcHeld: parseFloat(el('btcHeld').value),
+    shares: parseFloat(el('shares').value),
+    debt: parseFloat(el('debt').value),
+    preferred: parseFloat(el('preferred').value),
+    usdReserve: parseFloat(el('usdReserve').value),
+    usdCash: parseFloat(el('usdCash').value),
+    mnav: parseFloat(el('mnav').value),
+    contracts: parseFloat(el('contracts').value),
+    iv: parseFloat(el('iv').value),
+    rate: parseFloat(el('rate').value),
+    projDate: el('projDate').value,
+    manualPrice: el('manualPrice').value || null,
+    derivedPrice: el('derivedPrice').value,
+    optionPrice: el('outOptionPrice').textContent,
+    totalPositionValue: el('outTotal').textContent
+  };
+
+  const { error } = await supabaseClient.from('saved_contracts').insert({
+    strike,
+    expiration_date: expirationDate,
+    notes: notes || null,
+    contract_data: contractData
+  });
+
+  if (error) {
+    statusEl.textContent = error.message;
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+
+  statusEl.textContent = 'Saved.';
+  statusEl.style.color = 'var(--green)';
+  el('scenarioNotes').value = '';
+  loadSavedPositions();
+}
+
+async function loadSavedPositions() {
+  const { data, error } = await supabaseClient
+    .from('saved_contracts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const list = el('savedPositionsList');
+  if (error) {
+    list.innerHTML = '<p class="hint">' + error.message + '</p>';
+    return;
+  }
+  if (!data.length) {
+    list.innerHTML = '<p class="hint">No saved scenarios yet.</p>';
+    return;
+  }
+  list.innerHTML = data.map(c => {
+    const cd = c.contract_data || {};
+    const label = (c.notes ? c.notes + ' — ' : '') +
+      '$' + c.strike + ' strike, exp ' + c.expiration_date +
+      (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
+    return '<div style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
+      '<span>' + label + '</span>' +
+      '<button onclick="deleteSavedPosition(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;">Delete</button>' +
+      '</div>';
+  }).join('');
+}
+
+async function deleteSavedPosition(id) {
+  const { error } = await supabaseClient.from('saved_contracts').delete().eq('id', id);
+  if (error) { alert(error.message); return; }
+  loadSavedPositions();
+}
 
 const projDateInput = el('projDate');
 const today = new Date();
@@ -1015,6 +1229,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (modal) modal.addEventListener('click', function(e) {
     if (e.target === this) closeWaitlistModal();
   });
+  var authModal = document.getElementById('authModal');
+  if (authModal) authModal.addEventListener('click', function(e) {
+    if (e.target === this) closeAuthModal();
+  });
 });
 
 async function submitWaitlist() {
@@ -1095,6 +1313,7 @@ fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
 fetchMnavCloseSnapshot(); // also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
+checkExistingSession(); // shows the Pro panel immediately if a session already exists
 
 recalc();
 
@@ -1187,6 +1406,38 @@ document.addEventListener('visibilitychange', () => {
       <div id="waitlistMsg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--ink-dim);"></div>
     </div>
     <div style="font-size:10px;color:var(--ink-faint);margin-top:12px;text-align:center;">No spam. Unsubscribe anytime.</div>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div id="authModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
+    <button onclick="closeAuthModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
+
+    <div id="authViewLogin">
+      <div style="font-size:20px;margin-bottom:4px;text-align:center;">🔑&nbsp;&nbsp;WS Model Pro</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">Log in or create an account to save scenarios.</div>
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Email</label>
+      <input type="email" id="authEmail" placeholder="you@example.com" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Password</label>
+      <input type="password" id="authPassword" placeholder="At least 6 characters" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button onclick="authSignIn()" style="flex:1;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Log In</button>
+        <button onclick="authSignUp()" style="flex:1;background:var(--bg-panel-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Sign Up</button>
+      </div>
+      <div style="text-align:center;">
+        <span onclick="authForgotPassword()" style="font-size:13px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">Forgot password?</span>
+      </div>
+      <div id="authStatus" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center;"></div>
+    </div>
+
+    <div id="authViewRecovery" style="display:none;">
+      <div style="font-size:20px;margin-bottom:4px;text-align:center;">🔑&nbsp;&nbsp;Reset Password</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">Set a new password for your account.</div>
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">New Password</label>
+      <input type="password" id="authNewPassword" placeholder="At least 6 characters" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <button onclick="authUpdatePassword()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Set New Password</button>
+    </div>
   </div>
 </div>
 </body>
