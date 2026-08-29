@@ -147,13 +147,18 @@
   }
   .list-tooltip:hover::after{opacity:1;}
 
-  .clear-btn{position:relative;border:1px solid var(--line);}
-  .clear-btn::before,.clear-btn::after{
-    content:"";position:absolute;top:-5px;bottom:-5px;width:11px;
-    border:2px solid var(--orange);border-radius:999px;background:transparent;
+  .clear-btn{
+    position:relative;
+    background:none;
+    border:2px solid var(--orange);
+    border-radius:6px;
   }
-  .clear-btn::before{left:-6px;}
-  .clear-btn::after{right:-6px;}
+  .clear-btn::before,.clear-btn::after{
+    content:"";position:absolute;left:9px;right:9px;height:4px;
+    background:var(--bg-panel);
+  }
+  .clear-btn::before{top:-2px;}
+  .clear-btn::after{bottom:-2px;}
 
   .quick-select{position:relative;}
   .quick-select > button{
@@ -795,7 +800,7 @@ async function loadSavedPositions() {
     return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
       '<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
       '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0;">' +
-      '<span class="list-tooltip" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" data-tooltip="' + label.replace(/"/g, '&quot;') + '">' + label + '</span>' +
+      '<span class="list-tooltip" style="flex:1;min-width:0;" data-tooltip="' + label.replace(/"/g, '&quot;') + '"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + label + '</span></span>' +
       '</span>' +
       '<span style="display:flex;gap:8px;flex-shrink:0;">' +
       '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
