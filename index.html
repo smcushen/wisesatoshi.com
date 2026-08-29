@@ -147,13 +147,12 @@
   }
   .list-tooltip:hover::after{opacity:1;}
 
-  .clear-btn{position:relative;}
-  .clear-btn::before,.clear-btn::after{
-    content:"";position:absolute;top:-3px;bottom:-3px;width:3px;
-    background:var(--orange);border-radius:2px;
+  .clear-btn{
+    border-top:1px solid transparent;
+    border-bottom:1px solid transparent;
+    border-left:1px solid var(--orange-dim);
+    border-right:1px solid var(--orange-dim);
   }
-  .clear-btn::before{left:-2px;}
-  .clear-btn::after{right:-2px;}
 
   .quick-select{position:relative;}
   .quick-select > button{
@@ -507,7 +506,7 @@
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
       <button type="button" onclick="compareSelectedScenarios()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Compare Selected</button>
       <button type="button" id="updateSelectedBtn" onclick="compareSelectedScenarios()" style="display:none;background:none;border:1px solid var(--orange-dim);color:var(--orange);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Update Selected</button>
-      <button type="button" id="clearSelectedBtn" class="clear-btn" onclick="clearComparisonSelection()" style="display:none;background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Clear Selected</button>
+      <button type="button" id="clearSelectedBtn" class="clear-btn" onclick="clearComparisonSelection()" style="display:none;background:none;border-radius:6px;padding:8px 14px;font-size:13px;color:var(--ink-dim);cursor:pointer;">Clear Selected</button>
     </div>
 
     <div id="comparisonPanel" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--line);">
@@ -984,7 +983,11 @@ function renderComparisonTable(comparisons) {
     ['Change since saved', c => c.pctChange !== null ? (c.pctChange >= 0 ? '+' : '') + c.pctChange.toFixed(1) + '%' : '—']
   ];
 
-  const metricColWidth = 190;
+  // Narrower on mobile specifically — the sticky Metric column eats into the
+  // same limited width the scrolling scenario columns need, so a few pixels
+  // saved here is a few more pixels of actual scenario data visible at once.
+  const isMobile = window.innerWidth <= 640;
+  const metricColWidth = isMobile ? 130 : 190;
   const scenarioColWidth = 145;
   const totalWidth = metricColWidth + comparisons.length * scenarioColWidth;
 
