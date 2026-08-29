@@ -25,6 +25,26 @@ jobs:
         id: check
         run: |
           TODAY_ET=$(TZ='America/New_York' date +%F)
+
+          # Same NYSE holiday list as capture-mnav-close.yml, kept in sync by
+          # hand — a holiday is correctly missing a snapshot, not a failure,
+          # so this workflow needs to know the same dates that one skips on.
+          # Needs a fresh set of dates appended once a year.
+          HOLIDAYS_2026="2026-01-01 2026-01-19 2026-02-16 2026-04-03 2026-05-25 2026-06-19 2026-07-03 2026-09-07 2026-11-26 2026-12-25"
+          HOLIDAYS_2027="2027-01-01 2027-01-18 2027-02-15 2027-03-26 2027-05-31 2027-06-18 2027-07-05 2027-09-06 2027-11-25 2027-12-24"
+          HOLIDAYS="$HOLIDAYS_2026 $HOLIDAYS_2027"
+
+          for d in $HOLIDAYS; do
+            if [ "$d" == "$TODAY_ET" ]; then
+              echo "$TODAY_ET is an NYSE holiday — no snapshot expected, skipping check."
+              echo "is_holiday=true" >> "$GITHUB_OUTPUT"
+              echo "today=$TODAY_ET" >> "$GITHUB_OUTPUT"
+              echo "existing=" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "is_holiday=false" >> "$GITHUB_OUTPUT"
+
           if [ -f data/mnav-close-snapshot.json ]; then
             EXISTING_DATE=$(jq -r '.marketDate // empty' data/mnav-close-snapshot.json)
           else
@@ -34,7 +54,7 @@ jobs:
           echo "existing=$EXISTING_DATE" >> "$GITHUB_OUTPUT"
 
       - name: File an issue if today's close is missing
-        if: steps.check.outputs.today != steps.check.outputs.existing
+        if: steps.check.outputs.is_holiday != 'true' && steps.check.outputs.today != steps.check.outputs.existing
         uses: actions/github-script@v7
         with:
           script: |
