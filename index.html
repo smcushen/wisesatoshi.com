@@ -485,6 +485,21 @@
       <button type="button" onclick="exportSavedPositionsCSV()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">⬇ Export CSV</button>
     </div>
     <div id="savedPositionsList" style="margin-top:12px;"></div>
+    <div style="margin-top:12px;">
+      <button type="button" onclick="compareSelectedScenarios()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Compare Selected</button>
+    </div>
+
+    <div id="comparisonPanel" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--line);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:13px;color:var(--ink-dim);max-width:60ch;">Compared at today's live BTC price — each scenario keeps its own saved strike, expiry, mNAV, and IV assumptions, updated for today's date and market.</div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button type="button" onclick="setComparisonView('table')" id="compareViewTableBtn" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Table</button>
+          <button type="button" onclick="setComparisonView('chart')" id="compareViewChartBtn" style="background:var(--bg-panel-2);color:var(--ink-dim);border:1px solid var(--line);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Chart</button>
+        </div>
+      </div>
+      <div id="comparisonTableWrap" style="overflow-x:auto;"></div>
+      <div id="comparisonChartWrap" style="display:none;"></div>
+    </div>
   </div>
 
   <div class="panel" id="about">
@@ -757,7 +772,10 @@ async function loadSavedPositions() {
       (c.notes ? ' — ' + c.notes : '') +
       (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
     return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
+      '<span style="display:flex;align-items:center;gap:10px;">' +
+      '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;">' +
       '<span>' + label + '</span>' +
+      '</span>' +
       '<span style="display:flex;gap:8px;">' +
       '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
       '<button onclick="startEditNote(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Edit</button>' +
@@ -765,6 +783,8 @@ async function loadSavedPositions() {
       '</span>' +
       '</div>';
   }).join('');
+
+  el('comparisonPanel').style.display = 'none';
 }
 
 // Swaps a saved-scenario row into an inline text field for editing its note,
@@ -808,6 +828,122 @@ document.addEventListener('click', function(e) {
   const wrap = document.getElementById('quickLoadWrap');
   if (wrap && !wrap.contains(e.target)) closeQuickLoadMenu();
 });
+
+// Recomputes selected saved scenarios against today's live BTC price and
+// today's date, while preserving each scenario's own saved strike, expiry,
+// mNAV, and IV assumptions — those were the deliberate "what if" being
+// tested, so only the market inputs that have genuinely moved get updated.
+// Any saved manual price override is intentionally ignored here, since the
+// whole point of "live" is letting the model respond to real conditions
+// rather than replaying a frozen number.
+function compareSelectedScenarios() {
+  const checked = Array.from(document.querySelectorAll('.compareCheckbox:checked')).map(cb => cb.value);
+  if (checked.length < 2) {
+    alert('Select at least two saved scenarios to compare.');
+    return;
+  }
+
+  const liveBtcPrice = window._liveBtcExact || parseFloat(el('btcPrice').value);
+  const now = new Date();
+
+  const comparisons = checked.map(id => {
+    const c = (window._savedPositions || []).find(row => row.id === id);
+    if (!c) return null;
+    const cd = c.contract_data || {};
+
+    const netValuePerShare = calcNetValuePerShare(
+      cd.btcHeld, liveBtcPrice, cd.debt, cd.preferred, cd.usdReserve, cd.usdCash || 0, cd.shares
+    );
+    const derivedPriceLive = netValuePerShare * cd.mnav;
+    const T = Math.max((new Date(c.expiration_date) - now) / (1000 * 60 * 60 * 24 * 365), 0.0001);
+    const r = (cd.rate || 0) / 100;
+    const sigma = (cd.iv || 0) / 100;
+    const { price, delta, gamma, vega, theta } = blackScholesCall(derivedPriceLive, c.strike, T, r, sigma);
+    const contracts = cd.contracts || 1;
+    const totalLive = price * 100 * contracts;
+
+    // The frozen value is stored as an already-formatted string (e.g. "$2,986")
+    // from save time — parsed back to a number just for the delta calculation.
+    const savedTotal = cd.totalPositionValue ? parseFloat(String(cd.totalPositionValue).replace(/[^0-9.-]/g, '')) : null;
+    const pctChange = savedTotal ? ((totalLive - savedTotal) / savedTotal * 100) : null;
+
+    return {
+      label: (c.notes ? c.notes : '$' + c.strike + ' strike') ,
+      strike: c.strike,
+      expiration: c.expiration_date,
+      daysToExpiry: Math.round(T * 365),
+      mnav: cd.mnav,
+      iv: cd.iv,
+      derivedPriceLive, price, delta, gamma, vega, theta, contracts, totalLive,
+      savedTotal, pctChange
+    };
+  }).filter(Boolean);
+
+  window._comparisons = comparisons;
+  renderComparisonTable(comparisons);
+  renderComparisonChart(comparisons);
+  setComparisonView('table');
+  el('comparisonPanel').style.display = 'block';
+  el('comparisonPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setComparisonView(view) {
+  el('comparisonTableWrap').style.display = view === 'table' ? 'block' : 'none';
+  el('comparisonChartWrap').style.display = view === 'chart' ? 'block' : 'none';
+  el('compareViewTableBtn').style.background = view === 'table' ? 'var(--orange)' : 'var(--bg-panel-2)';
+  el('compareViewTableBtn').style.color = view === 'table' ? '#12100c' : 'var(--ink-dim)';
+  el('compareViewChartBtn').style.background = view === 'chart' ? 'var(--orange)' : 'var(--bg-panel-2)';
+  el('compareViewChartBtn').style.color = view === 'chart' ? '#12100c' : 'var(--ink-dim)';
+}
+
+function renderComparisonTable(comparisons) {
+  const rows = [
+    ['Strike', c => '$' + c.strike],
+    ['Expiration', c => c.expiration],
+    ['Days to expiry', c => c.daysToExpiry.toLocaleString('en-US')],
+    ['mNAV assumption', c => c.mnav.toFixed(2) + '×'],
+    ['IV assumption', c => c.iv + '%'],
+    ['Derived MSTR price (live)', c => fmtUSD(c.derivedPriceLive)],
+    ['Option price (live)', c => fmtUSD(c.price)],
+    ['Delta', c => c.delta.toFixed(3)],
+    ['Theta', c => fmtUSD(c.theta)],
+    ['Vega', c => fmtUSD(c.vega)],
+    ['Gamma', c => c.gamma.toFixed(5)],
+    ['Contracts', c => c.contracts],
+    ['Total position value (live)', c => fmtUSD0(c.totalLive)],
+    ['Value when saved', c => c.savedTotal ? fmtUSD0(c.savedTotal) : '—'],
+    ['Change since saved', c => c.pctChange !== null ? (c.pctChange >= 0 ? '+' : '') + c.pctChange.toFixed(1) + '%' : '—']
+  ];
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+  html += '<thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-faint);font-weight:600;">Metric</th>';
+  comparisons.forEach(c => {
+    html += '<th style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:var(--ink);white-space:nowrap;">' + c.label + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  rows.forEach(([label, fn], i) => {
+    const isTotal = label === 'Total position value (live)';
+    html += '<tr style="' + (isTotal ? 'font-weight:600;' : '') + '">';
+    html += '<td style="padding:8px;border-bottom:1px solid var(--line);color:var(--ink-dim);">' + label + '</td>';
+    comparisons.forEach(c => {
+      html += '<td style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:' + (isTotal ? 'var(--orange)' : 'var(--ink)') + ';white-space:nowrap;">' + fn(c) + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el('comparisonTableWrap').innerHTML = html;
+}
+
+function renderComparisonChart(comparisons) {
+  const maxVal = Math.max(...comparisons.map(c => c.totalLive), 1);
+  el('comparisonChartWrap').innerHTML = comparisons.map(c => {
+    const pct = Math.max((c.totalLive / maxVal) * 100, 2);
+    return '<div style="margin-bottom:16px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="color:var(--ink-dim);">' + c.label + '</span><span style="color:var(--orange);font-weight:600;">' + fmtUSD0(c.totalLive) + '</span></div>' +
+      '<div style="background:var(--bg-panel);border-radius:4px;height:16px;overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:var(--orange);border-radius:4px;"></div></div>' +
+      '</div>';
+  }).join('');
+}
 
 // Reconstructs a saved scenario back into the actual input fields and
 // recalculates — this is what "Save" was always missing a counterpart for.
