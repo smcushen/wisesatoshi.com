@@ -847,25 +847,41 @@ function compareSelectedScenarios() {
   const now = new Date();
   const skipped = [];
 
+  // Fundamentals (BTC held, shares, debt, etc.) and the risk-free rate are
+  // facts about the company/market, not a deliberate "what if" — so every
+  // comparison uses TODAY's official numbers, not whatever happened to be
+  // true when each scenario was individually saved. Falls back to the
+  // scenario's own saved fundamentals only if the official data hasn't
+  // loaded yet (e.g. this ran before loadStrategyFundamentals() resolved).
+  const off = window._officialFundamentals;
+  const liveRate = window._liveRateValue;
+
   const comparisons = checked.map(id => {
     const c = (window._savedPositions || []).find(row => row.id === id);
     if (!c) return null;
     const cd = c.contract_data || {};
 
-    // Older test saves (from before saveScenario() captured the full
-    // snapshot) don't carry the fields a live recompute needs — skip those
-    // with an explanation rather than crashing on a missing value.
-    if (cd.mnav == null || cd.shares == null || cd.btcHeld == null) {
+    // The one thing that can't be substituted: the mNAV assumption itself is
+    // the deliberate hypothesis being tested. A scenario saved before that
+    // was captured (e.g. the old pro.html placeholder save) has nothing to
+    // compare — skip it with an explanation rather than crashing.
+    if (cd.mnav == null) {
       skipped.push(c.notes || ('$' + c.strike + ' strike, exp ' + c.expiration_date));
       return null;
     }
 
-    const netValuePerShare = calcNetValuePerShare(
-      cd.btcHeld, liveBtcPrice, cd.debt || 0, cd.preferred || 0, cd.usdReserve || 0, cd.usdCash || 0, cd.shares
-    );
+    const btcHeld = off ? off.btcHeld : cd.btcHeld;
+    const shares = off ? off.sharesOutstandingMillions : cd.shares;
+    const debt = off ? off.convertibleDebtBillions : (cd.debt || 0);
+    const preferred = off ? off.preferredStockBillions : (cd.preferred || 0);
+    const usdReserve = off ? off.usdReserveBillions : (cd.usdReserve || 0);
+    const usdCash = off ? (off.usdCashBillions || 0) : (cd.usdCash || 0);
+    const rate = liveRate != null ? liveRate : (cd.rate || 0);
+
+    const netValuePerShare = calcNetValuePerShare(btcHeld, liveBtcPrice, debt, preferred, usdReserve, usdCash, shares);
     const derivedPriceLive = netValuePerShare * cd.mnav;
     const T = Math.max((new Date(c.expiration_date) - now) / (1000 * 60 * 60 * 24 * 365), 0.0001);
-    const r = (cd.rate || 0) / 100;
+    const r = rate / 100;
     const sigma = (cd.iv || 0) / 100;
     const { price, delta, gamma, vega, theta } = blackScholesCall(derivedPriceLive, c.strike, T, r, sigma);
     const contracts = cd.contracts || 1;
@@ -889,7 +905,7 @@ function compareSelectedScenarios() {
   }).filter(Boolean);
 
   if (skipped.length) {
-    alert('Skipped (saved before full scenario data was captured, so there\'s not enough to recompute): ' + skipped.join(', '));
+    alert('Skipped (saved before the mNAV assumption was captured, so there\'s nothing to compare): ' + skipped.join(', '));
   }
   if (comparisons.length < 2) {
     if (!skipped.length) alert('Select at least two saved scenarios to compare.');
@@ -932,10 +948,11 @@ function renderComparisonTable(comparisons) {
     ['Change since saved', c => c.pctChange !== null ? (c.pctChange >= 0 ? '+' : '') + c.pctChange.toFixed(1) + '%' : '—']
   ];
 
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-  html += '<thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-faint);font-weight:600;">Metric</th>';
+  const colWidth = 'calc((100% - 190px) / ' + comparisons.length + ')';
+  let html = '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;">';
+  html += '<thead><tr><th style="width:190px;text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-faint);font-weight:600;">Metric</th>';
   comparisons.forEach(c => {
-    html += '<th style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:var(--ink);white-space:nowrap;">' + c.label + '</th>';
+    html += '<th style="width:' + colWidth + ';text-align:right;padding:8px;border-bottom:1px solid var(--line);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + c.label + '">' + c.label + '</th>';
   });
   html += '</tr></thead><tbody>';
   rows.forEach(([label, fn], i) => {
@@ -943,7 +960,7 @@ function renderComparisonTable(comparisons) {
     html += '<tr style="' + (isTotal ? 'font-weight:600;' : '') + '">';
     html += '<td style="padding:8px;border-bottom:1px solid var(--line);color:var(--ink-dim);">' + label + '</td>';
     comparisons.forEach(c => {
-      html += '<td style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:' + (isTotal ? 'var(--orange)' : 'var(--ink)') + ';white-space:nowrap;">' + fn(c) + '</td>';
+      html += '<td style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:' + (isTotal ? 'var(--orange)' : 'var(--ink)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + fn(c) + '</td>';
     });
     html += '</tr>';
   });
@@ -1444,6 +1461,7 @@ async function fetchLiveRate() {
 
   try {
     const data = await fetchTreasuryRateData();
+    window._liveRateValue = parseFloat(data.rate);
 
     // Same principle as BTC price and mNAV: don't silently overwrite a value
     // the user has manually dragged. Still update the status text either way
@@ -1635,6 +1653,12 @@ function loadStrategyFundamentals() {
   fetch('data/strategy-fundamentals.json')
     .then(res => res.json())
     .then(data => {
+      // Kept separately from the input fields themselves, since those can be
+      // deliberately overridden by "Explore a new scenario" at any moment —
+      // comparisons need the real, official numbers regardless of whatever
+      // hypothetical is currently sitting in the visible fields.
+      window._officialFundamentals = data;
+
       el('btcHeld').value = data.btcHeld;
       el('shares').value = data.sharesOutstandingMillions;
       el('debt').value = data.convertibleDebtBillions;
