@@ -254,6 +254,17 @@
 
 <main id="tool">
 
+  <div class="panel" id="proQuickBar" style="display:none;">
+    <div class="panel-title">Pro <span id="quickBarEmail" style="font-size:12px;color:var(--ink-dim);text-transform:none;letter-spacing:normal;margin-left:8px;"></span></div>
+    <div class="field" style="margin-bottom:0;">
+      <label>Load a saved scenario</label>
+      <select id="quickLoadSelect" onchange="if(this.value){ loadSavedPosition(this.value); this.value=''; }" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;">
+        <option value="">— Select a saved scenario —</option>
+      </select>
+      <div class="hint">Loads the saved strike, expiry, BTC price, mNAV, IV, and rate into the fields below. <a href="#proPanel" style="color:var(--orange);text-decoration:none;">Manage saved scenarios ↓</a></div>
+    </div>
+  </div>
+
   <div class="fix-note">
     Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve, matching the company's own published capital-structure math.
   </div>
@@ -596,6 +607,7 @@ async function signOutNav() {
   el('navLoginLink').style.display = 'inline';
   el('navLoggedIn').style.display = 'none';
   el('proPanel').style.display = 'none';
+  el('proQuickBar').style.display = 'none';
   el('positionWaitlistHint').style.display = 'block';
   el('ivWaitlistHint').style.display = 'block';
 }
@@ -606,6 +618,8 @@ function onLoggedIn(user) {
   el('navLoggedIn').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
   el('proPanel').style.display = 'block';
+  el('proQuickBar').style.display = 'block';
+  el('quickBarEmail').textContent = '— logged in as ' + user.email;
   el('positionWaitlistHint').style.display = 'none';
   el('ivWaitlistHint').style.display = 'none';
   loadSavedPositions();
@@ -679,10 +693,26 @@ async function loadSavedPositions() {
     .order('created_at', { ascending: false });
 
   const list = el('savedPositionsList');
+  const quickSelect = el('quickLoadSelect');
+
   if (error) {
     list.innerHTML = '<p class="hint">' + error.message + '</p>';
+    window._savedPositions = [];
     return;
   }
+
+  // Kept in memory so both the top dropdown and the Load buttons below can
+  // reconstruct a scenario instantly, without a second network round trip.
+  window._savedPositions = data;
+
+  if (quickSelect) {
+    quickSelect.innerHTML = '<option value="">— Select a saved scenario —</option>' +
+      data.map(c => {
+        const label = (c.notes ? c.notes + ' — ' : '') + '$' + c.strike + ' strike, exp ' + c.expiration_date;
+        return '<option value="' + c.id + '">' + label + '</option>';
+      }).join('');
+  }
+
   if (!data.length) {
     list.innerHTML = '<p class="hint">No saved scenarios yet.</p>';
     return;
@@ -692,11 +722,51 @@ async function loadSavedPositions() {
     const label = (c.notes ? c.notes + ' — ' : '') +
       '$' + c.strike + ' strike, exp ' + c.expiration_date +
       (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
-    return '<div style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
+    return '<div style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
       '<span>' + label + '</span>' +
-      '<button onclick="deleteSavedPosition(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;">Delete</button>' +
+      '<span style="display:flex;gap:8px;">' +
+      '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
+      '<button onclick="deleteSavedPosition(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Delete</button>' +
+      '</span>' +
       '</div>';
   }).join('');
+}
+
+// Reconstructs a saved scenario back into the actual input fields and
+// recalculates — this is what "Save" was always missing a counterpart for.
+// Treated the same way a Quick Scenario button is treated: a deliberate
+// historical snapshot, not a live value, so it won't get silently overwritten
+// by the next background BTC/mNAV poll a few minutes later.
+function loadSavedPosition(id) {
+  const row = (window._savedPositions || []).find(c => c.id === id);
+  if (!row) return;
+  const cd = row.contract_data || {};
+
+  window._userMovedBtcSlider = true;
+  window._liveBtcExact = null;
+  window._userMovedMnav = true;
+  document.querySelectorAll('.toggle-row button').forEach(b => b.classList.remove('active'));
+
+  el('strike').value = row.strike;
+  el('expiryDate').value = row.expiration_date;
+  if (cd.btcPrice != null) el('btcPrice').value = cd.btcPrice;
+  if (cd.btcHeld != null) el('btcHeld').value = cd.btcHeld;
+  if (cd.shares != null) el('shares').value = cd.shares;
+  if (cd.debt != null) el('debt').value = cd.debt;
+  if (cd.preferred != null) el('preferred').value = cd.preferred;
+  if (cd.usdReserve != null) el('usdReserve').value = cd.usdReserve;
+  if (cd.usdCash != null) el('usdCash').value = cd.usdCash;
+  if (cd.mnav != null) el('mnav').value = cd.mnav;
+  if (cd.contracts != null) el('contracts').value = cd.contracts;
+  if (cd.iv != null) el('iv').value = cd.iv;
+  if (cd.rate != null) el('rate').value = cd.rate;
+  if (cd.projDate) el('projDate').value = cd.projDate;
+  el('manualPrice').value = cd.manualPrice || '';
+
+  if (typeof checkIvWarning === 'function') checkIvWarning();
+  recalc();
+
+  el('tool').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function deleteSavedPosition(id) {
