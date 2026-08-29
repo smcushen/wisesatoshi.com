@@ -485,8 +485,10 @@
       <button type="button" onclick="exportSavedPositionsCSV()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">⬇ Export CSV</button>
     </div>
     <div id="savedPositionsList" style="margin-top:12px;"></div>
-    <div style="margin-top:12px;">
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
       <button type="button" onclick="compareSelectedScenarios()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Compare Selected</button>
+      <button type="button" id="updateSelectedBtn" onclick="compareSelectedScenarios()" style="display:none;background:none;border:1px solid var(--orange-dim);color:var(--orange);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Update Selected</button>
+      <button type="button" id="clearSelectedBtn" onclick="clearComparisonSelection()" style="display:none;background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">Clear Selected</button>
     </div>
 
     <div id="comparisonPanel" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--line);">
@@ -771,12 +773,12 @@ async function loadSavedPositions() {
     const label = '$' + c.strike + ' strike, exp ' + c.expiration_date +
       (c.notes ? ' — ' + c.notes : '') +
       (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
-    return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
-      '<span style="display:flex;align-items:center;gap:10px;">' +
-      '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;">' +
-      '<span>' + label + '</span>' +
+    return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
+      '<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
+      '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0;">' +
+      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + label.replace(/"/g, '&quot;') + '">' + label + '</span>' +
       '</span>' +
-      '<span style="display:flex;gap:8px;">' +
+      '<span style="display:flex;gap:8px;flex-shrink:0;">' +
       '<button onclick="loadSavedPosition(\'' + c.id + '\')" style="background:var(--orange);color:#12100c;border:none;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Load</button>' +
       '<button onclick="startEditNote(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Edit</button>' +
       '<button onclick="deleteSavedPosition(\'' + c.id + '\')" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;">Delete</button>' +
@@ -785,6 +787,8 @@ async function loadSavedPositions() {
   }).join('');
 
   el('comparisonPanel').style.display = 'none';
+  el('updateSelectedBtn').style.display = 'none';
+  el('clearSelectedBtn').style.display = 'none';
 }
 
 // Swaps a saved-scenario row into an inline text field for editing its note,
@@ -917,7 +921,20 @@ function compareSelectedScenarios() {
   renderComparisonChart(comparisons);
   setComparisonView('table');
   el('comparisonPanel').style.display = 'block';
+  el('updateSelectedBtn').style.display = 'inline-block';
+  el('clearSelectedBtn').style.display = 'inline-block';
   el('comparisonPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Unchecks everything and closes the comparison, rather than leaving a stale
+// comparison on screen after the person changes their mind about what
+// they're looking at.
+function clearComparisonSelection() {
+  document.querySelectorAll('.compareCheckbox').forEach(cb => cb.checked = false);
+  el('comparisonPanel').style.display = 'none';
+  el('updateSelectedBtn').style.display = 'none';
+  el('clearSelectedBtn').style.display = 'none';
+  window._comparisons = null;
 }
 
 function setComparisonView(view) {
@@ -948,19 +965,18 @@ function renderComparisonTable(comparisons) {
     ['Change since saved', c => c.pctChange !== null ? (c.pctChange >= 0 ? '+' : '') + c.pctChange.toFixed(1) + '%' : '—']
   ];
 
-  const colWidth = 'calc((100% - 190px) / ' + comparisons.length + ')';
-  let html = '<table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px;">';
-  html += '<thead><tr><th style="width:190px;text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-faint);font-weight:600;">Metric</th>';
+  let html = '<table style="width:100%;min-width:100%;border-collapse:collapse;font-size:13px;">';
+  html += '<thead><tr><th style="position:sticky;left:0;background:var(--bg-panel);min-width:190px;text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-faint);font-weight:600;vertical-align:top;">Metric</th>';
   comparisons.forEach(c => {
-    html += '<th style="width:' + colWidth + ';text-align:right;padding:8px;border-bottom:1px solid var(--line);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + c.label + '">' + c.label + '</th>';
+    html += '<th style="min-width:150px;text-align:right;padding:8px;border-bottom:1px solid var(--line);color:var(--ink);white-space:normal;word-wrap:break-word;vertical-align:top;">' + c.label + '</th>';
   });
   html += '</tr></thead><tbody>';
   rows.forEach(([label, fn], i) => {
     const isTotal = label === 'Total position value (live)';
     html += '<tr style="' + (isTotal ? 'font-weight:600;' : '') + '">';
-    html += '<td style="padding:8px;border-bottom:1px solid var(--line);color:var(--ink-dim);">' + label + '</td>';
+    html += '<td style="position:sticky;left:0;background:var(--bg-panel);min-width:190px;padding:8px;border-bottom:1px solid var(--line);color:var(--ink-dim);">' + label + '</td>';
     comparisons.forEach(c => {
-      html += '<td style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:' + (isTotal ? 'var(--orange)' : 'var(--ink)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + fn(c) + '</td>';
+      html += '<td style="text-align:right;padding:8px;border-bottom:1px solid var(--line);color:' + (isTotal ? 'var(--orange)' : 'var(--ink)') + ';white-space:nowrap;">' + fn(c) + '</td>';
     });
     html += '</tr>';
   });
