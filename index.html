@@ -481,7 +481,10 @@
     </div>
     <button type="button" onclick="saveScenario()" style="background:var(--orange);color:#12100c;border:none;border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Save this scenario</button>
     <div id="saveScenarioStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
-    <div id="savedPositionsList" style="margin-top:16px;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button type="button" onclick="exportSavedPositionsCSV()" style="background:none;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:8px 14px;font-size:13px;cursor:pointer;">⬇ Export CSV</button>
+    </div>
+    <div id="savedPositionsList" style="margin-top:12px;"></div>
   </div>
 
   <div class="panel" id="about">
@@ -847,6 +850,52 @@ async function deleteSavedPosition(id) {
   const { error } = await supabaseClient.from('saved_contracts').delete().eq('id', id);
   if (error) { alert(error.message); return; }
   loadSavedPositions();
+}
+
+// Exports every saved scenario as a CSV download — pulls from the same
+// in-memory list loadSavedPositions() already keeps around, so no extra
+// database round trip is needed just to export what's already on screen.
+function exportSavedPositionsCSV() {
+  const rows = window._savedPositions || [];
+  if (!rows.length) {
+    alert('No saved scenarios to export yet.');
+    return;
+  }
+
+  const headers = [
+    'Strike', 'Expiration Date', 'Note',
+    'BTC Price', 'BTC Held', 'Shares Outstanding (M)', 'Convertible Debt ($B)',
+    'Preferred Stock ($B)', 'USD Reserve ($B)', 'USD Cash ($B)', 'mNAV Multiple',
+    'Contracts', 'IV (%)', 'Risk-Free Rate (%)', 'Projection Date', 'Manual Price Override',
+    'Derived MSTR Price', 'Option Price', 'Total Position Value', 'Saved At'
+  ];
+
+  function csvEscape(value) {
+    const str = value === null || value === undefined ? '' : String(value);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }
+
+  const lines = [headers.map(csvEscape).join(',')];
+  rows.forEach(c => {
+    const cd = c.contract_data || {};
+    lines.push([
+      c.strike, c.expiration_date, c.notes || '',
+      cd.btcPrice, cd.btcHeld, cd.shares, cd.debt,
+      cd.preferred, cd.usdReserve, cd.usdCash, cd.mnav,
+      cd.contracts, cd.iv, cd.rate, cd.projDate, cd.manualPrice || '',
+      cd.derivedPrice, cd.optionPrice, cd.totalPositionValue, c.created_at
+    ].map(csvEscape).join(','));
+  });
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'ws-model-saved-scenarios-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 const projDateInput = el('projDate');
