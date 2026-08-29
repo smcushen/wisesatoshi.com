@@ -763,18 +763,15 @@ async function startCheckout() {
   statusEl.style.color = 'var(--ink-dim)';
 
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) throw new Error('Please log in again.');
-
-    const resp = await fetch(SUPABASE_URL + '/functions/v1/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + session.access_token
-      }
+    // functions.invoke() automatically attaches both the project's apikey
+    // header and the current session's Authorization bearer token — doing
+    // this by hand with a raw fetch() risks missing the apikey header,
+    // which the function's own gateway requires separately from the JWT.
+    const { data, error } = await supabaseClient.functions.invoke('create-checkout-session', {
+      method: 'POST'
     });
-    const data = await resp.json();
-    if (!resp.ok || !data.url) throw new Error(data.error || 'Could not start checkout.');
+    if (error) throw error;
+    if (!data || !data.url) throw new Error('Could not start checkout.');
     window.location.href = data.url;
   } catch (err) {
     statusEl.textContent = err.message;
