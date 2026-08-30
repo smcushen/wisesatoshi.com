@@ -1,0 +1,20 @@
+name: Expire Past-Due Grace Periods
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # every hour
+  workflow_dispatch: {}
+
+jobs:
+  expire-grace-periods:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Downgrade expired past_due accounts to canceled
+        run: |
+          curl -X PATCH \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?subscription_status=eq.past_due&grace_period_ends_at=lt.$(date -u +%Y-%m-%dT%H:%M:%S)" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d '{"subscription_status": "canceled"}'
