@@ -1,9 +1,9 @@
 # This file is updated automatically from GitHub Issue Form submissions.
 # You can still edit it directly here if you ever need to.
 
-PREVIOUS_CLOSE=77846
+PREVIOUS_CLOSE=78230
 TODAY_IN_BITCOIN=
-TREASURY_1=Strive is on pace to buy an estimated 2,700 BTC this week — breaking its own weekly record of 2,500 BTC — pushing holdings to roughly 24,050 and overtaking Bullish as the 5th-largest corporate Bitcoin holder. Confirmation lands in Monday's 8-K. (BitcoinTreasuries.net) https://bitcointreasuries.net/news/strive-poised-to-break-a-weekly-bitcoin-buying-record
+TREASURY_1=
 TREASURY_2=
 TREASURY_3=
-WEEK_AHEAD=
+WEEK_AHEAD=Strive's next SEC 8-K lands Monday, confirming this week's estimated ~2,700 BTC purchase — which would push holdings to roughly 24,050 and overtake Bullish as the 5th-largest corporate Bitcoin holder.
