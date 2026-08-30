@@ -708,7 +708,7 @@ async function onLoggedIn(user) {
 
   const { data: profile, error } = await supabaseClient
     .from('profiles')
-    .select('trial_ends_at, subscription_status')
+    .select('trial_ends_at, subscription_status, grace_period_ends_at')
     .eq('id', user.id)
     .single();
 
@@ -720,7 +720,9 @@ async function onLoggedIn(user) {
 
   currentProfile = profile;
   const trialEndsAt = new Date(profile.trial_ends_at);
-  const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt;
+  const graceEndsAt = profile.grace_period_ends_at ? new Date(profile.grace_period_ends_at) : null;
+  const inGracePeriod = profile.subscription_status === 'past_due' && graceEndsAt && new Date() < graceEndsAt;
+  const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt || inGracePeriod;
 
   if (hasAccess) {
     el('proPanel').style.display = 'block';
@@ -729,7 +731,13 @@ async function onLoggedIn(user) {
     el('quickBarEmail').textContent = '— logged in as ' + user.email;
 
     const banner = el('trialBanner');
-    if (profile.subscription_status === 'active') {
+    if (inGracePeriod) {
+      const hoursLeft = Math.max(1, Math.ceil((graceEndsAt - new Date()) / (1000 * 60 * 60)));
+      const hourWord = hoursLeft === 1 ? 'hour' : 'hours';
+      banner.innerHTML = '⚠️ Your last payment didn\'t go through — update your card within ' + hoursLeft + ' ' + hourWord +
+        ' to keep Pro access. <a href="#" onclick="startCheckout(); return false;" style="color:var(--orange);">Update payment method →</a>';
+      banner.style.display = 'block';
+    } else if (profile.subscription_status === 'active') {
       banner.style.display = 'none';
     } else {
       const daysLeft = Math.max(1, Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24)));
@@ -740,16 +748,27 @@ async function onLoggedIn(user) {
     }
     loadSavedPositions();
   } else {
-    showUpgradePrompt(trialEndsAt);
+    const wasGracePeriod = profile.subscription_status === 'past_due' || profile.subscription_status === 'canceled';
+    showUpgradePrompt(wasGracePeriod ? graceEndsAt : trialEndsAt, wasGracePeriod);
   }
 }
 
-function showUpgradePrompt(trialEndsAt) {
+function showUpgradePrompt(endedAt, wasPaymentFailure) {
   el('proPanel').style.display = 'none';
   el('proQuickBar').style.display = 'none';
   el('upgradePanel').style.display = 'block';
-  el('trialEndedDate').textContent = trialEndsAt
-    ? trialEndsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+  const titleEl = document.querySelector('#upgradePanel .panel-title');
+  const copyEl = document.querySelector('#upgradePanel .hint');
+  if (wasPaymentFailure) {
+    titleEl.textContent = 'Your Payment Didn\'t Go Through';
+    copyEl.innerHTML = 'We weren\'t able to charge your card, and your grace period ended on <span id="trialEndedDate"></span>. Update your payment method to restore access.';
+  } else {
+    titleEl.textContent = 'Your Pro Trial Has Ended';
+    copyEl.innerHTML = 'Your 7-day trial ended on <span id="trialEndedDate"></span>. Subscribe to keep saving, loading, and comparing scenarios.';
+  }
+  el('trialEndedDate').textContent = endedAt
+    ? endedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'recently';
 }
 
