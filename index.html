@@ -454,7 +454,7 @@
       <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
     </div>
     <div id="ivWaitlistHint" style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> IV auto-fetched for your specific contract from live options data — no manual lookup needed. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
+      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> Pick your strike and expiration from real, currently-listed MSTR contracts — no more typing them in blind. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
     </div>
   </div>
 
@@ -645,10 +645,6 @@ async function authSignUp() {
   });
   if (error) { setAuthStatus(error.message, 'error'); return; }
   setAuthStatus('Account created. Check your email (including spam/junk) to confirm, then log in.', 'ok');
-  // Fire-and-forget: tags the new signup in Kit as a trial start. Never
-  // awaited or checked, since a Kit hiccup should never affect the signup
-  // confirmation message the user is already seeing above.
-  supabaseClient.functions.invoke('tag-kit-signup', { body: { email } }).catch(() => {});
 }
 
 async function authSignIn() {
@@ -1943,7 +1939,7 @@ document.addEventListener('visibilitychange', () => {
   <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
     <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
     <div style="font-size:20px;margin-bottom:4px;text-align:center;">🚀&nbsp;&nbsp;WS Model Pro</div>
-    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with live IV, portfolio saving, and price alerts.</div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with a real strike/expiration selector, saved positions, and price alerts.</div>
     <div id="waitlistForm">
       <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
       <input type="email" id="waitlistEmail" placeholder="Email address" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
