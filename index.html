@@ -665,6 +665,13 @@ async function authSignIn() {
   onLoggedIn(data.user);
 }
 
+function handleAuthEnterKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    authSignIn();
+  }
+}
+
 async function authForgotPassword() {
   const email = el('authEmail').value;
   if (!email) {
@@ -2266,17 +2273,17 @@ document.addEventListener('visibilitychange', () => {
 
     <div id="authViewLogin">
       <div style="font-size:20px;margin-bottom:4px;text-align:center;">🔑&nbsp;&nbsp;WS Model Pro</div>
-      <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">Log in or create an account to save scenarios.</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">Log in to save, load, and compare your scenarios.</div>
       <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Email</label>
-      <input type="email" id="authEmail" placeholder="you@example.com" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <input type="email" id="authEmail" placeholder="you@example.com" onkeydown="handleAuthEnterKey(event)" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
       <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Password</label>
-      <input type="password" id="authPassword" placeholder="At least 6 characters" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button onclick="authSignIn()" style="flex:1;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Log In</button>
-        <button onclick="authSignUp()" style="flex:1;background:var(--bg-panel-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Sign Up</button>
-      </div>
-      <div style="text-align:center;">
+      <input type="password" id="authPassword" placeholder="At least 6 characters" onkeydown="handleAuthEnterKey(event)" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <button onclick="authSignIn()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">Log In</button>
+      <div style="text-align:center;margin-bottom:14px;">
         <span onclick="authForgotPassword()" style="font-size:13px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">Forgot password?</span>
+      </div>
+      <div style="border-top:1px solid var(--line);padding-top:14px;text-align:center;font-size:13px;color:var(--ink-dim);">
+        Not a Pro member yet? <span onclick="authSignUp()" style="color:var(--orange);text-decoration:underline;cursor:pointer;">Start your free 7-day trial</span>
       </div>
       <div id="authStatus" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center;"></div>
     </div>
