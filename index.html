@@ -644,6 +644,18 @@ function setAuthStatus(message, type) {
 async function authSignUp() {
   const email = el('authEmail').value;
   const password = el('authPassword').value;
+  // Supabase treats a signUp call with no email/password as an anonymous
+  // sign-in attempt, which is disabled on this project — without this check,
+  // clicking the trial link before filling in the fields surfaces that
+  // confusing internal error instead of a plain "fill this in first" message.
+  if (!email || !password) {
+    setAuthStatus('Enter an email and password above first.', 'error');
+    return;
+  }
+  if (password.length < 6) {
+    setAuthStatus('Password must be at least 6 characters.', 'error');
+    return;
+  }
   setAuthStatus('Creating account...', '');
   // emailRedirectTo sends the confirmation link back to the bare domain, since
   // logging in happens right on this page now rather than a separate pro.html.
