@@ -1335,7 +1335,8 @@ function renderExpiryMenu(data, selectedDate) {
   if (!menu) return;
   menu.innerHTML = data.expirations.map(exp => {
     const active = exp.date === selectedDate;
-    return '<div class="quick-select-item" onclick="selectExpiry(\'' + exp.date + '\')"' +
+    return '<div class="quick-select-item"' + (active ? ' data-selected="1"' : '') +
+      ' onclick="selectExpiry(\'' + exp.date + '\')"' +
       (active ? ' style="color:var(--orange);font-weight:600;"' : '') + '>' +
       (active ? '✓ ' : '') + formatExpiryLabel(exp.date) + '</div>';
   }).join('');
@@ -1345,24 +1346,37 @@ function renderStrikeMenu(strikes, selectedStrike) {
   if (!menu) return;
   menu.innerHTML = (strikes || []).map(s => {
     const active = s === selectedStrike;
-    return '<div class="quick-select-item" onclick="selectStrike(' + s + ')"' +
+    return '<div class="quick-select-item"' + (active ? ' data-selected="1"' : '') +
+      ' onclick="selectStrike(' + s + ')"' +
       (active ? ' style="color:var(--orange);font-weight:600;"' : '') + '>' +
       (active ? '✓ ' : '') + formatStrikeLabel(s) + '</div>';
   }).join('');
+}
+
+// Opens a quick-select menu scrolled to the currently selected item instead
+// of always starting at the top of the list — matters most for the strike
+// menu, which can run to 100+ items with the selection often nowhere near $5.
+function scrollSelectedIntoView(menu) {
+  const sel = menu.querySelector('[data-selected="1"]');
+  if (sel) sel.scrollIntoView({ block: 'center' });
 }
 
 function toggleExpiryMenu() {
   const menu = el('expiryPickerMenu');
   if (!menu) return;
   closeStrikeMenu();
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  const opening = menu.style.display !== 'block';
+  menu.style.display = opening ? 'block' : 'none';
+  if (opening) scrollSelectedIntoView(menu);
 }
 function closeExpiryMenu() { const m = el('expiryPickerMenu'); if (m) m.style.display = 'none'; }
 function toggleStrikeMenu() {
   const menu = el('strikePickerMenu');
   if (!menu) return;
   closeExpiryMenu();
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  const opening = menu.style.display !== 'block';
+  menu.style.display = opening ? 'block' : 'none';
+  if (opening) scrollSelectedIntoView(menu);
 }
 function closeStrikeMenu() { const m = el('strikePickerMenu'); if (m) m.style.display = 'none'; }
 
