@@ -335,18 +335,21 @@
         <label>Number of contracts <span class="val" id="lblContracts">10</span></label>
         <input type="range" id="contracts" min="1" max="200" value="10">
       </div>
-      <div class="field">
-        <label>Strike price ($)</label>
-        <input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
-      </div>
-      <div class="field">
+      <div class="field" id="expiryField">
         <label>Expiration date</label>
         <input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
+      </div>
+      <div class="field" id="strikeField">
+        <label>Strike price ($)</label>
+        <input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
       </div>
       <div class="field">
         <label>Projection date</label>
         <input type="date" id="projDate">
       </div>
+    </div>
+    <div class="hint" id="pickerToggleHint" style="display:none;">
+      <span id="optionSymbolDisplay" class="mono"></span>&nbsp;·&nbsp;<a href="#" id="manualToggleLink" onclick="toggleManualEntry(); return false;" style="color:var(--orange);text-decoration:none;">Don't see your exact strike? Enter it manually</a>
     </div>
     <div class="hint" id="positionWaitlistHint">Want to pick from live available strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openWaitlistModal(); return false;" style="color:var(--orange);text-decoration:none;">Join the Pro waitlist →</a></div>
   </div>
@@ -747,6 +750,7 @@ async function onLoggedIn(user) {
       banner.style.display = 'block';
     }
     loadSavedPositions();
+    enablePicker();
   } else {
     const wasGracePeriod = profile.subscription_status === 'past_due' || profile.subscription_status === 'canceled';
     showUpgradePrompt(wasGracePeriod ? graceEndsAt : trialEndsAt, wasGracePeriod);
@@ -1159,8 +1163,9 @@ function loadSavedPosition(id) {
   window._userMovedMnav = true;
   document.querySelectorAll('.toggle-row button').forEach(b => b.classList.remove('active'));
 
-  el('strike').value = row.strike;
-  el('expiryDate').value = row.expiration_date;
+  setPickerValue('strike', row.strike, false);
+  setPickerValue('expiryDate', row.expiration_date, true);
+  updateOptionSymbolDisplay();
   if (cd.btcPrice != null) el('btcPrice').value = cd.btcPrice;
   if (cd.btcHeld != null) el('btcHeld').value = cd.btcHeld;
   if (cd.shares != null) el('shares').value = cd.shares;
@@ -1270,6 +1275,183 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
   const netBtc = btcHeld - debtBtc - preferredBtc + reserveBtc + cashBtc;
   const netBtcPerShare = netBtc / shares;
   return netBtcPerShare * btcPrice;
+}
+
+// ---- Pro contract selector: expiration first, then strike ----
+// Loads the weekly/monthly-refreshed static chain file (no live data provider —
+// see project notes). Expiration drives which strikes are offered, since a
+// strike only makes sense in the context of a specific listed expiration.
+let _pickerMode = false;
+let _optionsChainData = null;
+
+function loadOptionsChain() {
+  return fetch('data/mstr-options-chain.json')
+    .then(res => res.json())
+    .then(data => { _optionsChainData = data; return data; })
+    .catch(err => {
+      console.warn('Could not load options chain data, leaving manual entry in place.', err);
+      return null;
+    });
+}
+
+function formatExpiryLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+// OCC/OSI symbol format: ROOT + YYMMDD + C/P + strike*1000 zero-padded to 8 digits.
+// Calls only, matching the site's long-calls-only scope.
+function buildOptionSymbol(strike, expiryIso) {
+  if (!strike || !expiryIso) return '';
+  const d = new Date(expiryIso + 'T00:00:00');
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const strikeCode = String(Math.round(strike * 1000)).padStart(8, '0');
+  return `MSTR${yy}${mm}${dd}C${strikeCode}`;
+}
+
+function updateOptionSymbolDisplay() {
+  const symEl = el('optionSymbolDisplay');
+  if (!symEl) return;
+  const strike = parseFloat(el('strike').value);
+  const expiry = el('expiryDate').value;
+  symEl.textContent = buildOptionSymbol(strike, expiry) || '';
+}
+
+// Sets a <select>'s value even if that value isn't currently one of its
+// listed options (e.g. a saved position references a strike that's since
+// rolled off the trimmed, activity-filtered chain file). Injects a clearly
+// marked one-off option rather than silently failing to select anything.
+function setPickerValue(fieldId, rawValue, isExpiry) {
+  const field = el(fieldId);
+  if (!field) return;
+  if (field.tagName !== 'SELECT') { field.value = rawValue; return; }
+
+  const match = Array.from(field.options).find(o => o.value === String(rawValue));
+  if (match) { field.value = rawValue; return; }
+
+  const opt = document.createElement('option');
+  opt.value = rawValue;
+  opt.textContent = isExpiry
+    ? formatExpiryLabel(rawValue) + ' (not currently listed)'
+    : '$' + Number(rawValue).toLocaleString('en-US') + ' (not currently listed)';
+  field.insertBefore(opt, field.firstChild);
+  field.value = rawValue;
+}
+
+function enablePicker() {
+  loadOptionsChain().then(data => {
+    if (!data || !data.expirations || !data.expirations.length) return;
+
+    const currentExpiry = el('expiryDate').value;
+    const currentStrike = parseFloat(el('strike').value);
+
+    // Expiration select
+    const expiryField = document.getElementById('expiryField');
+    const oldExpiry = document.getElementById('expiryDate');
+    const expirySelect = document.createElement('select');
+    expirySelect.id = 'expiryDate';
+    data.expirations.forEach(exp => {
+      const opt = document.createElement('option');
+      opt.value = exp.date;
+      opt.textContent = formatExpiryLabel(exp.date);
+      expirySelect.appendChild(opt);
+    });
+    expiryField.replaceChild(expirySelect, oldExpiry);
+
+    // Strike select — options depend on whichever expiration is selected
+    const strikeField = document.getElementById('strikeField');
+    const oldStrike = document.getElementById('strike');
+    const strikeSelect = document.createElement('select');
+    strikeSelect.id = 'strike';
+    strikeField.replaceChild(strikeSelect, oldStrike);
+
+    function populateStrikes(expiryDateVal, preferredStrike) {
+      const entry = data.expirations.find(e => e.date === expiryDateVal);
+      const strikes = entry ? entry.strikes : [];
+      strikeSelect.innerHTML = '';
+      strikes.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = '$' + s.toLocaleString('en-US');
+        strikeSelect.appendChild(opt);
+      });
+      if (strikes.length) {
+        if (strikes.includes(preferredStrike)) {
+          strikeSelect.value = preferredStrike;
+        } else {
+          // Land on the closest available strike rather than defaulting to
+          // the first one in the list, so switching expirations doesn't
+          // jump the user's position size around unexpectedly.
+          let closest = strikes[0], bestDiff = Math.abs(strikes[0] - preferredStrike);
+          strikes.forEach(s => {
+            const diff = Math.abs(s - preferredStrike);
+            if (diff < bestDiff) { bestDiff = diff; closest = s; }
+          });
+          strikeSelect.value = closest;
+        }
+      }
+    }
+
+    setPickerValue('expiryDate', currentExpiry, true);
+    populateStrikes(expirySelect.value, currentStrike);
+    _pickerMode = true;
+
+    expirySelect.addEventListener('change', () => {
+      populateStrikes(expirySelect.value, parseFloat(strikeSelect.value));
+      updateOptionSymbolDisplay();
+      checkIvWarning();
+      recalc();
+    });
+    strikeSelect.addEventListener('change', () => { updateOptionSymbolDisplay(); checkIvWarning(); recalc(); });
+
+    el('pickerToggleHint').style.display = 'block';
+    updateOptionSymbolDisplay();
+    recalc();
+  });
+}
+
+// Escape hatch for a real, held contract that got trimmed out of the
+// activity-filtered chain file, or any strike/expiry combo not currently
+// listed at all.
+function toggleManualEntry() {
+  _pickerMode = false;
+  const currentExpiry = el('expiryDate').value;
+  const currentStrike = el('strike').value;
+
+  const expiryField = document.getElementById('expiryField');
+  const manualExpiry = document.createElement('input');
+  manualExpiry.type = 'date';
+  manualExpiry.id = 'expiryDate';
+  manualExpiry.value = currentExpiry;
+  manualExpiry.setAttribute('onchange', 'checkIvWarning()');
+  expiryField.replaceChild(manualExpiry, document.getElementById('expiryDate'));
+
+  const strikeField = document.getElementById('strikeField');
+  const manualStrike = document.createElement('input');
+  manualStrike.type = 'number';
+  manualStrike.id = 'strike';
+  manualStrike.step = '5';
+  manualStrike.value = currentStrike;
+  manualStrike.setAttribute('oninput', 'checkIvWarning()');
+  strikeField.replaceChild(manualStrike, document.getElementById('strike'));
+
+  manualExpiry.addEventListener('input', () => { updateOptionSymbolDisplay(); recalc(); });
+  manualStrike.addEventListener('input', () => { updateOptionSymbolDisplay(); recalc(); });
+
+  const link = document.getElementById('manualToggleLink');
+  link.textContent = 'Switch back to picking from listed contracts';
+  link.onclick = function(e) {
+    e.preventDefault();
+    enablePicker();
+    link.textContent = "Don't see your exact strike? Enter it manually";
+    link.onclick = function(e2) { e2.preventDefault(); toggleManualEntry(); };
+  };
+
+  updateOptionSymbolDisplay();
+  recalc();
 }
 
 function recalc(){
