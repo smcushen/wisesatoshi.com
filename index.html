@@ -1278,9 +1278,13 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
 }
 
 // ---- Pro contract selector: expiration first, then strike ----
-// Loads the weekly/monthly-refreshed static chain file (no live data provider —
-// see project notes). Expiration drives which strikes are offered, since a
-// strike only makes sense in the context of a specific listed expiration.
+// Loads the monthly-refreshed, activity-trimmed static chain file (no live
+// data provider — see project notes). Expiration drives which strikes are
+// offered, since a strike only makes sense in the context of a specific
+// listed expiration. Built on the same custom quick-select dropdown already
+// used for "Load a saved scenario" above, rather than a native <select>,
+// since a native select's open menu can't be restyled to match the page's
+// dark theme across browsers — the closed box can, but not the popup list.
 let _pickerMode = false;
 let _optionsChainData = null;
 
@@ -1298,6 +1302,9 @@ function formatExpiryLabel(iso) {
   const d = new Date(iso + 'T00:00:00');
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+function formatStrikeLabel(s) {
+  return '$' + Number(s).toLocaleString('en-US');
 }
 
 // OCC/OSI symbol format: ROOT + YYMMDD + C/P + strike*1000 zero-padded to 8 digits.
@@ -1320,25 +1327,107 @@ function updateOptionSymbolDisplay() {
   symEl.textContent = buildOptionSymbol(strike, expiry) || '';
 }
 
-// Sets a <select>'s value even if that value isn't currently one of its
-// listed options (e.g. a saved position references a strike that's since
-// rolled off the trimmed, activity-filtered chain file). Injects a clearly
-// marked one-off option rather than silently failing to select anything.
+function renderExpiryMenu(data, selectedDate) {
+  const menu = el('expiryPickerMenu');
+  if (!menu) return;
+  menu.innerHTML = data.expirations.map(exp => {
+    const active = exp.date === selectedDate;
+    return '<div class="quick-select-item" onclick="selectExpiry(\'' + exp.date + '\')"' +
+      (active ? ' style="color:var(--orange);font-weight:600;"' : '') + '>' +
+      (active ? '✓ ' : '') + formatExpiryLabel(exp.date) + '</div>';
+  }).join('');
+}
+function renderStrikeMenu(strikes, selectedStrike) {
+  const menu = el('strikePickerMenu');
+  if (!menu) return;
+  menu.innerHTML = (strikes || []).map(s => {
+    const active = s === selectedStrike;
+    return '<div class="quick-select-item" onclick="selectStrike(' + s + ')"' +
+      (active ? ' style="color:var(--orange);font-weight:600;"' : '') + '>' +
+      (active ? '✓ ' : '') + formatStrikeLabel(s) + '</div>';
+  }).join('');
+}
+
+function toggleExpiryMenu() {
+  const menu = el('expiryPickerMenu');
+  if (!menu) return;
+  closeStrikeMenu();
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+function closeExpiryMenu() { const m = el('expiryPickerMenu'); if (m) m.style.display = 'none'; }
+function toggleStrikeMenu() {
+  const menu = el('strikePickerMenu');
+  if (!menu) return;
+  closeExpiryMenu();
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+function closeStrikeMenu() { const m = el('strikePickerMenu'); if (m) m.style.display = 'none'; }
+
+function selectExpiry(dateVal) {
+  closeExpiryMenu();
+  el('expiryDate').value = dateVal;
+  el('expiryPickerLabel').textContent = formatExpiryLabel(dateVal);
+
+  const entry = (_optionsChainData.expirations || []).find(e => e.date === dateVal);
+  const strikes = entry ? entry.strikes : [];
+  const currentStrike = parseFloat(el('strike').value);
+  let nextStrike = currentStrike;
+  // Land on the closest available strike rather than defaulting to the
+  // list's first entry, so switching expirations doesn't jump the user's
+  // position size around unexpectedly.
+  if (strikes.length && !strikes.includes(currentStrike)) {
+    let closest = strikes[0], bestDiff = Math.abs(strikes[0] - currentStrike);
+    strikes.forEach(s => { const diff = Math.abs(s - currentStrike); if (diff < bestDiff) { bestDiff = diff; closest = s; } });
+    nextStrike = closest;
+  }
+  el('strike').value = nextStrike;
+  el('strikePickerLabel').textContent = formatStrikeLabel(nextStrike);
+  renderStrikeMenu(strikes, nextStrike);
+
+  updateOptionSymbolDisplay();
+  checkIvWarning();
+  recalc();
+}
+function selectStrike(strikeVal) {
+  closeStrikeMenu();
+  el('strike').value = strikeVal;
+  el('strikePickerLabel').textContent = formatStrikeLabel(strikeVal);
+  const entry = (_optionsChainData.expirations || []).find(e => e.date === el('expiryDate').value);
+  renderStrikeMenu(entry ? entry.strikes : [], strikeVal);
+  updateOptionSymbolDisplay();
+  checkIvWarning();
+  recalc();
+}
+
+document.addEventListener('click', function(e) {
+  const expWrap = document.getElementById('expiryPickerWrap');
+  if (expWrap && !expWrap.contains(e.target)) closeExpiryMenu();
+  const strikeWrap = document.getElementById('strikePickerWrap');
+  if (strikeWrap && !strikeWrap.contains(e.target)) closeStrikeMenu();
+});
+
+// Sets the picker's underlying value even when that value isn't among the
+// currently loaded chain data (e.g. a saved position references a strike
+// that's since rolled off the trimmed, activity-filtered file). Labels it
+// clearly rather than silently failing to show anything.
 function setPickerValue(fieldId, rawValue, isExpiry) {
   const field = el(fieldId);
   if (!field) return;
-  if (field.tagName !== 'SELECT') { field.value = rawValue; return; }
-
-  const match = Array.from(field.options).find(o => o.value === String(rawValue));
-  if (match) { field.value = rawValue; return; }
-
-  const opt = document.createElement('option');
-  opt.value = rawValue;
-  opt.textContent = isExpiry
-    ? formatExpiryLabel(rawValue) + ' (not currently listed)'
-    : '$' + Number(rawValue).toLocaleString('en-US') + ' (not currently listed)';
-  field.insertBefore(opt, field.firstChild);
   field.value = rawValue;
+  if (!_pickerMode) return; // native manual-entry inputs — nothing else to sync
+
+  if (isExpiry) {
+    const listed = _optionsChainData && _optionsChainData.expirations.some(e => e.date === String(rawValue));
+    el('expiryPickerLabel').textContent = formatExpiryLabel(rawValue) + (listed ? '' : ' (not currently listed)');
+    if (_optionsChainData) renderExpiryMenu(_optionsChainData, rawValue);
+    const entry = _optionsChainData && _optionsChainData.expirations.find(e => e.date === String(rawValue));
+    renderStrikeMenu(entry ? entry.strikes : [], parseFloat(el('strike').value));
+  } else {
+    const entry = _optionsChainData && _optionsChainData.expirations.find(e => e.date === el('expiryDate').value);
+    const listed = entry && entry.strikes.includes(Number(rawValue));
+    el('strikePickerLabel').textContent = formatStrikeLabel(rawValue) + (listed ? '' : ' (not currently listed)');
+    renderStrikeMenu(entry ? entry.strikes : [], Number(rawValue));
+  }
 }
 
 function enablePicker() {
@@ -1348,98 +1437,67 @@ function enablePicker() {
     const currentExpiry = el('expiryDate').value;
     const currentStrike = parseFloat(el('strike').value);
 
-    // Expiration select
-    const expiryField = document.getElementById('expiryField');
-    const oldExpiry = document.getElementById('expiryDate');
-    const expirySelect = document.createElement('select');
-    expirySelect.id = 'expiryDate';
-    data.expirations.forEach(exp => {
-      const opt = document.createElement('option');
-      opt.value = exp.date;
-      opt.textContent = formatExpiryLabel(exp.date);
-      expirySelect.appendChild(opt);
-    });
-    expiryField.replaceChild(expirySelect, oldExpiry);
+    document.getElementById('expiryField').innerHTML =
+      '<label>Expiration date</label>' +
+      '<input type="hidden" id="expiryDate">' +
+      '<div class="quick-select" id="expiryPickerWrap">' +
+        '<button type="button" id="expiryPickerButton" onclick="toggleExpiryMenu()">' +
+          '<span id="expiryPickerLabel"></span><span class="quick-select-caret">▾</span>' +
+        '</button>' +
+        '<div id="expiryPickerMenu" class="quick-select-menu" style="display:none;"></div>' +
+      '</div>';
 
-    // Strike select — options depend on whichever expiration is selected
-    const strikeField = document.getElementById('strikeField');
-    const oldStrike = document.getElementById('strike');
-    const strikeSelect = document.createElement('select');
-    strikeSelect.id = 'strike';
-    strikeField.replaceChild(strikeSelect, oldStrike);
+    document.getElementById('strikeField').innerHTML =
+      '<label>Strike price ($)</label>' +
+      '<input type="hidden" id="strike">' +
+      '<div class="quick-select" id="strikePickerWrap">' +
+        '<button type="button" id="strikePickerButton" onclick="toggleStrikeMenu()">' +
+          '<span id="strikePickerLabel"></span><span class="quick-select-caret">▾</span>' +
+        '</button>' +
+        '<div id="strikePickerMenu" class="quick-select-menu" style="display:none;"></div>' +
+      '</div>';
 
-    function populateStrikes(expiryDateVal, preferredStrike) {
-      const entry = data.expirations.find(e => e.date === expiryDateVal);
-      const strikes = entry ? entry.strikes : [];
-      strikeSelect.innerHTML = '';
-      strikes.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = '$' + s.toLocaleString('en-US');
-        strikeSelect.appendChild(opt);
-      });
-      if (strikes.length) {
-        if (strikes.includes(preferredStrike)) {
-          strikeSelect.value = preferredStrike;
-        } else {
-          // Land on the closest available strike rather than defaulting to
-          // the first one in the list, so switching expirations doesn't
-          // jump the user's position size around unexpectedly.
-          let closest = strikes[0], bestDiff = Math.abs(strikes[0] - preferredStrike);
-          strikes.forEach(s => {
-            const diff = Math.abs(s - preferredStrike);
-            if (diff < bestDiff) { bestDiff = diff; closest = s; }
-          });
-          strikeSelect.value = closest;
-        }
-      }
-    }
-
-    setPickerValue('expiryDate', currentExpiry, true);
-    populateStrikes(expirySelect.value, currentStrike);
     _pickerMode = true;
 
-    expirySelect.addEventListener('change', () => {
-      populateStrikes(expirySelect.value, parseFloat(strikeSelect.value));
-      updateOptionSymbolDisplay();
-      checkIvWarning();
-      recalc();
-    });
-    strikeSelect.addEventListener('change', () => { updateOptionSymbolDisplay(); checkIvWarning(); recalc(); });
+    const matchExp = data.expirations.find(e => e.date === currentExpiry);
+    const resolvedExpiry = matchExp ? currentExpiry : data.expirations[0].date;
+    el('expiryDate').value = resolvedExpiry;
+    el('expiryPickerLabel').textContent = formatExpiryLabel(resolvedExpiry);
+    renderExpiryMenu(data, resolvedExpiry);
+
+    const entry = data.expirations.find(e => e.date === resolvedExpiry);
+    const strikes = entry ? entry.strikes : [];
+    let resolvedStrike = currentStrike;
+    if (strikes.length && !strikes.includes(currentStrike)) {
+      let closest = strikes[0], bestDiff = Math.abs(strikes[0] - currentStrike);
+      strikes.forEach(s => { const diff = Math.abs(s - currentStrike); if (diff < bestDiff) { bestDiff = diff; closest = s; } });
+      resolvedStrike = closest;
+    }
+    el('strike').value = resolvedStrike;
+    el('strikePickerLabel').textContent = formatStrikeLabel(resolvedStrike);
+    renderStrikeMenu(strikes, resolvedStrike);
 
     el('pickerToggleHint').style.display = 'block';
     updateOptionSymbolDisplay();
+    checkIvWarning();
     recalc();
   });
 }
 
 // Escape hatch for a real, held contract that got trimmed out of the
-// activity-filtered chain file, or any strike/expiry combo not currently
-// listed at all.
+// activity-filtered chain file, or any strike/expiry combo not listed at all.
 function toggleManualEntry() {
   _pickerMode = false;
   const currentExpiry = el('expiryDate').value;
   const currentStrike = el('strike').value;
 
-  const expiryField = document.getElementById('expiryField');
-  const manualExpiry = document.createElement('input');
-  manualExpiry.type = 'date';
-  manualExpiry.id = 'expiryDate';
-  manualExpiry.value = currentExpiry;
-  manualExpiry.setAttribute('onchange', 'checkIvWarning()');
-  expiryField.replaceChild(manualExpiry, document.getElementById('expiryDate'));
+  document.getElementById('expiryField').innerHTML =
+    '<label>Expiration date</label>' +
+    '<input type="date" id="expiryDate" value="' + currentExpiry + '" onchange="checkIvWarning(); updateOptionSymbolDisplay(); recalc();">';
 
-  const strikeField = document.getElementById('strikeField');
-  const manualStrike = document.createElement('input');
-  manualStrike.type = 'number';
-  manualStrike.id = 'strike';
-  manualStrike.step = '5';
-  manualStrike.value = currentStrike;
-  manualStrike.setAttribute('oninput', 'checkIvWarning()');
-  strikeField.replaceChild(manualStrike, document.getElementById('strike'));
-
-  manualExpiry.addEventListener('input', () => { updateOptionSymbolDisplay(); recalc(); });
-  manualStrike.addEventListener('input', () => { updateOptionSymbolDisplay(); recalc(); });
+  document.getElementById('strikeField').innerHTML =
+    '<label>Strike price ($)</label>' +
+    '<input type="number" id="strike" value="' + currentStrike + '" step="5" oninput="checkIvWarning(); updateOptionSymbolDisplay(); recalc();">';
 
   const link = document.getElementById('manualToggleLink');
   link.textContent = 'Switch back to picking from listed contracts';
