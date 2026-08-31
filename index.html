@@ -645,6 +645,10 @@ async function authSignUp() {
   });
   if (error) { setAuthStatus(error.message, 'error'); return; }
   setAuthStatus('Account created. Check your email (including spam/junk) to confirm, then log in.', 'ok');
+  // Fire-and-forget: tags the new signup in Kit as a trial start. Never
+  // awaited or checked, since a Kit hiccup should never affect the signup
+  // confirmation message the user is already seeing above.
+  supabaseClient.functions.invoke('tag-kit-signup', { body: { email } }).catch(() => {});
 }
 
 async function authSignIn() {
