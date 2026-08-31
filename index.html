@@ -633,6 +633,7 @@ function closeAuthModal() {
 }
 function showAuthView(view) {
   el('authViewLogin').style.display = view === 'login' ? 'block' : 'none';
+  el('authViewSignup').style.display = view === 'signup' ? 'block' : 'none';
   el('authViewRecovery').style.display = view === 'recovery' ? 'block' : 'none';
 }
 function setAuthStatus(message, type) {
@@ -641,30 +642,41 @@ function setAuthStatus(message, type) {
   node.style.color = type === 'error' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--ink-dim)';
 }
 
+function setSignupStatus(message, type) {
+  const node = el('signupStatus');
+  node.textContent = message;
+  node.style.color = type === 'error' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--ink-dim)';
+}
+
 async function authSignUp() {
-  const email = el('authEmail').value;
-  const password = el('authPassword').value;
+  const email = el('signupEmail').value;
+  const password = el('signupPassword').value;
+  const passwordConfirm = el('signupPasswordConfirm').value;
   // Supabase treats a signUp call with no email/password as an anonymous
   // sign-in attempt, which is disabled on this project — without this check,
-  // clicking the trial link before filling in the fields surfaces that
-  // confusing internal error instead of a plain "fill this in first" message.
-  if (!email || !password) {
-    setAuthStatus('Enter an email and password above first.', 'error');
+  // submitting before filling in the fields surfaces that confusing internal
+  // error instead of a plain "fill this in first" message.
+  if (!email || !password || !passwordConfirm) {
+    setSignupStatus('Fill in all three fields above first.', 'error');
     return;
   }
   if (password.length < 6) {
-    setAuthStatus('Password must be at least 6 characters.', 'error');
+    setSignupStatus('Password must be at least 6 characters.', 'error');
     return;
   }
-  setAuthStatus('Creating account...', '');
+  if (password !== passwordConfirm) {
+    setSignupStatus('Passwords do not match.', 'error');
+    return;
+  }
+  setSignupStatus('Creating account...', '');
   // emailRedirectTo sends the confirmation link back to the bare domain, since
   // logging in happens right on this page now rather than a separate pro.html.
   const { data, error } = await supabaseClient.auth.signUp({
     email, password,
     options: { emailRedirectTo: 'https://wisesatoshi.com/' }
   });
-  if (error) { setAuthStatus(error.message, 'error'); return; }
-  setAuthStatus('Account created. Check your email (including spam/junk) to confirm, then log in.', 'ok');
+  if (error) { setSignupStatus(error.message, 'error'); return; }
+  setSignupStatus('Account created. Check your email (including spam/junk) to confirm, then log in.', 'ok');
 }
 
 async function authSignIn() {
@@ -681,6 +693,13 @@ function handleAuthEnterKey(event) {
   if (event.key === 'Enter') {
     event.preventDefault();
     authSignIn();
+  }
+}
+
+function handleSignupEnterKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    authSignUp();
   }
 }
 
@@ -2295,9 +2314,25 @@ document.addEventListener('visibilitychange', () => {
         <span onclick="authForgotPassword()" style="font-size:13px;color:var(--ink-dim);text-decoration:underline;cursor:pointer;">Forgot password?</span>
       </div>
       <div style="border-top:1px solid var(--line);padding-top:14px;text-align:center;font-size:13px;color:var(--ink-dim);">
-        Not a Pro member yet? <span onclick="authSignUp()" style="color:var(--orange);text-decoration:underline;cursor:pointer;">Start your free 7-day trial</span>
+        Not a Pro member yet? <span onclick="showAuthView('signup')" style="color:var(--orange);text-decoration:underline;cursor:pointer;">Start your free 7-day trial</span>
       </div>
       <div id="authStatus" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center;"></div>
+    </div>
+
+    <div id="authViewSignup" style="display:none;">
+      <div style="font-size:20px;margin-bottom:4px;text-align:center;">🚀&nbsp;&nbsp;Start Your Free Trial</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">7 days free, no card required.</div>
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Email</label>
+      <input type="email" id="signupEmail" placeholder="you@example.com" onkeydown="handleSignupEnterKey(event)" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Password</label>
+      <input type="password" id="signupPassword" placeholder="At least 6 characters" onkeydown="handleSignupEnterKey(event)" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Confirm password</label>
+      <input type="password" id="signupPasswordConfirm" placeholder="Re-enter your password" onkeydown="handleSignupEnterKey(event)" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
+      <button onclick="authSignUp()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;">Create Account &amp; Start Trial</button>
+      <div style="text-align:center;font-size:13px;color:var(--ink-dim);">
+        Already have an account? <span onclick="showAuthView('login')" style="color:var(--orange);text-decoration:underline;cursor:pointer;">Log in</span>
+      </div>
+      <div id="signupStatus" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center;"></div>
     </div>
 
     <div id="authViewRecovery" style="display:none;">
