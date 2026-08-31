@@ -21,10 +21,6 @@ jobs:
 
           echo "$RESPONSE"
 
-          # Tag each newly-canceled account in Kit. A Kit failure here is
-          # logged but never fails the job -- the database update above is
-          # the source of truth, and a missed email tag shouldn't cause
-          # this workflow to show as failed in the Actions history.
           echo "$RESPONSE" | jq -r '.[].email // empty' | while read -r EMAIL; do
             if [ -n "$EMAIL" ]; then
               curl -s -X POST \
@@ -35,4 +31,3 @@ jobs:
                 || echo "Kit tagging failed for $EMAIL"
             fi
           done
-</parameter>
