@@ -11,10 +11,28 @@ jobs:
     steps:
       - name: Downgrade expired past_due accounts to canceled
         run: |
-          curl -X PATCH \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?subscription_status=eq.past_due&grace_period_ends_at=lt.$(date -u +%Y-%m-%dT%H:%M:%S)" \
+          RESPONSE=$(curl -s -X PATCH \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/profiles?subscription_status=eq.past_due&grace_period_ends_at=lt.$(date -u +%Y-%m-%dT%H:%M:%S)&select=email" \
             -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=representation" \
-            -d '{"subscription_status": "canceled"}'
+            -d '{"subscription_status": "canceled"}')
+
+          echo "$RESPONSE"
+
+          # Tag each newly-canceled account in Kit. A Kit failure here is
+          # logged but never fails the job -- the database update above is
+          # the source of truth, and a missed email tag shouldn't cause
+          # this workflow to show as failed in the Actions history.
+          echo "$RESPONSE" | jq -r '.[].email // empty' | while read -r EMAIL; do
+            if [ -n "$EMAIL" ]; then
+              curl -s -X POST \
+                "https://api.kit.com/v4/tags/22907876/subscribers" \
+                -H "X-Kit-Api-Key: ${{ secrets.KIT_API_KEY }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"email_address\": \"$EMAIL\"}" \
+                || echo "Kit tagging failed for $EMAIL"
+            fi
+          done
+</parameter>
