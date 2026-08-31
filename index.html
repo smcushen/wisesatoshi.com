@@ -422,6 +422,8 @@
       </div>
     </div>
 
+    <div class="hint" id="mstrVarianceBadge" style="display:none;margin-top:-8px;margin-bottom:18px;"></div>
+
     <div class="grid">
       <div class="field">
         <label>Manual override — MSTR price ($, optional)</label>
@@ -451,6 +453,7 @@
         <button onclick="calibrateIV()" style="background:var(--orange);color:#000;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">Solve IV</button>
         <span id="ivCalibResult" style="font-size:12px;color:var(--ink-dim);font-family:var(--mono);"></span>
       </div>
+      <div id="optionVarianceBadge" style="display:none;font-size:13px;color:var(--ink-dim);margin-top:8px;"></div>
       <div id="ivSkewWarning" style="display:none;font-size:13px;color:var(--orange);margin-top:8px;padding:6px 8px;background:rgba(247,147,26,0.08);border-radius:4px;border-left:2px solid var(--orange);">
         ⚠ Strike or expiry changed from defaults — IV may not match your contract due to volatility skew. Use the calibration tool above with your contract's current market price.
       </div>
@@ -1545,6 +1548,24 @@ function recalc(){
   const mktOpenForLabel = isMarketOpenNow();
   el('derivedPriceLabel').textContent = mktOpenForLabel ? 'Derived MSTR share price' : 'Derived MSTR share price (estimate)';
 
+  // Derived-vs-actual variance: market-hours only, since after hours "actual"
+  // is a frozen last trade while "derived" keeps moving with BTC — the gap
+  // at that point reflects staleness, not model accuracy, so it stays hidden
+  // rather than showing a number that would be misleading.
+  const varianceBadge = el('mstrVarianceBadge');
+  if (varianceBadge) {
+    const actualRaw = parseFloat((el('actualMstrPrice').value || '').replace(/[$,]/g, ''));
+    if (mktOpenForLabel && actualRaw > 0) {
+      const variancePct = ((derivedPrice - actualRaw) / actualRaw) * 100;
+      const direction = variancePct >= 0 ? 'above' : 'below';
+      varianceBadge.innerHTML = 'Model tracking: derived price is <strong style="color:var(--orange);">' +
+        Math.abs(variancePct).toFixed(1) + '%</strong> ' + direction + ' the actual live price right now.';
+      varianceBadge.style.display = 'block';
+    } else {
+      varianceBadge.style.display = 'none';
+    }
+  }
+
   const manualOverride = el('manualPrice').value;
   const S = manualOverride ? parseFloat(manualOverride) : derivedPrice;
   el('pricingBasisNote').textContent = manualOverride
@@ -1912,6 +1933,8 @@ function calibrateIV() {
   if (!observed || observed <= 0) {
     resultEl.textContent = '⚠ Enter a valid observed price first.';
     resultEl.style.color = 'var(--red)';
+    const badge = document.getElementById('optionVarianceBadge');
+    if (badge) badge.style.display = 'none';
     return;
   }
 
@@ -1937,9 +1960,29 @@ function calibrateIV() {
   const K = parseFloat(el('strike').value);
   const ratePct = parseFloat(el('rate').value);
   const r = ratePct / 100;
-  const expiry = new Date(el('expiry').value);
+  const expiry = new Date(el('expiryDate').value);
   const proj = new Date(el('projDate').value);
   const T = Math.max((expiry - proj) / (1000*60*60*24*365), 0.0001);
+
+  const varianceBadge = document.getElementById('optionVarianceBadge');
+  if (!useS || !K || !T) {
+    if (varianceBadge) varianceBadge.style.display = 'none';
+  } else {
+    // What the model currently says at whatever IV is presently set — a
+    // separate question from "what IV would make it match exactly" below.
+    // Shown regardless of whether calibration itself succeeds, since this
+    // is just describing where the model already stands.
+    const currentSigma = parseFloat(el('iv').value) / 100;
+    const currentPrice = blackScholesCall(useS, K, T, r, currentSigma).price;
+    const optVariancePct = ((currentPrice - observed) / observed) * 100;
+    const optDirection = optVariancePct >= 0 ? 'above' : 'below';
+    if (varianceBadge) {
+      varianceBadge.innerHTML = 'At your current ' + Math.round(currentSigma * 100) + '% IV assumption, the model price (' +
+        fmtUSD(currentPrice) + ') is <strong style="color:var(--orange);">' + Math.abs(optVariancePct).toFixed(1) +
+        '%</strong> ' + optDirection + ' your entered market price.';
+      varianceBadge.style.display = 'block';
+    }
+  }
 
   if (!useS || !K || !T) {
     resultEl.textContent = '⚠ Model inputs incomplete.';
