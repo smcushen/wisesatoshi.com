@@ -691,15 +691,13 @@ async function authUpdatePassword() {
 
 async function signOutNav() {
   await supabaseClient.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  el('navLoginLink').style.display = 'inline';
-  el('navLoggedIn').style.display = 'none';
-  el('proPanel').style.display = 'none';
-  el('proQuickBar').style.display = 'none';
-  el('upgradePanel').style.display = 'none';
-  el('positionWaitlistHint').style.display = 'block';
-  el('ivWaitlistHint').style.display = 'block';
+  // A full reload is deliberate here rather than manually resetting each
+  // piece of Pro-only state (picker mode, calibration results, saved-scenario
+  // menu, trial banner, etc.) — that approach already missed a case (the
+  // strike/expiry picker stayed active after logout even though the waitlist
+  // hint reappeared). Reloading guarantees the same clean state a brand-new
+  // anonymous visitor gets, with nothing left over to track by hand.
+  window.location.reload();
 }
 
 // Checks the server-side profile row (created automatically at signup by a
