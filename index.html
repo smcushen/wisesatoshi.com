@@ -39,6 +39,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
+    color-scheme:dark;
   }
   .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
 
@@ -133,6 +134,7 @@
   .field input[type=number],.field input[type=date],.field input[type=text]{
     width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
     color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
+    color-scheme:dark;
   }
   .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
 
@@ -325,7 +327,7 @@
   </div>
 
   <div class="fix-note">
-    Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve, matching the company's own published capital-structure math.
+    Updated methodology — Bitcoin per share now nets out convertible debt <strong>and</strong> preferred stock (STRK/STRF/STRD/STRC), offset by Strategy's USD Reserve <strong>and</strong> USD Cash, matching the company's own published capital-structure math.
   </div>
 
   <div class="panel">
@@ -388,12 +390,12 @@
       </div>
       <div class="field">
         <label>USD Cash ($B)</label>
-        <input type="number" id="usdCash" value="1.59" step="0.01">
+        <input type="number" id="usdCash" value="1.61" step="0.01">
         <div class="hint">General-purpose liquidity — not earmarked for debt/preferred payments the way USD Reserve is, but added back to the total Bitcoin backing the same way.</div>
       </div>
       <div class="field">
         <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
-        <input type="range" id="mnav" min="0.5" max="5.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
+        <input type="range" id="mnav" min="0.5" max="10.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
       </div>
     </div>
 
@@ -437,7 +439,7 @@
     <div class="grid">
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
-        <input type="range" id="iv" min="20" max="150" value="84">
+        <input type="range" id="iv" min="20" max="250" value="84">
         <div class="hint">IV varies by strike and expiration — 84% is just a starting assumption. If you have a brokerage account, check its live quote for your exact contract. If not, look it up free on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> (account required).</div>
       </div>
       <div class="field">
@@ -548,7 +550,7 @@
     <div class="panel-title">Methodology</div>
     <div class="methodology">
       <p><strong>Net BTC per share</strong> is calculated as:</p>
-      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve) ÷ shares outstanding</code></p>
+      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve + USD cash) ÷ shares outstanding</code></p>
       <p>This mirrors Strategy's own published capital-structure accounting: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack. Earlier versions of this tool only netted out convertible debt, which overstated fair value per share by roughly 30% at current prices.</p>
       <p>The derived MSTR price is then <code>net value per share × mNAV multiple</code>. Option pricing uses Black-Scholes as a European-style approximation for MSTR's American-style calls — early exercise is rarely optimal for a non-dividend-paying stock, so the approximation is close in practice.</p>
     </div>
