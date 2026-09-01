@@ -1795,7 +1795,7 @@ async function fetchMnavCloseSnapshot() {
 // that should ever interrupt the page for a user.
 async function triggerMnavCloseBackfill() {
   try {
-    const resp = await fetch('/.netlify/functions/capture-mnav-close-check');
+    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/capture-mnav-close-check');
     const result = await resp.json();
     if (result && result.captured) {
       await fetchMnavCloseSnapshot();
