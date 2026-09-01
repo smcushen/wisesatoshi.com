@@ -1787,6 +1787,25 @@ async function fetchMnavCloseSnapshot() {
   }
 }
 
+// Safety net alongside the scheduled Netlify function: asks the same
+// capture logic to run right now, in case the schedule ever fails or gets
+// delayed. Cheap and safe to call from every visitor during this window —
+// the function itself exits almost immediately once today's snapshot
+// already exists. Silent on failure; this is a backstop, not something
+// that should ever interrupt the page for a user.
+async function triggerMnavCloseBackfill() {
+  try {
+    const resp = await fetch('/.netlify/functions/capture-mnav-close-check');
+    const result = await resp.json();
+    if (result && result.captured) {
+      await fetchMnavCloseSnapshot();
+      recalc();
+    }
+  } catch (err) {
+    // Best-effort only — the scheduled function is the primary path.
+  }
+}
+
 function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   const el2 = el('mnavStatus');
   if (success) {
@@ -2203,6 +2222,7 @@ fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
 fetchMnavCloseSnapshot(); // also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
+triggerMnavCloseBackfill(); // safety net in case today's scheduled capture hasn't run yet
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
 
 recalc();
@@ -2259,7 +2279,10 @@ function startDataPolling(){
   // Re-checks the close snapshot every 20 min so a stuck CDN/browser cache
   // self-heals on its own — this file changes at most once per trading day,
   // so the poll frequency here is about masking a caching bug, not freshness.
-  mnavCloseInterval = setInterval(fetchMnavCloseSnapshot, 20 * 60 * 1000);
+  mnavCloseInterval = setInterval(() => {
+    fetchMnavCloseSnapshot();
+    if (!isMarketOpenNow()) triggerMnavCloseBackfill();
+  }, 20 * 60 * 1000);
 }
 function stopDataPolling(){
   clearInterval(mnavInterval);
