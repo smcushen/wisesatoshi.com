@@ -4,9 +4,16 @@ import { captureIfNeeded } from './lib/mnav-close-core.mjs';
 // on every page load during that window — captureIfNeeded() exits almost
 // immediately once today's snapshot already exists, so repeat calls from
 // many visitors cost nothing beyond a quick check.
-export default async () => {
+//
+// Supports ?force=true for manual testing — this bypasses the before-close
+// and already-captured checks (so you can test outside market hours), but
+// NOT the holiday/weekend checks, matching how the old GitHub Actions
+// workflow_dispatch "force" input behaved.
+export default async (req) => {
   try {
-    const result = await captureIfNeeded({ force: false });
+    const url = new URL(req.url);
+    const force = url.searchParams.get('force') === 'true';
+    const result = await captureIfNeeded({ force });
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
     });
