@@ -353,7 +353,7 @@
     <div class="hint" id="pickerToggleHint" style="display:none;">
       <span id="optionSymbolDisplay" class="mono"></span>&nbsp;·&nbsp;<a href="#" id="manualToggleLink" onclick="toggleManualEntry(); return false;" style="color:var(--orange);text-decoration:none;">Don't see your exact strike? Enter it manually</a>
     </div>
-    <div class="hint" id="positionWaitlistHint">Want to pick from live available strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openWaitlistModal(); return false;" style="color:var(--orange);text-decoration:none;">Join the Pro waitlist →</a></div>
+    <div class="hint" id="positionWaitlistHint">Want to pick from real, currently-listed strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></div>
   </div>
 
   <div class="panel">
@@ -464,7 +464,7 @@
       <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
     </div>
     <div id="ivWaitlistHint" style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> Pick your strike and expiration from real, currently-listed MSTR contracts — no more typing them in blind. <button onclick="openWaitlistModal()" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Join the waitlist ↗</button>
+      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> Pick your strike and expiration from real, currently-listed MSTR contracts — no more typing them in blind. <button onclick="openAuthModal('signup')" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Start free trial →</button>
     </div>
   </div>
 
@@ -2178,66 +2178,13 @@ function resetCalibration() {
 }
 
 
-// Waitlist Modal
-function openWaitlistModal() {
-  const modal = document.getElementById('waitlistModal');
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeWaitlistModal() {
-  document.getElementById('waitlistModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-
 // Close on backdrop click
 document.addEventListener('DOMContentLoaded', function() {
-  var modal = document.getElementById('waitlistModal');
-  if (modal) modal.addEventListener('click', function(e) {
-    if (e.target === this) closeWaitlistModal();
-  });
   var authModal = document.getElementById('authModal');
   if (authModal) authModal.addEventListener('click', function(e) {
     if (e.target === this) closeAuthModal();
   });
 });
-
-async function submitWaitlist() {
-  const firstName = document.getElementById('waitlistFirstName').value.trim();
-  const email = document.getElementById('waitlistEmail').value.trim();
-  const msg = document.getElementById('waitlistMsg');
-
-  if (!email || !email.includes('@')) {
-    msg.textContent = 'Please enter a valid email address.';
-    msg.style.color = 'var(--red)';
-    return;
-  }
-
-  msg.textContent = 'Submitting...';
-  msg.style.color = 'var(--ink-dim)';
-
-  try {
-    const formData = new FormData();
-    formData.append('email_address', email);
-    if (firstName) formData.append('first_name', firstName);
-    formData.append('tags[]', 'ws-pro-waitlist');
-
-    const resp = await fetch('https://app.kit.com/forms/9832811/subscriptions', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json' },
-      body: formData
-    });
-
-    if (resp.ok || resp.status === 200 || resp.status === 201) {
-       document.getElementById("waitlistForm").innerHTML = `<div style="text-align:center;padding:1rem 0;"><div style="font-size:2rem;margin-bottom:8px;">🟠</div><div style="font-weight:600;margin-bottom:4px;">You are on the list!</div><div style="font-size:13px;color:var(--ink-dim);">We will email you when WS Model Pro launches.</div></div>`;
-    } else {
-      throw new Error('submission failed');
-    }
-  } catch(e) {
-    msg.textContent = 'Something went wrong — try again or email hello@wisesatoshi.com';
-    msg.style.color = 'var(--red)';
-  }
-}
 
 // Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
 // from the JSON file the weekly update-form automation writes to. Falls back to the
@@ -2368,22 +2315,6 @@ document.addEventListener('visibilitychange', () => {
 });
 </script>
 
-
-<!-- Waitlist Modal -->
-<div id="waitlistModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
-  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
-    <button onclick="closeWaitlistModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
-    <div style="font-size:20px;margin-bottom:4px;text-align:center;">🚀&nbsp;&nbsp;WS Model Pro</div>
-    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;">Join the waitlist — we'll notify you when Pro launches with a real strike/expiration selector, saved positions, and price alerts.</div>
-    <div id="waitlistForm">
-      <input type="text" id="waitlistFirstName" placeholder="First name" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-      <input type="email" id="waitlistEmail" placeholder="Email address" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:16px;box-sizing:border-box;">
-      <button onclick="submitWaitlist()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.03em;">Join the Waitlist</button>
-      <div id="waitlistMsg" style="margin-top:10px;font-size:12px;text-align:center;color:var(--ink-dim);"></div>
-    </div>
-    <div style="font-size:10px;color:var(--ink-faint);margin-top:12px;text-align:center;">No spam. Unsubscribe anytime.</div>
-  </div>
-</div>
 
 <!-- Auth Modal -->
 <div id="authModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
