@@ -1891,7 +1891,6 @@ async function fetchLiveMnav() {
       if (!window._userMovedMnav) {
         el('mnav').value = liveMnav.toFixed(2);
       }
-      recalc();
     } else {
       console.warn('Skipped live mNAV update — computed value out of expected range:', liveMnav);
     }
@@ -1926,6 +1925,15 @@ async function fetchLiveMnav() {
       el('actualMstrPrice').value = fmtUSD(data.price);
       el('actualMstrPriceHint').textContent = 'Previous close (as of ' + stamp + ') — for comparison against the model\'s estimate.';
     }
+
+    // Runs once here, after actualMstrPrice has its real value — not earlier
+    // in this function, and not dependent on some other feature (like the
+    // Pro options-chain loader) happening to call recalc() again afterward.
+    // That was the actual bug: the variance badge only ever "worked" for
+    // logged-in users by coincidence, since enablePicker() incidentally
+    // re-ran recalc() later once its own fetch resolved. Free users had no
+    // equivalent second call, so the badge stayed stuck on stale data.
+    recalc();
   } catch (err) {
     setMnavStatus(false);
   }
