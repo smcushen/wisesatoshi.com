@@ -1790,10 +1790,47 @@ async function fetchMnavCloseSnapshot() {
 // Safety net alongside the scheduled Netlify function: asks the same
 // capture logic to run right now, in case the schedule ever fails or gets
 // delayed. Cheap and safe to call from every visitor during this window —
-// the function itself exits almost immediately once today's snapshot
-// already exists. Silent on failure; this is a backstop, not something
-// that should ever interrupt the page for a user.
+function easternDateStringClient(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date);
+  const y = parts.find(p => p.type === 'year').value;
+  const m = parts.find(p => p.type === 'month').value;
+  const d = parts.find(p => p.type === 'day').value;
+  return `${y}-${m}-${d}`;
+}
+
+// 4:00pm–8:00pm ET on a weekday — the window worth checking whether today's
+// close snapshot exists yet. Outside it, either close hasn't happened yet,
+// or enough time has passed that a still-missing snapshot needs a human,
+// not another automatic retry (the watchdog workflow already files a
+// GitHub issue for that at 6pm ET).
+function isWithinCloseCatchupWindow() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: 'numeric', hour12: false, weekday: 'short'
+  }).formatToParts(new Date());
+  const weekday = parts.find(p => p.type === 'weekday').value;
+  if (weekday === 'Sat' || weekday === 'Sun') return false;
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  return hour >= 16 && hour < 20;
+}
+
+function todaysSnapshotAlreadyCurrent() {
+  const snap = window._mnavCloseSnapshot;
+  return !!(snap && snap.marketDate === easternDateStringClient(new Date()));
+}
+
+// Safety net alongside the scheduled Netlify function: asks the same
+// capture logic to run right now, in case the schedule ever fails or gets
+// delayed. Guards itself against ever calling Netlify outside the narrow
+// post-close catch-up window, or once today's snapshot is already current —
+// both checks are free, local, and run before any network call. This used
+// to fire unconditionally on every page load and every 20 minutes for
+// essentially the entire day, which is what actually burned through
+// Netlify usage — the fetch itself was cheap, but the sheer call volume
+// wasn't.
 async function triggerMnavCloseBackfill() {
+  if (!isWithinCloseCatchupWindow() || todaysSnapshotAlreadyCurrent()) return;
   try {
     const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/capture-mnav-close-check');
     const result = await resp.json();
@@ -1844,27 +1881,46 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
 // price. The static file (data/mstr-price.json, refreshed by a GitHub Action)
 // only gets used if the live function itself is unreachable, in which case the
 // existing staleness detection still applies since that path can lag.
-async function fetchMstrPriceData() {
+// Static-file-first, matching the same pattern already used by
+// fetchTreasuryRateData() below — the GitHub Action refreshing
+// data/mstr-price.json every 15 minutes makes a live Netlify call
+// unnecessary for routine polling. preferLive=true (used only for the
+// market-open and market-close bookend refreshes) tries the live function
+// first instead, so those two specific daily moments still get a genuinely
+// live number rather than whatever GitHub last committed.
+async function fetchMstrPriceData(preferLive = false) {
+  if (preferLive) {
+    try {
+      const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
+      if (!resp.ok) throw new Error('bad response');
+      const data = await resp.json();
+      if (!data.price) throw new Error('no price');
+      return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
+    } catch (err) {
+      console.warn('Live MSTR price function unavailable, falling back to static snapshot:', err);
+    }
+  }
+
   try {
-    const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
+    const resp = await fetch('data/mstr-price.json');
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
-    return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
+    return { price: data.price, lastFetched: data.lastFetched, isLive: false };
   } catch (err) {
-    console.warn('Live MSTR price function unavailable, falling back to static snapshot:', err);
+    console.warn('Static MSTR price snapshot unavailable, falling back to live function:', err);
   }
 
-  const resp = await fetch('data/mstr-price.json');
+  const resp = await fetch('https://wisesatoshi.netlify.app/.netlify/functions/mstr-price');
   if (!resp.ok) throw new Error('bad response');
   const data = await resp.json();
   if (!data.price) throw new Error('no price');
-  return { price: data.price, lastFetched: data.lastFetched, isLive: false };
+  return { price: data.price, lastFetched: new Date(data.timestamp * 1000).toISOString(), isLive: true };
 }
 
-async function fetchLiveMnav() {
+async function fetchLiveMnav(preferLive = false) {
   try {
-    const data = await fetchMstrPriceData();
+    const data = await fetchMstrPriceData(preferLive);
 
     // Use the same formula as calcNetValuePerShare(), with whatever fundamentals
     // are currently in the inputs (BTC price should already be live by this point).
@@ -2229,8 +2285,8 @@ function loadStrategyFundamentals() {
 fetchLiveBtcPrice().then(fetchLiveMnav);
 fetchLiveRate();
 loadStrategyFundamentals();
-fetchMnavCloseSnapshot(); // also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
-triggerMnavCloseBackfill(); // safety net in case today's scheduled capture hasn't run yet
+// also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
+fetchMnavCloseSnapshot().then(triggerMnavCloseBackfill); // triggerMnavCloseBackfill() guards itself against calling Netlify outside the post-close window or once already current
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
 
 recalc();
@@ -2266,12 +2322,12 @@ function checkPreciseRefreshTimes(){
 
   if (hour === 9 && minute === 31 && !_firedOpenRefreshToday) {
     _firedOpenRefreshToday = true;
-    fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveBtcPrice().then(() => fetchLiveMnav(true));
     fetchLiveRate();
   }
   if (hour === 16 && minute === 1 && !_firedCloseRefreshToday) {
     _firedCloseRefreshToday = true;
-    fetchLiveBtcPrice().then(fetchLiveMnav);
+    fetchLiveBtcPrice().then(() => fetchLiveMnav(true));
     fetchLiveRate();
   }
 }
@@ -2288,8 +2344,7 @@ function startDataPolling(){
   // self-heals on its own — this file changes at most once per trading day,
   // so the poll frequency here is about masking a caching bug, not freshness.
   mnavCloseInterval = setInterval(() => {
-    fetchMnavCloseSnapshot();
-    if (!isMarketOpenNow()) triggerMnavCloseBackfill();
+    fetchMnavCloseSnapshot().then(triggerMnavCloseBackfill);
   }, 20 * 60 * 1000);
 }
 function stopDataPolling(){
