@@ -111,7 +111,7 @@
   .pro-promo-title{font-size:clamp(22px,3vw,30px);font-weight:600;margin:0 0 10px;line-height:1.25;}
   .pro-promo-lede{color:var(--ink-dim);font-size:15px;margin:0;}
   .pro-carousel{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-  .pro-carousel-track{position:relative;flex:1;min-height:195px;}
+  .pro-carousel-track{position:relative;flex:1;min-height:245px;}
   .pro-feature{
     position:absolute;inset:0;
     background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
@@ -154,7 +154,7 @@
       max-width:1560px;
       margin:0 auto;
       padding:0 32px;
-      margin-bottom:40px;
+      margin-bottom:20px;
     }
     .hero-promo-wrap .hero{
       flex:1 1 50%;
@@ -172,14 +172,20 @@
       margin-top:32px;
       padding:32px;
     }
+    /* Grid instead of two independent flex columns — row 2 (the button and
+       the subtext) is a single shared track, so the two are guaranteed to
+       start at exactly the same height regardless of how tall the header
+       text or the carousel above them turns out to be. No margin-guessing. */
     .hero-promo-wrap .pro-promo-inner{
       max-width:none;
-      display:flex;
-      gap:32px;
-      align-items:flex-start;
+      display:grid;
+      grid-template-columns:40% 1fr;
+      column-gap:32px;
     }
-    .hero-promo-wrap .pro-promo-header{flex:1 1 40%;margin-bottom:0;}
-    .hero-promo-wrap .pro-promo-right{flex:1 1 60%;margin-top:34px;}
+    .hero-promo-wrap .pro-promo-header{grid-column:1;grid-row:1;margin-bottom:0;}
+    .hero-promo-wrap .pro-promo-right{grid-column:2;grid-row:1;margin-top:34px;}
+    .hero-promo-wrap .pro-cta-button{grid-column:1;grid-row:2;align-self:start;margin-top:20px;}
+    .hero-promo-wrap .pro-cta-sub{grid-column:2;grid-row:2;align-self:start;margin-top:20px;}
   }
 
   main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
@@ -385,7 +391,6 @@
       <div class="eyebrow">WS Model Pro</div>
       <h2 class="pro-promo-title">Stop typing contracts. Start comparing them.</h2>
       <p class="pro-promo-lede">Everything the free calculator already does, plus the tools for actually managing a real position.</p>
-      <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
     </div>
     <div class="pro-promo-right">
       <div class="pro-carousel">
@@ -420,8 +425,9 @@
         <span class="pro-dot" onclick="proCarouselGoTo(2)"></span>
         <span class="pro-dot" onclick="proCarouselGoTo(3)"></span>
       </div>
-      <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
     </div>
+    <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
+    <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
   </div>
 </section>
 </div>
