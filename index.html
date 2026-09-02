@@ -142,6 +142,14 @@
   }
   .pro-cta-sub{font-size:13px;color:var(--ink-faint);margin-top:14px;}
 
+  /* Mobile/stacked layout only (below the desktop breakpoint further down):
+     center the CTA button under the dots, and add breathing room below the
+     whole promo band so it doesn't touch whatever comes right after it. */
+  @media(max-width:1099px){
+    .pro-cta-button{display:block;margin-left:auto;margin-right:auto;}
+    .pro-promo{margin-bottom:24px;}
+  }
+
   /* Desktop/laptop only — hero and Pro promo sit side by side in the space
      that's otherwise empty next to the hero text. Below this width,
      everything reverts to the original stacked layout (the rules above),
@@ -2353,7 +2361,7 @@ function proCarouselGoTo(index) {
 
 function proCarouselResetTimer() {
   clearInterval(_proCarouselTimer);
-  _proCarouselTimer = setInterval(() => proCarouselShow(_proCarouselIndex + 1), 6000);
+  _proCarouselTimer = setInterval(() => proCarouselShow(_proCarouselIndex + 1), 10000);
 }
 
 // Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
