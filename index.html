@@ -110,10 +110,28 @@
   .pro-promo-header{margin-bottom:32px;max-width:60ch;}
   .pro-promo-title{font-size:clamp(22px,3vw,30px);font-weight:600;margin:0 0 10px;line-height:1.25;}
   .pro-promo-lede{color:var(--ink-dim);font-size:15px;margin:0;}
-  .pro-features{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px;}
-  @media(max-width:800px){.pro-features{grid-template-columns:1fr 1fr;}}
-  @media(max-width:480px){.pro-features{grid-template-columns:1fr;}}
-  .pro-feature{background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;}
+  .pro-carousel{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .pro-carousel-track{position:relative;flex:1;min-height:150px;}
+  .pro-feature{
+    position:absolute;inset:0;
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
+    opacity:0;visibility:hidden;
+    transition:opacity 0.4s ease;
+  }
+  .pro-feature.active{opacity:1;visibility:visible;}
+  .pro-carousel-arrow{
+    background:none;border:1px solid var(--line);color:var(--ink-dim);
+    border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;
+    cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    transition:border-color 0.2s,color 0.2s;
+  }
+  .pro-carousel-arrow:hover{border-color:var(--orange);color:var(--orange);}
+  .pro-carousel-dots{display:flex;justify-content:center;gap:8px;margin-bottom:32px;}
+  .pro-dot{
+    width:8px;height:8px;border-radius:50%;cursor:pointer;
+    background:rgba(247,147,26,0.25);transition:background 0.2s;
+  }
+  .pro-dot.active{background:var(--orange);}
   .pro-feature-icon{font-size:22px;margin-bottom:10px;}
   .pro-feature-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--ink);}
   .pro-feature-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;}
@@ -155,7 +173,6 @@
     }
     .hero-promo-wrap .pro-promo-inner{max-width:none;}
     .hero-promo-wrap .pro-promo-header{margin-bottom:24px;}
-    .hero-promo-wrap .pro-features{grid-template-columns:1fr 1fr;margin-bottom:24px;}
   }
 
   main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
@@ -362,27 +379,37 @@
       <h2 class="pro-promo-title">Stop typing contracts. Start comparing them.</h2>
       <p class="pro-promo-lede">Everything the free calculator already does, plus the tools for actually managing a real position.</p>
     </div>
-    <div class="pro-features">
-      <div class="pro-feature">
-        <div class="pro-feature-icon">🎯</div>
-        <div class="pro-feature-title">Pick from real contracts</div>
-        <div class="pro-feature-desc">Strike and expiration selected from currently-listed MSTR options — no more typing them in blind.</div>
+    <div class="pro-carousel">
+      <button class="pro-carousel-arrow" onclick="proCarouselNav(-1)" aria-label="Previous feature">‹</button>
+      <div class="pro-carousel-track">
+        <div class="pro-feature active">
+          <div class="pro-feature-icon">🎯</div>
+          <div class="pro-feature-title">Pick from real contracts</div>
+          <div class="pro-feature-desc">Strike and expiration selected from currently-listed MSTR options — no more typing them in blind.</div>
+        </div>
+        <div class="pro-feature">
+          <div class="pro-feature-icon">💾</div>
+          <div class="pro-feature-title">Save your positions</div>
+          <div class="pro-feature-desc">Stop re-entering the same strike and expiry every time you check the tool.</div>
+        </div>
+        <div class="pro-feature">
+          <div class="pro-feature-icon">⚖️</div>
+          <div class="pro-feature-title">Compare scenarios side by side</div>
+          <div class="pro-feature-desc">Line up contracts under the same BTC scenario to see which one actually wins.</div>
+        </div>
+        <div class="pro-feature">
+          <div class="pro-feature-icon">📊</div>
+          <div class="pro-feature-title">Export to CSV</div>
+          <div class="pro-feature-desc">Pull your saved scenarios into a spreadsheet whenever you want to dig deeper.</div>
+        </div>
       </div>
-      <div class="pro-feature">
-        <div class="pro-feature-icon">💾</div>
-        <div class="pro-feature-title">Save your positions</div>
-        <div class="pro-feature-desc">Stop re-entering the same strike and expiry every time you check the tool.</div>
-      </div>
-      <div class="pro-feature">
-        <div class="pro-feature-icon">⚖️</div>
-        <div class="pro-feature-title">Compare scenarios side by side</div>
-        <div class="pro-feature-desc">Line up contracts under the same BTC scenario to see which one actually wins.</div>
-      </div>
-      <div class="pro-feature">
-        <div class="pro-feature-icon">📊</div>
-        <div class="pro-feature-title">Export to CSV</div>
-        <div class="pro-feature-desc">Pull your saved scenarios into a spreadsheet whenever you want to dig deeper.</div>
-      </div>
+      <button class="pro-carousel-arrow" onclick="proCarouselNav(1)" aria-label="Next feature">›</button>
+    </div>
+    <div class="pro-carousel-dots">
+      <span class="pro-dot active" onclick="proCarouselGoTo(0)"></span>
+      <span class="pro-dot" onclick="proCarouselGoTo(1)"></span>
+      <span class="pro-dot" onclick="proCarouselGoTo(2)"></span>
+      <span class="pro-dot" onclick="proCarouselGoTo(3)"></span>
     </div>
     <div class="pro-promo-cta">
       <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
@@ -2280,7 +2307,41 @@ document.addEventListener('DOMContentLoaded', function() {
   if (authModal) authModal.addEventListener('click', function(e) {
     if (e.target === this) closeAuthModal();
   });
+  if (document.querySelector('.pro-carousel-track')) proCarouselResetTimer();
 });
+
+// Pro feature carousel — auto-advances every 4.5s and loops indefinitely.
+// Manual navigation (arrows or dots) jumps straight to that slide and
+// resets the timer, so the loop continues from wherever the person left
+// it rather than immediately jumping again right after they interacted.
+let _proCarouselIndex = 0;
+let _proCarouselTimer = null;
+const PRO_CAROUSEL_SLIDES = 4;
+
+function proCarouselShow(index) {
+  _proCarouselIndex = (index + PRO_CAROUSEL_SLIDES) % PRO_CAROUSEL_SLIDES;
+  document.querySelectorAll('.pro-feature').forEach((el, i) => {
+    el.classList.toggle('active', i === _proCarouselIndex);
+  });
+  document.querySelectorAll('.pro-dot').forEach((el, i) => {
+    el.classList.toggle('active', i === _proCarouselIndex);
+  });
+}
+
+function proCarouselNav(direction) {
+  proCarouselShow(_proCarouselIndex + direction);
+  proCarouselResetTimer();
+}
+
+function proCarouselGoTo(index) {
+  proCarouselShow(index);
+  proCarouselResetTimer();
+}
+
+function proCarouselResetTimer() {
+  clearInterval(_proCarouselTimer);
+  _proCarouselTimer = setInterval(() => proCarouselShow(_proCarouselIndex + 1), 4500);
+}
 
 // Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
 // from the JSON file the weekly update-form automation writes to. Falls back to the
