@@ -111,7 +111,7 @@
   .pro-promo-title{font-size:clamp(22px,3vw,30px);font-weight:600;margin:0 0 10px;line-height:1.25;}
   .pro-promo-lede{color:var(--ink-dim);font-size:15px;margin:0;}
   .pro-carousel{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-  .pro-carousel-track{position:relative;flex:1;min-height:170px;}
+  .pro-carousel-track{position:relative;flex:1;min-height:195px;}
   .pro-feature{
     position:absolute;inset:0;
     background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
@@ -135,12 +135,12 @@
   .pro-feature-icon{font-size:22px;margin-bottom:10px;}
   .pro-feature-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--ink);}
   .pro-feature-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;}
-  .pro-promo-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
   .pro-cta-button{
     background:var(--orange);color:#000;border:none;border-radius:6px;
     padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;
+    margin-top:20px;
   }
-  .pro-cta-sub{font-size:13px;color:var(--ink-faint);}
+  .pro-cta-sub{font-size:13px;color:var(--ink-faint);margin-top:14px;}
 
   /* Desktop/laptop only — hero and Pro promo sit side by side in the space
      that's otherwise empty next to the hero text. Below this width,
@@ -179,7 +179,7 @@
       align-items:flex-start;
     }
     .hero-promo-wrap .pro-promo-header{flex:1 1 40%;margin-bottom:0;}
-    .hero-promo-wrap .pro-promo-right{flex:1 1 60%;}
+    .hero-promo-wrap .pro-promo-right{flex:1 1 60%;margin-top:34px;}
   }
 
   main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
@@ -385,6 +385,7 @@
       <div class="eyebrow">WS Model Pro</div>
       <h2 class="pro-promo-title">Stop typing contracts. Start comparing them.</h2>
       <p class="pro-promo-lede">Everything the free calculator already does, plus the tools for actually managing a real position.</p>
+      <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
     </div>
     <div class="pro-promo-right">
       <div class="pro-carousel">
@@ -419,10 +420,7 @@
         <span class="pro-dot" onclick="proCarouselGoTo(2)"></span>
         <span class="pro-dot" onclick="proCarouselGoTo(3)"></span>
       </div>
-      <div class="pro-promo-cta">
-        <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
-        <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
-      </div>
+      <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
     </div>
   </div>
 </section>
