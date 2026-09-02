@@ -393,7 +393,7 @@
   </div>
 </section>
 
-<section class="pro-promo">
+<section class="pro-promo" id="proPromoSection">
   <div class="pro-promo-inner">
     <div class="pro-promo-header">
       <div class="eyebrow">WS Model Pro</div>
@@ -919,6 +919,12 @@ async function onLoggedIn(user) {
     el('proQuickBar').style.display = 'block';
     el('upgradePanel').style.display = 'none';
     el('quickBarEmail').textContent = '— logged in as ' + user.email;
+
+    // No point advertising a trial/subscription to someone who already has
+    // one — the hero's flex-grow means it automatically expands to fill
+    // the space this leaves behind, no extra layout work needed.
+    const promoSection = document.getElementById('proPromoSection');
+    if (promoSection) promoSection.style.display = 'none';
 
     const banner = el('trialBanner');
     if (inGracePeriod) {
