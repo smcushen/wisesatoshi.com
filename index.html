@@ -2432,12 +2432,17 @@ function loadStrategyFundamentals() {
     });
 }
 
-// Run BTC price first, then mNAV (which depends on BTC price being current).
-fetchLiveBtcPrice().then(fetchLiveMnav);
+// Run BTC price and the close-snapshot fetch in parallel, but wait for BOTH
+// before the very first mNAV render — otherwise there's a race where
+// fetchLiveMnav() can call setMnavStatus() before window._mnavCloseSnapshot
+// is populated, showing the generic "Previous close" fallback even when a
+// real, current snapshot exists and finishes loading moments later.
+const _initialBtcPricePromise = fetchLiveBtcPrice();
+const _initialCloseSnapshotPromise = fetchMnavCloseSnapshot();
+Promise.all([_initialBtcPricePromise, _initialCloseSnapshotPromise]).then(() => fetchLiveMnav());
+_initialCloseSnapshotPromise.then(triggerMnavCloseBackfill); // triggerMnavCloseBackfill() guards itself against calling Netlify outside the post-close window or once already current
 fetchLiveRate();
 loadStrategyFundamentals();
-// also re-checked periodically below — a CDN/browser cache could otherwise mask an updated snapshot for hours
-fetchMnavCloseSnapshot().then(triggerMnavCloseBackfill); // triggerMnavCloseBackfill() guards itself against calling Netlify outside the post-close window or once already current
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
 
 recalc();
