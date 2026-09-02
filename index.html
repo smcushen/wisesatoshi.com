@@ -124,6 +124,40 @@
   }
   .pro-cta-sub{font-size:13px;color:var(--ink-faint);}
 
+  /* Desktop/laptop only — hero and Pro promo sit side by side in the space
+     that's otherwise empty next to the hero text. Below this width,
+     everything reverts to the original stacked layout (the rules above),
+     completely untouched. */
+  @media(min-width:1100px){
+    .hero-promo-wrap{
+      display:flex;
+      align-items:flex-start;
+      gap:40px;
+      max-width:1400px;
+      margin:0 auto;
+      padding:0 32px;
+    }
+    .hero-promo-wrap .hero{
+      flex:1 1 55%;
+      max-width:none;
+      padding-left:0;
+      padding-right:0;
+    }
+    .hero-promo-wrap .pro-promo{
+      flex:1 1 45%;
+      background:var(--bg-panel);
+      border:1px solid var(--line);
+      border-radius:12px;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      margin-top:64px;
+      padding:32px;
+    }
+    .hero-promo-wrap .pro-promo-inner{max-width:none;}
+    .hero-promo-wrap .pro-promo-header{margin-bottom:24px;}
+    .hero-promo-wrap .pro-features{grid-template-columns:1fr 1fr;margin-bottom:24px;}
+  }
+
   main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
 
   .panel{
@@ -306,6 +340,7 @@
   </nav>
 </header>
 
+<div class="hero-promo-wrap">
 <section class="hero">
   <div class="enso"></div>
   <div class="eyebrow">MSTR options projector</div>
@@ -355,6 +390,7 @@
     </div>
   </div>
 </section>
+</div>
 
 <main id="tool">
 
