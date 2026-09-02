@@ -1998,7 +1998,13 @@ function setMnavStatus(success, stamp, liveDisplayMnav, staleMinutes) {
   if (success) {
     const mkt = isMarketOpenNow();
     const mnavStr = liveDisplayMnav ? liveDisplayMnav + '× ' : '';
-    const isStale = staleMinutes !== null && staleMinutes >= 45;
+    // Staleness only matters while the market is open — a live number sitting
+    // untouched overnight or over a weekend isn't a problem, it's expected,
+    // since nothing's trading to make it stale in the first place. This used
+    // to fire regardless of market hours, which meant a perfectly normal
+    // overnight gap got flagged with the same red "verify before using"
+    // alarm as an actual mid-day data outage.
+    const isStale = mkt && staleMinutes !== null && staleMinutes >= 45;
     // Closed-market messages split into two visual lines: a bold fact (green,
     // matches the rest of this badge) and a muted instructional line (gray,
     // matches the site's existing .source-line style used elsewhere) — kept
@@ -2056,7 +2062,21 @@ async function fetchMstrPriceData(preferLive = false) {
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (!data.price) throw new Error('no price');
-    return { price: data.price, lastFetched: data.lastFetched, isLive: false };
+
+    // The static file only refreshes as often as GitHub's scheduler actually
+    // honors it — observed in practice to run every 2-4 hours rather than
+    // the intended 15 minutes. That's harmless outside market hours (the
+    // price genuinely isn't moving), but during market hours a multi-hour
+    // gap is a real accuracy problem, so fall through to the live Netlify
+    // function instead of silently returning stale data. This only calls
+    // Netlify on the actual gaps GitHub leaves, not on a fixed schedule —
+    // far cheaper than a dedicated always-on scheduled function.
+    const ageMinutes = (Date.now() - new Date(data.lastFetched).getTime()) / 60000;
+    const staticTooOld = isMarketOpenNow() && ageMinutes > 20;
+    if (!staticTooOld) {
+      return { price: data.price, lastFetched: data.lastFetched, isLive: false };
+    }
+    console.warn('Static MSTR price is ' + Math.round(ageMinutes) + ' min old during market hours — trying the live function instead.');
   } catch (err) {
     console.warn('Static MSTR price snapshot unavailable, falling back to live function:', err);
   }
