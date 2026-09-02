@@ -168,11 +168,17 @@
       border-radius:12px;
       border-top:1px solid var(--line);
       border-bottom:1px solid var(--line);
-      margin-top:64px;
+      margin-top:32px;
       padding:32px;
     }
-    .hero-promo-wrap .pro-promo-inner{max-width:none;}
-    .hero-promo-wrap .pro-promo-header{margin-bottom:24px;}
+    .hero-promo-wrap .pro-promo-inner{
+      max-width:none;
+      display:flex;
+      gap:32px;
+      align-items:flex-start;
+    }
+    .hero-promo-wrap .pro-promo-header{flex:1 1 40%;margin-bottom:0;}
+    .hero-promo-wrap .pro-promo-right{flex:1 1 60%;}
   }
 
   main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
@@ -379,41 +385,43 @@
       <h2 class="pro-promo-title">Stop typing contracts. Start comparing them.</h2>
       <p class="pro-promo-lede">Everything the free calculator already does, plus the tools for actually managing a real position.</p>
     </div>
-    <div class="pro-carousel">
-      <button class="pro-carousel-arrow" onclick="proCarouselNav(-1)" aria-label="Previous feature">‹</button>
-      <div class="pro-carousel-track">
-        <div class="pro-feature active">
-          <div class="pro-feature-icon">🎯</div>
-          <div class="pro-feature-title">Pick from real contracts</div>
-          <div class="pro-feature-desc">Strike and expiration selected from currently-listed MSTR options — no more typing them in blind.</div>
+    <div class="pro-promo-right">
+      <div class="pro-carousel">
+        <button class="pro-carousel-arrow" onclick="proCarouselNav(-1)" aria-label="Previous feature">‹</button>
+        <div class="pro-carousel-track">
+          <div class="pro-feature active">
+            <div class="pro-feature-icon">🎯</div>
+            <div class="pro-feature-title">Pick from real contracts</div>
+            <div class="pro-feature-desc">Strike and expiration selected from currently-listed MSTR options — no more typing them in blind.</div>
+          </div>
+          <div class="pro-feature">
+            <div class="pro-feature-icon">💾</div>
+            <div class="pro-feature-title">Save your positions</div>
+            <div class="pro-feature-desc">Stop re-entering the same strike and expiry every time you check the tool.</div>
+          </div>
+          <div class="pro-feature">
+            <div class="pro-feature-icon">⚖️</div>
+            <div class="pro-feature-title">Compare scenarios side by side</div>
+            <div class="pro-feature-desc">Line up contracts under the same BTC scenario to see which one actually wins.</div>
+          </div>
+          <div class="pro-feature">
+            <div class="pro-feature-icon">📊</div>
+            <div class="pro-feature-title">Export to CSV</div>
+            <div class="pro-feature-desc">Pull your saved scenarios into a spreadsheet whenever you want to dig deeper.</div>
+          </div>
         </div>
-        <div class="pro-feature">
-          <div class="pro-feature-icon">💾</div>
-          <div class="pro-feature-title">Save your positions</div>
-          <div class="pro-feature-desc">Stop re-entering the same strike and expiry every time you check the tool.</div>
-        </div>
-        <div class="pro-feature">
-          <div class="pro-feature-icon">⚖️</div>
-          <div class="pro-feature-title">Compare scenarios side by side</div>
-          <div class="pro-feature-desc">Line up contracts under the same BTC scenario to see which one actually wins.</div>
-        </div>
-        <div class="pro-feature">
-          <div class="pro-feature-icon">📊</div>
-          <div class="pro-feature-title">Export to CSV</div>
-          <div class="pro-feature-desc">Pull your saved scenarios into a spreadsheet whenever you want to dig deeper.</div>
-        </div>
+        <button class="pro-carousel-arrow" onclick="proCarouselNav(1)" aria-label="Next feature">›</button>
       </div>
-      <button class="pro-carousel-arrow" onclick="proCarouselNav(1)" aria-label="Next feature">›</button>
-    </div>
-    <div class="pro-carousel-dots">
-      <span class="pro-dot active" onclick="proCarouselGoTo(0)"></span>
-      <span class="pro-dot" onclick="proCarouselGoTo(1)"></span>
-      <span class="pro-dot" onclick="proCarouselGoTo(2)"></span>
-      <span class="pro-dot" onclick="proCarouselGoTo(3)"></span>
-    </div>
-    <div class="pro-promo-cta">
-      <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
-      <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
+      <div class="pro-carousel-dots">
+        <span class="pro-dot active" onclick="proCarouselGoTo(0)"></span>
+        <span class="pro-dot" onclick="proCarouselGoTo(1)"></span>
+        <span class="pro-dot" onclick="proCarouselGoTo(2)"></span>
+        <span class="pro-dot" onclick="proCarouselGoTo(3)"></span>
+      </div>
+      <div class="pro-promo-cta">
+        <button onclick="openAuthModal('signup')" class="pro-cta-button">Start your free 7-day trial →</button>
+        <div class="pro-cta-sub">$14.99/month after your trial — no card required to start.</div>
+      </div>
     </div>
   </div>
 </section>
