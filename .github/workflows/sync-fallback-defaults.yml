@@ -1,0 +1,66 @@
+name: Sync index.html Fallback Defaults
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/strategy-fundamentals.json'
+  workflow_dispatch:  # allows manual trigger anytime
+
+permissions:
+  contents: write
+
+jobs:
+  sync-defaults:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Patch hardcoded fallback values in index.html
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const f = JSON.parse(fs.readFileSync('data/strategy-fundamentals.json', 'utf8'));
+            let html = fs.readFileSync('index.html', 'utf8');
+
+            // Only touches the value="..." attribute — everything else on
+            // the input tag (step, type, id) is left completely alone.
+            function replaceInputValue(html, id, newValue) {
+              const re = new RegExp(`(<input type="number" id="${id}" value=")[^"]*(")`);
+              if (!re.test(html)) throw new Error(`Could not find input#${id} in index.html to update`);
+              return html.replace(re, `$1${newValue}$2`);
+            }
+
+            html = replaceInputValue(html, 'btcHeld', f.btcHeld);
+            html = replaceInputValue(html, 'shares', f.sharesOutstandingMillions);
+            html = replaceInputValue(html, 'debt', f.convertibleDebtBillions);
+            html = replaceInputValue(html, 'preferred', f.preferredStockBillions);
+            html = replaceInputValue(html, 'usdReserve', f.usdReserveBillions);
+            // usdCash was added after usdReserve and may be absent on older
+            // snapshots — skip rather than fail if it's not set.
+            if (f.usdCashBillions !== undefined && f.usdCashBillions !== null) {
+              html = replaceInputValue(html, 'usdCash', f.usdCashBillions);
+            }
+
+            // Also keep the human-readable caption under "Reset fundamentals
+            // to live values" in sync with the same file.
+            const dateStr = new Date(f.lastUpdated + 'T00:00:00Z')
+              .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+            const sourceLineRe = /(<div class="source-line" id="sourceLine">)[^<]*(<\/div>)/;
+            if (!sourceLineRe.test(html)) throw new Error('Could not find #sourceLine in index.html to update');
+            const newSourceLine =
+              `Defaults last updated: ${dateStr} · Source: Strategy SEC 8-K &amp; Investor Briefing · ` +
+              `Basic shares ≈${f.sharesOutstandingMillions}M · BTC: ${f.btcHeld.toLocaleString('en-US')}`;
+            html = html.replace(sourceLineRe, `$1${newSourceLine}$2`);
+
+            fs.writeFileSync('index.html', html);
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "Sync index.html fallback defaults with strategy-fundamentals.json"
+          git push
