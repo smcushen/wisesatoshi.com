@@ -604,9 +604,6 @@
       </div>
       <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
     </div>
-    <div id="ivWaitlistHint" style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
-      🔒 <strong style="color:var(--ink-dim);">Coming in Pro:</strong> Pick your strike and expiration from real, currently-listed MSTR contracts — no more typing them in blind. <button onclick="openAuthModal('signup')" style="background:none;border:none;padding:0;color:var(--orange);text-decoration:underline;cursor:pointer;font-size:inherit;font-family:inherit;">Start free trial →</button>
-    </div>
   </div>
 
   <div class="panel">
@@ -891,7 +888,6 @@ async function onLoggedIn(user) {
   el('navLoggedIn').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
   el('positionWaitlistHint').style.display = 'none';
-  el('ivWaitlistHint').style.display = 'none';
 
   const { data: profile, error } = await supabaseClient
     .from('profiles')
