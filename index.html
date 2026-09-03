@@ -148,8 +148,8 @@
      without competing for attention while someone's actively using the
      calculator. Respects the OS-level "reduce motion" setting. */
   @keyframes proNudge {
-    0%, 100% { transform: translateX(0); opacity: 0.55; }
-    50% { transform: translateX(4px); opacity: 1; }
+    0%, 100% { transform: translateX(0); opacity: 0.75; }
+    50% { transform: translateX(2px); opacity: 1; }
   }
   .pro-nudge-arrow {
     display: inline-block;
@@ -157,10 +157,22 @@
     font-weight: 700;
     margin-right: 10px;
     flex-shrink: 0;
-    animation: proNudge 2.2s ease-in-out infinite;
+    animation: proNudge 3s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
     .pro-nudge-arrow { animation: none; opacity: 1; }
+  }
+  /* Shared look for every "this is a Pro pitch" callout on the page — kept
+     as one class so all three always move together if adjusted again. */
+  .pro-pitch {
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: flex-start;
   }
 
   /* Mobile/stacked layout only (below the desktop breakpoint further down):
@@ -515,7 +527,7 @@
     <div class="hint" id="pickerToggleHint" style="display:none;">
       <span id="optionSymbolDisplay" class="mono"></span>&nbsp;·&nbsp;<a href="#" id="manualToggleLink" onclick="toggleManualEntry(); return false;" style="color:var(--orange);text-decoration:none;">Don't see your exact strike? Enter it manually</a>
     </div>
-    <div class="hint" id="positionWaitlistHint">Want to pick from real, currently-listed strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></div>
+    <div class="pro-pitch" id="positionWaitlistHint"><span class="pro-nudge-arrow">→</span><span>Want to pick from real, currently-listed strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span></div>
   </div>
 
   <div class="panel">
@@ -625,7 +637,7 @@
       </div>
       <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
     </div>
-    <div id="ivProHint" style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);display:flex;align-items:flex-start;">
+    <div id="ivProHint" class="pro-pitch" style="margin-top:8px;">
       <span class="pro-nudge-arrow">→</span>
       <span>In Pro, this strike and expiration come from a real, currently-listed dropdown — no typing, and it's saved for next time. <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span>
     </div>
@@ -682,7 +694,7 @@
     <div style="display:flex;align-items:flex-start;">
       <span class="pro-nudge-arrow" style="margin-top:3px;">→</span>
       <div>
-        <p class="hint" style="margin-top:0;">Save this exact scenario — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
+        <p style="font-size:14px;color:var(--ink);margin-top:0;">Save this exact scenario — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
         <button type="button" onclick="openAuthModal('signup')" style="background:none;border:1px dashed var(--line);color:var(--ink-dim);border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">🔒 Save this scenario — Start free trial</button>
       </div>
     </div>
