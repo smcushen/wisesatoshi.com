@@ -530,6 +530,10 @@
         <label>Number of contracts <span class="val" id="lblContracts">10</span></label>
         <input type="range" id="contracts" min="1" max="100" value="10">
       </div>
+      <div class="field">
+        <label>Custom contract count (optional)</label>
+        <input type="number" id="contractsCustom" min="1" step="1" placeholder="leave blank to use slider above (max 100)">
+      </div>
       <div class="field" id="expiryField">
         <label>Expiration date</label>
         <input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
@@ -1094,6 +1098,7 @@ async function saveScenario() {
     usdCash: parseFloat(el('usdCash').value),
     mnav: parseFloat(el('mnav').value),
     contracts: parseFloat(el('contracts').value),
+    contractsCustom: el('contractsCustom').value || null,
     iv: parseFloat(el('iv').value),
     rate: parseFloat(el('rate').value),
     projDate: el('projDate').value,
@@ -1434,6 +1439,7 @@ function loadSavedPosition(id) {
   if (cd.usdCash != null) el('usdCash').value = cd.usdCash;
   if (cd.mnav != null) el('mnav').value = cd.mnav;
   if (cd.contracts != null) el('contracts').value = cd.contracts;
+  el('contractsCustom').value = cd.contractsCustom || '';
   if (cd.iv != null) el('iv').value = cd.iv;
   if (cd.rate != null) el('rate').value = cd.rate;
   if (cd.projDate) el('projDate').value = cd.projDate;
@@ -1465,7 +1471,7 @@ function exportSavedPositionsCSV() {
     'Strike', 'Expiration Date', 'Note',
     'BTC Price', 'BTC Held', 'Shares Outstanding (M)', 'Convertible Debt ($B)',
     'Preferred Stock ($B)', 'USD Reserve ($B)', 'USD Cash ($B)', 'mNAV Multiple',
-    'Contracts', 'IV (%)', 'Risk-Free Rate (%)', 'Projection Date', 'Manual Price Override',
+    'Contracts', 'Custom Contract Count', 'IV (%)', 'Risk-Free Rate (%)', 'Projection Date', 'Manual Price Override',
     'Derived MSTR Price', 'Option Price', 'Total Position Value', 'Saved At'
   ];
 
@@ -1481,7 +1487,7 @@ function exportSavedPositionsCSV() {
       c.strike, c.expiration_date, c.notes || '',
       cd.btcPrice, cd.btcHeld, cd.shares, cd.debt,
       cd.preferred, cd.usdReserve, cd.usdCash, cd.mnav,
-      cd.contracts, cd.iv, cd.rate, cd.projDate, cd.manualPrice || '',
+      cd.contracts, cd.contractsCustom || '', cd.iv, cd.rate, cd.projDate, cd.manualPrice || '',
       cd.derivedPrice, cd.optionPrice, cd.totalPositionValue, c.created_at
     ].map(csvEscape).join(','));
   });
@@ -1796,7 +1802,8 @@ function recalc(){
   const usdCashB = parseFloat(el('usdCash').value);
   const mnav = parseFloat(el('mnav').value);
   const strike = parseFloat(el('strike').value);
-  const contracts = parseFloat(el('contracts').value);
+  const contractsOverride = el('contractsCustom').value;
+  const contracts = contractsOverride ? parseInt(contractsOverride) : parseFloat(el('contracts').value);
   const ivPct = parseFloat(el('iv').value);
   const ratePct = parseFloat(el('rate').value);
 
@@ -1866,7 +1873,7 @@ function recalc(){
 
 // wire up all inputs
 ['btcPrice','btcHeld','shares','debt','preferred','usdReserve','usdCash','mnav',
- 'strike','contracts','iv','rate','expiryDate','projDate','manualPrice']
+ 'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice']
  .forEach(id => el(id).addEventListener('input', recalc));
 
 // quick scenarios
