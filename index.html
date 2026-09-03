@@ -60,7 +60,8 @@
     flex-wrap:wrap;row-gap:10px;
     padding:22px 32px;
     border-bottom:1px solid var(--line);
-    position:relative;z-index:2;
+    position:sticky;top:0;z-index:10;
+    background:var(--bg);
   }
   header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:18px;}
   header .brand img{width:30px;height:30px;vertical-align:middle;margin-right:10px;position:relative;top:-1px;}
@@ -421,7 +422,7 @@
     <a href="#tool">projector</a>
     <a href="#about">about</a>
     <a href="learn.html">learn</a>
-    <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
+    <button type="button" id="navTrialBtn" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;margin-left:28px;">Start free trial</button>
     <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;">log in</a>
     <span id="navLoggedIn" style="display:none;">
       <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;margin-left:28px;"></span>
@@ -527,7 +528,7 @@
     <div class="grid">
       <div class="field">
         <label>Number of contracts <span class="val" id="lblContracts">10</span></label>
-        <input type="range" id="contracts" min="1" max="200" value="10">
+        <input type="range" id="contracts" min="1" max="100" value="10">
       </div>
       <div class="field" id="expiryField">
         <label>Expiration date</label>
@@ -953,6 +954,8 @@ async function onLoggedIn(user) {
   el('navLoginLink').style.display = 'none';
   el('navLoggedIn').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
+  const navTrialBtn = document.getElementById('navTrialBtn');
+  if (navTrialBtn) navTrialBtn.style.display = 'none';
   el('positionWaitlistHint').style.display = 'none';
   el('ivProHint').style.display = 'none';
 
