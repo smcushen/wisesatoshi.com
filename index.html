@@ -604,6 +604,9 @@
       </div>
       <div style="font-size:13px;color:var(--ink-faint);margin-top:6px;" id="ivCalibStamp"></div>
     </div>
+    <div id="ivProHint" style="font-size:13px;color:var(--ink-dim);margin-top:8px;padding:8px 10px;background:var(--bg-panel-2);border-radius:4px;border:1px solid var(--line);">
+      In Pro, this strike and expiration come from a real, currently-listed dropdown — no typing, and it's saved for next time. <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a>
+    </div>
   </div>
 
   <div class="panel">
@@ -650,6 +653,12 @@
       <div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
       <div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
     </div>
+  </div>
+
+  <div class="panel" id="proPanelLockedHint">
+    <div class="panel-title">Your Saved Positions</div>
+    <p class="hint" style="margin-top:-8px;">Save this exact scenario — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
+    <button type="button" onclick="openAuthModal('signup')" style="background:none;border:1px dashed var(--line);color:var(--ink-dim);border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">🔒 Save this scenario — Start free trial</button>
   </div>
 
   <div class="panel" id="proPanel" style="display:none;">
@@ -888,6 +897,7 @@ async function onLoggedIn(user) {
   el('navLoggedIn').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
   el('positionWaitlistHint').style.display = 'none';
+  el('ivProHint').style.display = 'none';
 
   const { data: profile, error } = await supabaseClient
     .from('profiles')
@@ -912,6 +922,9 @@ async function onLoggedIn(user) {
     el('proQuickBar').style.display = 'block';
     el('upgradePanel').style.display = 'none';
     el('quickBarEmail').textContent = '— logged in as ' + user.email;
+
+    const lockedPreview = document.getElementById('proPanelLockedHint');
+    if (lockedPreview) lockedPreview.style.display = 'none';
 
     // No point advertising a trial/subscription to someone who already has
     // one — the hero's flex-grow means it automatically expands to fill
