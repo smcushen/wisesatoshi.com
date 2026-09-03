@@ -162,13 +162,19 @@
   @media (prefers-reduced-motion: reduce) {
     .pro-nudge-arrow { animation: none; opacity: 1; }
   }
+  #proPanelLockedHint {
+    border-color: var(--orange-dim) !important;
+    background: rgba(247,147,26,0.05) !important;
+  }
   /* Shared look for every "this is a Pro pitch" callout on the page — kept
-     as one class so all three always move together if adjusted again. */
+     as one class so all three always move together if adjusted again.
+     Full border all the way around (not a left-accent stripe like
+     ivSkewWarning uses) so a promo box never reads as a caution message. */
   .pro-pitch {
     font-size: 14px;
     color: var(--ink);
-    background: var(--bg-panel-2);
-    border: 1px solid var(--line);
+    background: rgba(247,147,26,0.05);
+    border: 1px solid var(--orange-dim);
     border-radius: 4px;
     padding: 8px 10px;
     display: flex;
