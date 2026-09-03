@@ -162,6 +162,18 @@
   @media (prefers-reduced-motion: reduce) {
     .pro-nudge-arrow { animation: none; opacity: 1; }
   }
+  .pro-badge {
+    display: inline-block;
+    background: var(--orange);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
   #proPanelLockedHint {
     border-color: var(--orange-dim) !important;
     background: rgba(247,147,26,0.05) !important;
@@ -533,7 +545,7 @@
     <div class="hint" id="pickerToggleHint" style="display:none;">
       <span id="optionSymbolDisplay" class="mono"></span>&nbsp;·&nbsp;<a href="#" id="manualToggleLink" onclick="toggleManualEntry(); return false;" style="color:var(--orange);text-decoration:none;">Don't see your exact strike? Enter it manually</a>
     </div>
-    <div class="pro-pitch" id="positionWaitlistHint"><span class="pro-nudge-arrow">→</span><span>Want to pick from real, currently-listed strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span></div>
+    <div class="pro-pitch" id="positionWaitlistHint"><span class="pro-nudge-arrow">→</span><span><span class="pro-badge">PRO</span>Want to pick from real, currently-listed strikes &amp; expirations instead of typing them, plus save positions and get custom price alerts? <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span></div>
   </div>
 
   <div class="panel">
@@ -645,7 +657,7 @@
     </div>
     <div id="ivProHint" class="pro-pitch" style="margin-top:8px;">
       <span class="pro-nudge-arrow">→</span>
-      <span>In Pro, this strike and expiration come from a real, currently-listed dropdown — no typing, and it's saved for next time. <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span>
+      <span><span class="pro-badge">PRO</span>In Pro, this strike and expiration come from a real, currently-listed dropdown — no typing, and it's saved for next time. <a href="#" onclick="openAuthModal('signup'); return false;" style="color:var(--orange);text-decoration:none;">Start your free 7-day trial →</a></span>
     </div>
   </div>
 
@@ -698,10 +710,10 @@
   <div class="panel" id="proPanelLockedHint">
     <div class="panel-title">Your Saved Positions</div>
     <div style="display:flex;align-items:flex-start;">
-      <span class="pro-nudge-arrow" style="margin-top:3px;">→</span>
+      <span class="pro-nudge-arrow" style="margin-top:0;">→</span>
       <div>
-        <p style="font-size:14px;color:var(--ink);margin-top:0;">Save this exact scenario — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
-        <button type="button" onclick="openAuthModal('signup')" style="background:none;border:1px dashed var(--line);color:var(--ink-dim);border-radius:6px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;">🔒 Save this scenario — Start free trial</button>
+        <p style="font-size:14px;color:var(--ink);margin-top:0;"><span class="pro-badge">PRO</span>Save this exact scenario — strike, expiry, BTC price, mNAV, IV, and the computed results — to come back to later.</p>
+        <button type="button" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;min-height:44px;">Save this scenario — Start your free 7-day trial →</button>
       </div>
     </div>
   </div>
