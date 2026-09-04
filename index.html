@@ -2529,42 +2529,28 @@ checkExistingSession(); // shows the Pro panel immediately if a session already 
 
 recalc();
 
-// Nav scroll-spy — highlights "projector" or "about" in orange based on
-// which section is currently near the vertical center of the viewport,
-// matching the same active-page treatment learn.html already uses for
-// itself. Uses a thin trigger band at the middle of the screen (rather
-// than "is this section visible at all") since #tool spans most of the
-// page — a naive visibility check would keep it "active" almost the
-// entire time, never handing off to #about.
+// Nav scroll-spy — "projector" represents the whole main page (hero, the
+// Pro promo, and the calculator itself), so it's active by default from
+// the moment the page loads. "about" is the only thing that overrides it,
+// and only while its section is actually near the vertical center of the
+// viewport — not a naive "is it visible at all" check, since that would
+// make handoffs feel premature as a huge section like #tool scrolls by.
 (function setupNavScrollSpy() {
-  const spySections = [
-    { id: 'tool', link: document.querySelector('.nav-links a[href="#tool"]'), active: false },
-    { id: 'about', link: document.querySelector('.nav-links a[href="#about"]'), active: false }
-  ].filter(s => s.link && document.getElementById(s.id));
+  const projectorLink = document.querySelector('.nav-links a[href="#tool"]');
+  const aboutLink = document.querySelector('.nav-links a[href="#about"]');
+  const aboutSection = document.getElementById('about');
 
-  if (!spySections.length || !('IntersectionObserver' in window)) return;
+  if (!projectorLink || !aboutLink || !aboutSection || !('IntersectionObserver' in window)) return;
 
-  function applyActiveState() {
-    // If more than one section transiently overlaps the trigger band at
-    // once (possible right at a section boundary), the later section in
-    // page order wins — scrolling down means we've moved on from the one
-    // before it, even if its trailing edge hasn't fully cleared yet.
-    let winner = null;
-    spySections.forEach(s => { if (s.active) winner = s; });
-    spySections.forEach(s => {
-      s.link.style.color = (s === winner) ? 'var(--orange)' : '';
-    });
-  }
+  projectorLink.style.color = 'var(--orange)';
 
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const match = spySections.find(s => s.id === entry.target.id);
-      if (match) match.active = entry.isIntersecting;
-    });
-    applyActiveState();
+    const aboutActive = entries[0].isIntersecting;
+    aboutLink.style.color = aboutActive ? 'var(--orange)' : '';
+    projectorLink.style.color = aboutActive ? '' : 'var(--orange)';
   }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
 
-  spySections.forEach(s => observer.observe(document.getElementById(s.id)));
+  observer.observe(aboutSection);
 })();
 
 // Auto-refresh: BTC every 60 seconds (external APIs, no Netlify cost either way).
