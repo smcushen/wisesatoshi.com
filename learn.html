@@ -43,7 +43,7 @@
   .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
 
   header{
-    display:flex;align-items:center;justify-content:space-between;
+    display:flex;align-items:center;justify-content:flex-start;
     flex-wrap:wrap;row-gap:10px;
     padding:22px 32px;
     border-bottom:1px solid var(--line);
@@ -54,7 +54,6 @@
   nav{display:flex;flex-wrap:wrap;row-gap:8px;}
   nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
   nav a:hover{color:var(--ink);}
-  nav a.x-link{color:var(--orange-dim);}
   @media(max-width:480px){
     header{padding:18px 20px;}
     nav a{margin-left:0;margin-right:20px;}
@@ -167,7 +166,6 @@
   <nav>
     <a href="index.html">projector</a>
     <a href="learn.html" style="color:var(--orange);">learn</a>
-    <a class="x-link" href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi ↗</a>
   </nav>
 </header>
 
