@@ -426,9 +426,9 @@
     <a href="learn.html">learn</a>
     <button type="button" id="navTrialBtn" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;margin-left:28px;">Start free trial</button>
     <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;">log in</a>
-    <span id="navLoggedIn" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+    <a href="#" id="navLogoutLink" onclick="signOutNav(); return false;" style="display:none;margin-left:auto;">log out</a>
+    <span id="navLoggedIn" style="display:none;align-items:center;flex-wrap:wrap;">
       <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;"></span>
-      <a href="#" onclick="signOutNav(); return false;">log out</a>
     </span>
   </nav>
 </header>
@@ -959,6 +959,7 @@ async function onLoggedIn(user) {
   currentUser = user;
   el('navLoginLink').style.display = 'none';
   el('navLoggedIn').style.display = 'inline-flex';
+  el('navLogoutLink').style.display = 'inline';
   el('navUserEmail').textContent = user.email;
   const navTrialBtn = document.getElementById('navTrialBtn');
   if (navTrialBtn) navTrialBtn.style.display = 'none';
