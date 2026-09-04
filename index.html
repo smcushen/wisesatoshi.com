@@ -68,11 +68,13 @@
   header .brand span{color:var(--orange);}
   nav{display:flex;flex-wrap:wrap;row-gap:8px;}
   nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
+  #navLoggedIn{margin-left:28px;}
   nav a:hover{color:var(--ink);}
   nav a.x-link{color:var(--orange-dim);}
   @media(max-width:480px){
     header{padding:18px 20px;}
     nav a{margin-left:0;margin-right:20px;}
+    #navLoggedIn{margin-left:0;margin-right:20px;}
   }
 
   .hero{
@@ -424,8 +426,8 @@
     <a href="learn.html">learn</a>
     <button type="button" id="navTrialBtn" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;margin-left:28px;">Start free trial</button>
     <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;">log in</a>
-    <span id="navLoggedIn" style="display:none;">
-      <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;margin-left:28px;"></span>
+    <span id="navLoggedIn" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;"></span>
       <a href="#" onclick="signOutNav(); return false;">log out</a>
     </span>
   </nav>
@@ -956,7 +958,7 @@ async function signOutNav() {
 async function onLoggedIn(user) {
   currentUser = user;
   el('navLoginLink').style.display = 'none';
-  el('navLoggedIn').style.display = 'inline';
+  el('navLoggedIn').style.display = 'inline-flex';
   el('navUserEmail').textContent = user.email;
   const navTrialBtn = document.getElementById('navTrialBtn');
   if (navTrialBtn) navTrialBtn.style.display = 'none';
