@@ -308,7 +308,8 @@
      The glow uses the same --orange-dim hue as the border itself (not the
      brighter --orange) so the two don't visually clash -- that mismatch is
      what made an earlier version of this look muddy/dark on some fields. */
-  input:focus, textarea:focus, select:focus, .quick-select > button:focus{
+  input:focus, textarea:focus, select:focus, .quick-select > button:focus,
+  .quick-select.open > button{
     outline:none;border-color:var(--orange-dim);
     box-shadow:0 0 0 3px rgba(201,121,26,0.3);
   }
@@ -1377,13 +1378,40 @@ async function saveEditedNote(id) {
   loadSavedPositions();
 }
 
+// Drives the clicked-in glow directly from JS instead of relying on the
+// browser's native :focus behavior for buttons -- clicking a <button> with
+// a mouse doesn't reliably trigger the same focus styling that clicking
+// into a text <input> does (a real, long-standing cross-browser quirk),
+// so every dropdown-style control (quick-load, expiry/strike pickers, the
+// calendar widget) explicitly marks itself open/closed here instead.
+function setQuickSelectOpen(wrapId, isOpen) {
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.classList.toggle('open', isOpen);
+}
+// Closes every other open dropdown (list pickers, calendar widgets, and the
+// quick-load menu all share the .quick-select/.quick-select-menu classes),
+// clearing both their visibility and their open-glow class together so the
+// two never fall out of sync with each other.
+function closeAllQuickSelectExcept(exceptWrapId) {
+  document.querySelectorAll('.quick-select').forEach(wrap => {
+    if (wrap.id === exceptWrapId) return;
+    wrap.classList.remove('open');
+    const menu = wrap.querySelector('.quick-select-menu');
+    if (menu) menu.style.display = 'none';
+  });
+}
+
 function toggleQuickLoadMenu() {
+  closeAllQuickSelectExcept('quickLoadWrap');
   const menu = el('quickLoadMenu');
-  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  const opening = menu.style.display !== 'block';
+  menu.style.display = opening ? 'block' : 'none';
+  setQuickSelectOpen('quickLoadWrap', opening);
 }
 function closeQuickLoadMenu() {
   const menu = el('quickLoadMenu');
   if (menu) menu.style.display = 'none';
+  setQuickSelectOpen('quickLoadWrap', false);
 }
 function selectQuickLoad(id) {
   closeQuickLoadMenu();
@@ -1784,21 +1812,31 @@ function scrollSelectedIntoView(menu) {
 function toggleExpiryMenu() {
   const menu = el('expiryPickerMenu');
   if (!menu) return;
-  closeStrikeMenu();
+  closeAllQuickSelectExcept('expiryPickerWrap');
   const opening = menu.style.display !== 'block';
   menu.style.display = opening ? 'block' : 'none';
+  setQuickSelectOpen('expiryPickerWrap', opening);
   if (opening) scrollSelectedIntoView(menu);
 }
-function closeExpiryMenu() { const m = el('expiryPickerMenu'); if (m) m.style.display = 'none'; }
+function closeExpiryMenu() {
+  const m = el('expiryPickerMenu');
+  if (m) m.style.display = 'none';
+  setQuickSelectOpen('expiryPickerWrap', false);
+}
 function toggleStrikeMenu() {
   const menu = el('strikePickerMenu');
   if (!menu) return;
-  closeExpiryMenu();
+  closeAllQuickSelectExcept('strikePickerWrap');
   const opening = menu.style.display !== 'block';
   menu.style.display = opening ? 'block' : 'none';
+  setQuickSelectOpen('strikePickerWrap', opening);
   if (opening) scrollSelectedIntoView(menu);
 }
-function closeStrikeMenu() { const m = el('strikePickerMenu'); if (m) m.style.display = 'none'; }
+function closeStrikeMenu() {
+  const m = el('strikePickerMenu');
+  if (m) m.style.display = 'none';
+  setQuickSelectOpen('strikePickerWrap', false);
+}
 
 function selectExpiry(dateVal) {
   closeExpiryMenu();
@@ -2059,9 +2097,10 @@ function calGridKeydown(e, fieldId) {
 function toggleCalendarMenu(fieldId) {
   const menu = el(fieldId + 'Menu');
   if (!menu) return;
-  document.querySelectorAll('.quick-select-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+  closeAllQuickSelectExcept(fieldId + 'Wrap');
   const opening = menu.style.display !== 'block';
   menu.style.display = opening ? 'block' : 'none';
+  setQuickSelectOpen(fieldId + 'Wrap', opening);
   if (opening) {
     renderCalendarMonth(fieldId);
     const focusBtn = menu.querySelector('.cal-day.selected') || menu.querySelector('.cal-day.today');
@@ -2071,6 +2110,7 @@ function toggleCalendarMenu(fieldId) {
 function closeCalendarMenu(fieldId) {
   const m = el(fieldId + 'Menu');
   if (m) m.style.display = 'none';
+  setQuickSelectOpen(fieldId + 'Wrap', false);
 }
 
 function selectCalendarDate(fieldId, iso) {
@@ -2084,8 +2124,8 @@ function selectCalendarDate(fieldId, iso) {
 document.addEventListener('click', function(e) {
   document.querySelectorAll('.cal-select').forEach(wrap => {
     if (!wrap.contains(e.target)) {
-      const menu = wrap.querySelector('.cal-menu');
-      if (menu) menu.style.display = 'none';
+      const fieldId = wrap.id.replace(/Wrap$/, '');
+      closeCalendarMenu(fieldId);
     }
   });
 });
