@@ -350,6 +350,28 @@
   .quick-select-item:hover{background:rgba(247,147,26,0.12);}
   .quick-select-empty{padding:10px 12px;font-size:13px;color:var(--ink-faint);}
 
+  /* Custom calendar widget -- replaces the native <input type="date"> picker
+     everywhere it appears, since browsers give no CSS hook to recolor its
+     internal day-highlight away from native blue (accent-color is scoped to
+     checkboxes/radios/sliders/progress bars only). Reuses .quick-select's
+     button/menu shell, adding the month-grid layout on top of it. */
+  .cal-menu{padding:10px;width:260px;max-height:none;}
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-month-label{font-size:14px;font-weight:600;color:var(--ink);}
+  .cal-nav{background:none;border:1px solid var(--line);border-radius:6px;color:var(--ink-dim);
+    width:28px;height:28px;font-size:16px;line-height:1;cursor:pointer;font-family:inherit;}
+  .cal-nav:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
+    font-size:11px;color:var(--ink-faint);margin-bottom:4px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .cal-day{background:none;border:none;border-radius:6px;color:var(--ink);
+    font-size:13px;font-family:inherit;padding:7px 0;cursor:pointer;}
+  .cal-day:hover{background:rgba(247,147,26,0.12);}
+  .cal-day:focus{outline:2px solid var(--orange-dim);outline-offset:-2px;}
+  .cal-day.today{color:var(--orange);font-weight:600;}
+  .cal-day.selected{background:var(--orange);color:#12100c;font-weight:600;}
+  .cal-day.other-month{visibility:hidden;}
+
 
   .toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .toggle-row button{
@@ -564,7 +586,13 @@
       </div>
       <div class="field" id="expiryField">
         <label>Expiration date</label>
-        <input type="date" id="expiryDate" value="2028-12-15" onchange="checkIvWarning()">
+        <input type="hidden" id="expiryDate" value="2028-12-15">
+        <div class="quick-select cal-select" id="expiryDateWrap">
+          <button type="button" id="expiryDateButton" onclick="toggleCalendarMenu('expiryDate')">
+            <span id="expiryDateLabel"></span><span class="quick-select-caret">▾</span>
+          </button>
+          <div id="expiryDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>
+        </div>
       </div>
       <div class="field" id="strikeField">
         <label>Strike price ($)</label>
@@ -572,7 +600,13 @@
       </div>
       <div class="field">
         <label>Projection date</label>
-        <input type="date" id="projDate">
+        <input type="hidden" id="projDate">
+        <div class="quick-select cal-select" id="projDateWrap">
+          <button type="button" id="projDateButton" onclick="toggleCalendarMenu('projDate')">
+            <span id="projDateLabel"></span><span class="quick-select-caret">▾</span>
+          </button>
+          <div id="projDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>
+        </div>
       </div>
     </div>
     <div class="hint" id="pickerToggleHint" style="display:none;">
@@ -854,6 +888,11 @@ function blackScholesCall(S,K,T,r,sigma){
 const el = id => document.getElementById(id);
 const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
 const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
+// State for the custom calendar widget (see its full implementation further
+// down) -- declared here, ahead of any code that touches a date field, since
+// const declarations aren't usably hoisted the way function declarations are.
+const _calState = {};
+window._calOnChange = window._calOnChange || {};
 
 // ---------- Supabase auth & saved positions (Pro) ----------
 // Publishable key — safe to be public, this is designed for client-side use
@@ -1553,7 +1592,7 @@ function loadSavedPosition(id) {
   el('contractsCustom').value = cd.contractsCustom || '';
   if (cd.iv != null) el('iv').value = cd.iv;
   if (cd.rate != null) el('rate').value = cd.rate;
-  if (cd.projDate) el('projDate').value = cd.projDate;
+  if (cd.projDate) setDateFieldValue('projDate', cd.projDate);
   el('manualPrice').value = cd.manualPrice || '';
 
   if (typeof checkIvWarning === 'function') checkIvWarning();
@@ -1616,7 +1655,10 @@ function exportSavedPositionsCSV() {
 
 const projDateInput = el('projDate');
 const today = new Date();
-projDateInput.value = today.toISOString().slice(0,10);
+setDateFieldValue('projDate', today.toISOString().slice(0,10));
+registerCalendarChange('projDate', recalc);
+registerCalendarChange('expiryDate', function(){ checkIvWarning(); updateOptionSymbolDisplay(); recalc(); });
+syncCalendarLabel('expiryDate');
 
 // Whether NYSE/Nasdaq regular trading hours are open right now (9:30 AM-4:00 PM
 // Eastern, Mon-Fri, not accounting for market holidays). Uses Intl's timezone
@@ -1804,7 +1846,12 @@ function setPickerValue(fieldId, rawValue, isExpiry) {
   const field = el(fieldId);
   if (!field) return;
   field.value = rawValue;
-  if (!_pickerMode) return; // native manual-entry inputs — nothing else to sync
+  if (!_pickerMode) {
+    // Calendar-widget mode (free tier or manual entry) -- keep its button
+    // label in sync too, since this bypasses selectCalendarDate() entirely.
+    if (isExpiry) syncCalendarLabel(fieldId);
+    return;
+  }
 
   if (isExpiry) {
     const listed = _optionsChainData && _optionsChainData.expirations.some(e => e.date === String(rawValue));
@@ -1874,6 +1921,163 @@ function enablePicker() {
   });
 }
 
+// Custom calendar widget -- replaces the native <input type="date"> picker
+// everywhere it appears (the free-tier/manual-entry Expiration date field,
+// and the Projection date field used by both tiers). Built for the same
+// reason the strike/expiry list picker exists: a native control's popup
+// can't be restyled to match the page's dark/orange theme across browsers,
+// and unlike the list picker's fixed short list of real contract dates,
+// a genuinely free-form date needs an actual month grid, not a dropdown list.
+//
+// Each field keeps its original id as a hidden input holding the ISO date
+// string, so every existing el(fieldId).value read elsewhere in the file
+// continues to work unchanged -- only the visible control changes.
+// (_calState and window._calOnChange are declared near the top of this
+// script, ahead of every other place that touches a date field.)
+const CAL_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CAL_DOW_LABELS = ['S','M','T','W','T','F','S'];
+
+function registerCalendarChange(fieldId, onChangeFn) {
+  window._calOnChange[fieldId] = onChangeFn;
+}
+
+function calIso(y, m, d) {
+  return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+
+function ensureCalState(fieldId, iso) {
+  if (_calState[fieldId]) return;
+  const d = iso ? new Date(iso + 'T00:00:00') : new Date();
+  _calState[fieldId] = { viewYear: d.getFullYear(), viewMonth: d.getMonth() };
+}
+
+// Keeps a calendar field's visible button label (and its remembered view
+// month) in sync with the underlying hidden input's value. Needed anywhere
+// code sets el(fieldId).value directly rather than through selectCalendarDate()
+// -- e.g. loading a saved scenario -- since that bypasses the widget entirely.
+function syncCalendarLabel(fieldId) {
+  const iso = el(fieldId) ? el(fieldId).value : null;
+  const label = el(fieldId + 'Label');
+  if (label) label.textContent = iso ? formatExpiryLabel(iso) : 'Select date';
+  ensureCalState(fieldId, iso);
+  if (iso) {
+    const d = new Date(iso + 'T00:00:00');
+    _calState[fieldId].viewYear = d.getFullYear();
+    _calState[fieldId].viewMonth = d.getMonth();
+  }
+}
+
+function setDateFieldValue(fieldId, iso) {
+  const field = el(fieldId);
+  if (!field) return;
+  field.value = iso;
+  syncCalendarLabel(fieldId);
+}
+
+function renderCalendarMonth(fieldId) {
+  const menu = el(fieldId + 'Menu');
+  if (!menu) return;
+  ensureCalState(fieldId, el(fieldId).value);
+  const { viewYear, viewMonth } = _calState[fieldId];
+  const selectedIso = el(fieldId).value;
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  const startDow = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  let cells = '';
+  for (let i = 0; i < startDow; i++) cells += '<span class="cal-day other-month" aria-hidden="true"></span>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = calIso(viewYear, viewMonth, day);
+    const classes = ['cal-day'];
+    if (iso === selectedIso) classes.push('selected');
+    if (iso === todayIso) classes.push('today');
+    cells += '<button type="button" class="' + classes.join(' ') + '" data-iso="' + iso + '" ' +
+      'onclick="selectCalendarDate(\'' + fieldId + '\',\'' + iso + '\')">' + day + '</button>';
+  }
+  const trailing = (7 - ((startDow + daysInMonth) % 7)) % 7;
+  for (let i = 0; i < trailing; i++) cells += '<span class="cal-day other-month" aria-hidden="true"></span>';
+
+  menu.innerHTML =
+    '<div class="cal-header">' +
+      '<button type="button" class="cal-nav" onclick="calShiftMonth(\'' + fieldId + '\',-1)" aria-label="Previous month">‹</button>' +
+      '<span class="cal-month-label">' + CAL_MONTH_NAMES[viewMonth] + ' ' + viewYear + '</span>' +
+      '<button type="button" class="cal-nav" onclick="calShiftMonth(\'' + fieldId + '\',1)" aria-label="Next month">›</button>' +
+    '</div>' +
+    '<div class="cal-dow-row">' + CAL_DOW_LABELS.map(d => '<span>' + d + '</span>').join('') + '</div>' +
+    '<div class="cal-grid" onkeydown="calGridKeydown(event,\'' + fieldId + '\')">' + cells + '</div>';
+}
+
+function calShiftMonth(fieldId, delta) {
+  const state = _calState[fieldId];
+  if (!state) return;
+  state.viewMonth += delta;
+  if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear--; }
+  if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear++; }
+  renderCalendarMonth(fieldId);
+}
+
+// Arrow keys move by day/week (crossing month boundaries re-renders the
+// grid onto the right month automatically); Enter/Space select via the
+// day buttons' native activation; Escape closes and returns focus to the
+// trigger button, matching standard combobox keyboard behavior.
+function calGridKeydown(e, fieldId) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeCalendarMenu(fieldId);
+    el(fieldId + 'Button').focus();
+    return;
+  }
+  const deltaByKey = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+  const delta = deltaByKey[e.key];
+  if (delta === undefined) return;
+  e.preventDefault();
+  const current = document.activeElement;
+  if (!current || !current.dataset || !current.dataset.iso) return;
+  const d = new Date(current.dataset.iso + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  _calState[fieldId].viewYear = d.getFullYear();
+  _calState[fieldId].viewMonth = d.getMonth();
+  renderCalendarMonth(fieldId);
+  const nextIso = calIso(d.getFullYear(), d.getMonth(), d.getDate());
+  const btn = document.querySelector('#' + fieldId + 'Menu button[data-iso="' + nextIso + '"]');
+  if (btn) btn.focus();
+}
+
+function toggleCalendarMenu(fieldId) {
+  const menu = el(fieldId + 'Menu');
+  if (!menu) return;
+  document.querySelectorAll('.quick-select-menu').forEach(m => { if (m !== menu) m.style.display = 'none'; });
+  const opening = menu.style.display !== 'block';
+  menu.style.display = opening ? 'block' : 'none';
+  if (opening) {
+    renderCalendarMonth(fieldId);
+    const focusBtn = menu.querySelector('.cal-day.selected') || menu.querySelector('.cal-day.today');
+    if (focusBtn) focusBtn.focus();
+  }
+}
+function closeCalendarMenu(fieldId) {
+  const m = el(fieldId + 'Menu');
+  if (m) m.style.display = 'none';
+}
+
+function selectCalendarDate(fieldId, iso) {
+  setDateFieldValue(fieldId, iso);
+  closeCalendarMenu(fieldId);
+  el(fieldId + 'Button').focus();
+  const cb = window._calOnChange[fieldId];
+  if (typeof cb === 'function') cb();
+}
+
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.cal-select').forEach(wrap => {
+    if (!wrap.contains(e.target)) {
+      const menu = wrap.querySelector('.cal-menu');
+      if (menu) menu.style.display = 'none';
+    }
+  });
+});
+
 // Escape hatch for a real, held contract that got trimmed out of the
 // activity-filtered chain file, or any strike/expiry combo not listed at all.
 function toggleManualEntry() {
@@ -1883,7 +2087,15 @@ function toggleManualEntry() {
 
   document.getElementById('expiryField').innerHTML =
     '<label>Expiration date</label>' +
-    '<input type="date" id="expiryDate" value="' + currentExpiry + '" onchange="checkIvWarning(); updateOptionSymbolDisplay(); recalc();">';
+    '<input type="hidden" id="expiryDate" value="' + currentExpiry + '">' +
+    '<div class="quick-select cal-select" id="expiryDateWrap">' +
+      '<button type="button" id="expiryDateButton" onclick="toggleCalendarMenu(\'expiryDate\')">' +
+        '<span id="expiryDateLabel"></span><span class="quick-select-caret">▾</span>' +
+      '</button>' +
+      '<div id="expiryDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>' +
+    '</div>';
+  registerCalendarChange('expiryDate', function(){ checkIvWarning(); updateOptionSymbolDisplay(); recalc(); });
+  syncCalendarLabel('expiryDate');
 
   document.getElementById('strikeField').innerHTML =
     '<label>Strike price ($)</label>' +
