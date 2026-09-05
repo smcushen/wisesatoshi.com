@@ -551,7 +551,7 @@
   <div class="panel" id="proQuickBar" style="display:none;">
     <div class="panel-title" style="display:flex;flex-wrap:wrap;align-items:baseline;row-gap:6px;column-gap:12px;">
       <span>Pro <span id="quickBarEmail" style="font-size:12px;color:var(--ink-dim);text-transform:none;letter-spacing:normal;margin-left:8px;"></span></span>
-      <a href="#" onclick="openBillingPortal(); return false;" class="quickbar-manage-billing" style="font-size:12px;color:var(--orange);text-transform:none;letter-spacing:normal;text-decoration:none;">Manage billing →</a>
+      <a href="#" onclick="openBillingPortal(); return false;" class="quickbar-manage-billing" style="font-size:12px;color:var(--orange);text-transform:none;letter-spacing:normal;text-decoration:none;"><span style="text-decoration:underline;">Manage billing</span> →</a>
     </div>
     <div id="trialBanner" class="fix-note" style="display:none;"></div>
     <div class="field" style="margin-bottom:0;">
@@ -1124,7 +1124,7 @@ async function onLoggedIn(user) {
       const hoursLeft = Math.max(1, Math.ceil((graceEndsAt - new Date()) / (1000 * 60 * 60)));
       const hourWord = hoursLeft === 1 ? 'hour' : 'hours';
       banner.innerHTML = '⚠️ Your last payment didn\'t go through — update your card within ' + hoursLeft + ' ' + hourWord +
-        ' to keep Pro access. <a href="#" onclick="openBillingPortal(); return false;" style="color:var(--orange);">Update payment method →</a>';
+        ' to keep Pro access. <a href="#" onclick="openBillingPortal(); return false;" style="color:var(--orange); text-decoration:none;"><span style="text-decoration:underline;">Update payment method</span> →</a>';
       banner.style.display = 'block';
     } else if (profile.subscription_status === 'active' && profile.cancel_at_period_end && profile.current_period_end) {
       const endsAt = new Date(profile.current_period_end);
