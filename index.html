@@ -705,6 +705,19 @@
         <div class="label">Implied mNAV vs derived price</div>
         <div class="value" id="outMnavCheck" style="font-size:20px;">—</div>
       </div>
+      <div class="result-card" style="grid-column:1/-1;">
+        <div class="label">Strategy market cap</div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;">
+          <div>
+            <div class="value" id="currentMarketCap" style="color:var(--ink);font-size:22px;">—</div>
+            <div class="sub">Today, live</div>
+          </div>
+          <div>
+            <div class="value" id="scenarioMarketCap" style="font-size:22px;">—</div>
+            <div class="sub">Under this scenario</div>
+          </div>
+        </div>
+      </div>
       <div class="result-card">
         <div class="label">Intrinsic value / share</div>
         <div class="value" id="outIntrinsic">—</div>
@@ -833,6 +846,18 @@ function blackScholesCall(S,K,T,r,sigma){
 const el = id => document.getElementById(id);
 const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
 const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
+// Abbreviated B/M currency, used only for the scenario market cap. That
+// number updates continuously as sliders move, so keeping it to a roughly
+// fixed width (unlike a full-digit figure, which visibly gains/loses
+// digits mid-drag) keeps the drag interaction feeling stable rather than
+// jittery. The live "today" market cap is a static reference figure by
+// comparison, so it uses the real full number instead -- see fmtUSD0 above.
+const fmtAbbrevUSD = n => {
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  return fmtUSD0(n);
+};
 
 // ---------- Supabase auth & saved positions (Pro) ----------
 // Publishable key — safe to be public, this is designed for client-side use
@@ -1963,6 +1988,17 @@ function recalc(){
   el('outContractValue').textContent = fmtUSD0(price*100);
   el('outTotal').textContent = fmtUSD0(price*100*contracts);
   el('outMnavCheck').textContent = (S/netValuePerShare).toFixed(3) + '×';
+
+  // Strategy market cap: today's real live price × real shares outstanding
+  // (both already on the page for other purposes) vs. the same math run on
+  // this scenario's derived/manual price instead. actualMstrPrice can briefly
+  // be empty before its first fetch resolves, so this fails gracefully to
+  // "—" rather than showing a nonsensical number computed from NaN.
+  const actualPriceRaw = parseFloat((el('actualMstrPrice').value || '').replace(/[$,]/g, ''));
+  el('currentMarketCap').textContent = (actualPriceRaw > 0 && sharesM > 0)
+    ? fmtUSD0(actualPriceRaw * sharesM * 1e6)
+    : '—';
+  el('scenarioMarketCap').textContent = (sharesM > 0) ? fmtAbbrevUSD(S * sharesM * 1e6) : '—';
 
   el('outDelta').textContent = delta.toFixed(3);
   el('outTheta').textContent = fmtUSD(theta);
