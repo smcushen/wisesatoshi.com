@@ -846,18 +846,6 @@ function blackScholesCall(S,K,T,r,sigma){
 const el = id => document.getElementById(id);
 const fmtUSD = n => '$' + n.toLocaleString('en-US',{maximumFractionDigits:2, minimumFractionDigits:2});
 const fmtUSD0 = n => '$' + Math.round(n).toLocaleString('en-US');
-// Abbreviated B/M currency, used only for the scenario market cap. That
-// number updates continuously as sliders move, so keeping it to a roughly
-// fixed width (unlike a full-digit figure, which visibly gains/loses
-// digits mid-drag) keeps the drag interaction feeling stable rather than
-// jittery. The live "today" market cap is a static reference figure by
-// comparison, so it uses the real full number instead -- see fmtUSD0 above.
-const fmtAbbrevUSD = n => {
-  const abs = Math.abs(n);
-  if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
-  if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-  return fmtUSD0(n);
-};
 
 // ---------- Supabase auth & saved positions (Pro) ----------
 // Publishable key — safe to be public, this is designed for client-side use
@@ -1998,7 +1986,7 @@ function recalc(){
   el('currentMarketCap').textContent = (actualPriceRaw > 0 && sharesM > 0)
     ? fmtUSD0(actualPriceRaw * sharesM * 1e6)
     : '—';
-  el('scenarioMarketCap').textContent = (sharesM > 0) ? fmtAbbrevUSD(S * sharesM * 1e6) : '—';
+  el('scenarioMarketCap').textContent = (sharesM > 0) ? fmtUSD0(S * sharesM * 1e6) : '—';
 
   el('outDelta').textContent = delta.toFixed(3);
   el('outTheta').textContent = fmtUSD(theta);
