@@ -841,9 +841,18 @@ let currentProfile = null;
 // Supabase fires this specific event when it detects a password-recovery
 // session in the URL (the link from a "reset password" email) — catching it
 // opens the same modal straight into the recovery view.
+//
+// It also fires SIGNED_OUT any time the current session becomes invalid —
+// including when the 2-session cap trigger deletes this session's row
+// because the account logged in elsewhere. window._manualSignOut is set
+// right before the deliberate signOut() call in signOutNav() so we can tell
+// that case apart from this one and only show the cap-reached modal here.
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
     openAuthModal('recovery');
+  }
+  if (event === 'SIGNED_OUT' && !window._manualSignOut) {
+    openSessionLimitModal();
   }
 });
 
@@ -854,6 +863,14 @@ function openAuthModal(view) {
 }
 function closeAuthModal() {
   el('authModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function openSessionLimitModal() {
+  el('sessionLimitModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeSessionLimitModal() {
+  el('sessionLimitModal').style.display = 'none';
   document.body.style.overflow = '';
 }
 function showAuthView(view) {
@@ -953,6 +970,7 @@ async function authUpdatePassword() {
 }
 
 async function signOutNav() {
+  window._manualSignOut = true;
   await supabaseClient.auth.signOut();
   // A full reload is deliberate here rather than manually resetting each
   // piece of Pro-only state (picker mode, calibration results, saved-scenario
@@ -2442,6 +2460,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (authModal) authModal.addEventListener('click', function(e) {
     if (e.target === this) closeAuthModal();
   });
+  var sessionLimitModal = document.getElementById('sessionLimitModal');
+  if (sessionLimitModal) sessionLimitModal.addEventListener('click', function(e) {
+    if (e.target === this) closeSessionLimitModal();
+  });
   if (document.querySelector('.pro-carousel-track')) proCarouselResetTimer();
 });
 
@@ -2683,6 +2705,17 @@ document.addEventListener('visibilitychange', () => {
       <input type="password" id="authNewPassword" placeholder="At least 6 characters" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;">
       <button onclick="authUpdatePassword()" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Set New Password</button>
     </div>
+  </div>
+</div>
+
+<div id="sessionLimitModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
+    <button onclick="closeSessionLimitModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
+    <div style="font-size:20px;margin-bottom:4px;text-align:center;">🔒&nbsp;&nbsp;Signed Out</div>
+    <div style="font-size:14px;color:var(--ink-dim);line-height:1.6;text-align:center;margin-bottom:1.5rem;">
+      Pro accounts are limited to two concurrent sessions. You were signed out because this account is already logged in on two other devices.
+    </div>
+    <button onclick="closeSessionLimitModal(); openAuthModal();" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Log In Again</button>
   </div>
 </div>
 </body>
