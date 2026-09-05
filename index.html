@@ -301,12 +301,17 @@
     color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
     color-scheme:dark;
   }
-  .field input[type=date]{
-    width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
-    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
-    color-scheme:dark;-webkit-appearance:none;appearance:none;
-  }
   .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
+
+  /* Every text/number field and dropdown-style button site-wide, recolored
+     from the browser's native blue focus ring to match the orange theme --
+     previously only the calendar's individual day cells had this, so every
+     other field (strike, custom contract count, manual overrides, saved-
+     scenario note, etc.) was still showing native blue on click or tab. */
+  input:focus, textarea:focus, select:focus, .quick-select > button:focus{
+    outline:none;border-color:var(--orange-dim);
+    box-shadow:0 0 0 2px rgba(247,147,26,0.25);
+  }
 
   .list-tooltip{position:relative;}
   .list-tooltip::after{
