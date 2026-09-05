@@ -546,7 +546,7 @@
       </div>
       <div class="field">
         <label>Custom contract count (optional)</label>
-        <input type="number" id="contractsCustom" min="1" step="1" placeholder="leave blank to use slider">
+        <input type="number" id="contractsCustom" min="1" max="1000" step="1" placeholder="leave blank to use slider">
       </div>
       <div class="field" id="expiryField">
         <label>Expiration date</label>
@@ -1854,7 +1854,16 @@ function recalc(){
   const mnav = parseFloat(el('mnav').value);
   const strike = parseFloat(el('strike').value);
   const contractsOverride = el('contractsCustom').value;
-  const contracts = contractsOverride ? parseInt(contractsOverride) : parseFloat(el('contracts').value);
+  // Capped at 1000 -- the field exists to go beyond the slider's 100-contract
+  // max, not to accept literally unbounded input (which could produce
+  // nonsensical results or break the currency formatting below).
+  let contracts;
+  if (contractsOverride) {
+    const parsedContracts = parseInt(contractsOverride);
+    contracts = isNaN(parsedContracts) ? parseFloat(el('contracts').value) : Math.min(Math.max(parsedContracts, 1), 1000);
+  } else {
+    contracts = parseFloat(el('contracts').value);
+  }
   const ivPct = parseFloat(el('iv').value);
   const ratePct = parseFloat(el('rate').value);
 
@@ -1926,6 +1935,19 @@ function recalc(){
 ['btcPrice','btcHeld','shares','debt','preferred','usdReserve','usdCash','mnav',
  'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice']
  .forEach(id => el(id).addEventListener('input', recalc));
+
+// Corrects what's actually displayed in the custom contract count box to
+// match the 1-1000 clamp recalc() already enforces for the math -- without
+// this, someone could type e.g. 5000, see the result computed with 1000
+// (via lblContracts), but still see "5000" sitting in this field, which
+// would look like a bug rather than an intentional cap.
+el('contractsCustom').addEventListener('change', function() {
+  if (!this.value) return;
+  const parsedContracts = parseInt(this.value);
+  if (!isNaN(parsedContracts)) {
+    this.value = Math.min(Math.max(parsedContracts, 1), 1000);
+  }
+});
 
 // quick scenarios
 document.querySelectorAll('.toggle-row button').forEach(btn=>{
