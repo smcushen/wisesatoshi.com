@@ -305,12 +305,11 @@
 
   /* Every text/number field and dropdown-style button site-wide, recolored
      from the browser's native blue focus ring to match the orange theme --
-     previously only the calendar's individual day cells had this, so every
-     other field (strike, custom contract count, manual overrides, saved-
-     scenario note, etc.) was still showing native blue on click or tab. */
+     matches .quick-select > button:hover's existing plain solid-border
+     treatment exactly (no added box-shadow), rather than introducing a
+     second, softer-looking focus style that wouldn't match it. */
   input:focus, textarea:focus, select:focus, .quick-select > button:focus{
     outline:none;border-color:var(--orange-dim);
-    box-shadow:0 0 0 2px rgba(247,147,26,0.25);
   }
 
   .list-tooltip{position:relative;}
