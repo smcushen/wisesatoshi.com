@@ -1131,7 +1131,17 @@ async function openBillingPortal() {
     const { data, error } = await supabaseClient.functions.invoke('create-portal-session', {
       method: 'POST'
     });
-    if (error) throw error;
+    if (error) {
+      // supabase-js's error.message here is just a generic "non-2xx status
+      // code" wrapper -- the actual { error: "..." } body we return from
+      // the function lives on error.context (the raw Response object).
+      let detail = error.message;
+      try {
+        const body = await error.context.json();
+        if (body?.error) detail = body.error;
+      } catch (_) { /* body wasn't JSON -- fall back to the generic message */ }
+      throw new Error(detail);
+    }
     if (!data || !data.url) throw new Error('Could not open billing portal.');
     window.location.href = data.url;
   } catch (err) {
