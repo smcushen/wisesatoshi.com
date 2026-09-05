@@ -68,7 +68,7 @@
   header .brand span{color:var(--orange);}
   nav{display:flex;flex-wrap:wrap;row-gap:8px;flex-grow:1;}
   .nav-links{display:flex;align-items:center;flex-wrap:wrap;}
-  .nav-account{display:flex;align-items:center;flex-wrap:wrap;margin-left:auto;}
+  .nav-account{display:flex;align-items:center;flex-wrap:wrap;margin-left:20px;}
   nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
   #navLoggedIn{margin-left:28px;}
   nav a:hover{color:var(--ink);}
@@ -77,6 +77,7 @@
     header{padding:18px 20px;}
     nav a{margin-left:0;margin-right:20px;}
     #navLoggedIn{margin-left:0;margin-right:20px;}
+    .nav-account{flex-basis:100%;margin-left:0;margin-top:8px;}
   }
 
   .hero{
@@ -433,10 +434,10 @@
       <a href="#about">about</a>
       <a href="learn.html">learn</a>
     </span>
+    <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;" style="margin-left:auto;">log in</a>
+    <a href="#" id="navLogoutLink" onclick="signOutNav(); return false;" style="display:none;margin-left:auto;">log out</a>
     <span class="nav-account">
-      <a href="#" id="navLoginLink" onclick="openAuthModal(); return false;">log in</a>
-      <button type="button" id="navTrialBtn" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;margin-left:28px;">Start free trial</button>
-      <a href="#" id="navLogoutLink" onclick="signOutNav(); return false;" style="display:none;">log out</a>
+      <button type="button" id="navTrialBtn" onclick="openAuthModal('signup')" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;">Start free trial</button>
       <span id="navLoggedIn" style="display:none;align-items:center;flex-wrap:wrap;">
         <span id="navUserEmail" style="color:var(--ink-dim);font-size:14px;"></span>
       </span>
