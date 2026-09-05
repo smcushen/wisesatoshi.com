@@ -281,6 +281,11 @@
   br.mobile-break{display:none;}
   @media(max-width:640px){br.mobile-break{display:inline;}}
 
+  /* Keeps "PRO — logged in as [email]" together as one group on mobile,
+     pushing "Manage billing" to its own line below rather than letting it
+     wrap awkwardly mid-phrase the way plain inline text would. */
+  @media(max-width:640px){.quickbar-manage-billing{flex-basis:100%;}}
+
   .field{margin-bottom:16px;}
   .field label{
     display:flex;justify-content:space-between;align-items:baseline;
@@ -516,7 +521,10 @@
 <main id="tool">
 
   <div class="panel" id="proQuickBar" style="display:none;">
-    <div class="panel-title">Pro <span id="quickBarEmail" style="font-size:12px;color:var(--ink-dim);text-transform:none;letter-spacing:normal;margin-left:8px;"></span> <a href="#" onclick="openBillingPortal(); return false;" style="font-size:12px;color:var(--orange);text-transform:none;letter-spacing:normal;margin-left:12px;text-decoration:none;">Manage billing →</a></div>
+    <div class="panel-title" style="display:flex;flex-wrap:wrap;align-items:baseline;row-gap:6px;column-gap:12px;">
+      <span>Pro <span id="quickBarEmail" style="font-size:12px;color:var(--ink-dim);text-transform:none;letter-spacing:normal;margin-left:8px;"></span></span>
+      <a href="#" onclick="openBillingPortal(); return false;" class="quickbar-manage-billing" style="font-size:12px;color:var(--orange);text-transform:none;letter-spacing:normal;text-decoration:none;">Manage billing →</a>
+    </div>
     <div id="trialBanner" class="fix-note" style="display:none;"></div>
     <div class="field" style="margin-bottom:0;">
       <label>Load a saved scenario</label>
