@@ -275,6 +275,12 @@
   @media(max-width:640px){.grid-3{grid-template-columns:1fr;}}
   @media(max-width:640px){.grid{grid-template-columns:1fr;}}
 
+  /* Forces a line break only below the mobile breakpoint -- used to
+     deliberately control where the cancellation banner wraps on phones,
+     while leaving it as flowing text on wider screens. */
+  br.mobile-break{display:none;}
+  @media(max-width:640px){br.mobile-break{display:inline;}}
+
   .field{margin-bottom:16px;}
   .field label{
     display:flex;justify-content:space-between;align-items:baseline;
@@ -1058,7 +1064,7 @@ async function onLoggedIn(user) {
       const endsAt = new Date(profile.current_period_end);
       banner.innerHTML = 'Your subscription is set to cancel on ' +
         endsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) +
-        ' — you\'ll keep Pro access until then. <a href="#" onclick="openBillingPortal(); return false;" style="color:var(--orange);">Manage billing →</a>';
+        ' —<br class="mobile-break"> you\'ll keep Pro access until then.<br class="mobile-break"> <a href="#" onclick="openBillingPortal(); return false;" style="color:var(--orange);">Manage billing →</a>';
       banner.style.display = 'block';
     } else if (profile.subscription_status === 'active') {
       banner.style.display = 'none';
