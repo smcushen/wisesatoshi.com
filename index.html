@@ -2000,15 +2000,22 @@ function renderCalendarMonth(fieldId) {
 
   menu.innerHTML =
     '<div class="cal-header">' +
-      '<button type="button" class="cal-nav" onclick="calShiftMonth(\'' + fieldId + '\',-1)" aria-label="Previous month">‹</button>' +
+      '<button type="button" class="cal-nav" onclick="calShiftMonth(event,\'' + fieldId + '\',-1)" aria-label="Previous month">‹</button>' +
       '<span class="cal-month-label">' + CAL_MONTH_NAMES[viewMonth] + ' ' + viewYear + '</span>' +
-      '<button type="button" class="cal-nav" onclick="calShiftMonth(\'' + fieldId + '\',1)" aria-label="Next month">›</button>' +
+      '<button type="button" class="cal-nav" onclick="calShiftMonth(event,\'' + fieldId + '\',1)" aria-label="Next month">›</button>' +
     '</div>' +
     '<div class="cal-dow-row">' + CAL_DOW_LABELS.map(d => '<span>' + d + '</span>').join('') + '</div>' +
     '<div class="cal-grid" onkeydown="calGridKeydown(event,\'' + fieldId + '\')">' + cells + '</div>';
 }
 
-function calShiftMonth(fieldId, delta) {
+function calShiftMonth(e, fieldId, delta) {
+  // Re-rendering the grid below replaces its DOM nodes, including the button
+  // that was just clicked -- if this click were left to bubble up to the
+  // document-level "click outside closes the calendar" listener, that
+  // listener would find its reference node already detached and wrongly
+  // conclude the click landed outside the widget, closing it. Stopping
+  // propagation here means that listener never runs for this click at all.
+  e.stopPropagation();
   const state = _calState[fieldId];
   if (!state) return;
   state.viewMonth += delta;
