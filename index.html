@@ -1057,7 +1057,7 @@ async function onLoggedIn(user) {
     } else if (profile.subscription_status === 'active' && profile.cancel_at_period_end && profile.current_period_end) {
       const endsAt = new Date(profile.current_period_end);
       banner.innerHTML = 'Your subscription is set to cancel on ' +
-        endsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) +
+        endsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) +
         ' — you\'ll keep Pro access until then. <a href="#" onclick="openBillingPortal(); return false;" style="color:var(--orange);">Manage billing →</a>';
       banner.style.display = 'block';
     } else if (profile.subscription_status === 'active') {
@@ -1066,7 +1066,7 @@ async function onLoggedIn(user) {
       const daysLeft = Math.max(1, Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24)));
       const dayWord = daysLeft === 1 ? 'day' : 'days';
       banner.textContent = '🎉 Your 7-day Pro trial is active — ' + daysLeft + ' ' + dayWord + ' left, ends ' +
-        trialEndsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) + '.';
+        trialEndsAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) + '.';
       banner.style.display = 'block';
     }
     loadSavedPositions();
@@ -1092,7 +1092,7 @@ function showUpgradePrompt(endedAt, wasPaymentFailure) {
     copyEl.innerHTML = 'Your 7-day trial ended on <span id="trialEndedDate"></span>. Subscribe to keep saving, loading, and comparing scenarios.';
   }
   el('trialEndedDate').textContent = endedAt
-    ? endedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    ? endedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
     : 'recently';
 }
 
@@ -2511,7 +2511,7 @@ function calibrateIV() {
   resultEl.style.color = 'var(--ink)';
 
   const now = new Date();
-  stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
+  stampEl.textContent = 'Calibrated ' + now.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}) + ' at ' + now.toISOString().slice(11,16) + ' UTC · MSTR $' + useS.toFixed(2) + ' · observed price $' + observed.toFixed(2);
 }
 
 // Clears the calibration box back to its empty starting state — the entered
