@@ -890,6 +890,19 @@ function setSignupStatus(message, type) {
   node.style.color = type === 'error' ? 'var(--red)' : type === 'ok' ? 'var(--green)' : 'var(--ink-dim)';
 }
 
+// Quick client-side check for an immediate, friendly error message.
+// This is NOT the real enforcement -- the database trigger (handle_new_user)
+// checks the same list server-side and is what actually withholds the free
+// trial, since this client-side list can be bypassed from devtools. Keep
+// this list in sync with the disposable_email_domains table in Supabase if
+// you add more domains.
+const DISPOSABLE_EMAIL_DOMAINS = [
+  'mailinator.com', 'guerrillamail.com', 'guerrillamailblock.com', '10minutemail.com',
+  'temp-mail.org', 'tempmail.com', 'throwawaymail.com', 'yopmail.com', 'trashmail.com',
+  'getnada.com', 'maildrop.cc', 'fakeinbox.com', 'sharklasers.com', 'mailnesia.com',
+  'mintemail.com', 'dispostable.com'
+];
+
 async function authSignUp() {
   const email = el('signupEmail').value;
   const password = el('signupPassword').value;
@@ -900,6 +913,11 @@ async function authSignUp() {
   // error instead of a plain "fill this in first" message.
   if (!email || !password || !passwordConfirm) {
     setSignupStatus('Fill in all three fields above first.', 'error');
+    return;
+  }
+  const emailDomain = email.split('@')[1]?.toLowerCase();
+  if (DISPOSABLE_EMAIL_DOMAINS.includes(emailDomain)) {
+    setSignupStatus('Please use a permanent email address to sign up.', 'error');
     return;
   }
   if (password.length < 6) {
