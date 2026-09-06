@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=">
+<title>Terms of Service — wisesatoshi.com</title>
+<meta name="description" content="Terms governing your use of the Wise Satoshi MSTR Options Projector.">
+<meta property="og:title" content="Terms of Service — wisesatoshi.com">
+<meta property="og:description" content="Terms governing your use of the Wise Satoshi MSTR Options Projector.">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#0b0d0f;
+    --bg-panel:#131619;
+    --bg-panel-2:#181c20;
+    --line:#262b30;
+    --ink:#e9e6df;
+    --ink-dim:#9aa0a6;
+    --ink-faint:#7f858b;
+    --orange:#f7931a;
+    --orange-dim:#c9791a;
+    --green:#4caf7d;
+    --red:#e0674a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    color-scheme:dark;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;}
+
+  /* enso ring motif, used sparingly */
+  .enso{
+    position:absolute;
+    border-radius:50%;
+    border:1.5px solid var(--orange);
+    opacity:0.14;
+    border-right-color:transparent;
+    border-bottom-color:transparent;
+    transform:rotate(-35deg);
+    pointer-events:none;
+  }
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;row-gap:10px;
+    padding:22px 32px;
+    border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:10;
+    background:var(--bg);
+  }
+  header .brand{font-weight:600;letter-spacing:0.02em;color:var(--ink);text-decoration:none;font-size:18px;}
+  header .brand img{width:30px;height:30px;vertical-align:middle;margin-right:10px;position:relative;top:-1px;}
+  header .brand span{color:var(--orange);}
+  nav{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;flex-grow:1;}
+  .nav-links{display:flex;align-items:center;flex-wrap:wrap;}
+  .nav-account{display:flex;align-items:center;flex-wrap:wrap;margin-left:20px;}
+  nav a{color:var(--ink-dim);text-decoration:none;margin-left:28px;font-size:14px;}
+  #navLoggedIn{margin-left:28px;}
+  nav a:hover{color:var(--ink);}
+  nav a.x-link{color:var(--orange-dim);}
+  @media(max-width:480px){
+    header{padding:18px 20px;}
+    nav a{margin-left:0;margin-right:20px;}
+    #navLoggedIn{margin-left:0;margin-right:20px;}
+    .nav-account{flex-basis:100%;margin-left:0;margin-top:8px;}
+  }
+
+  .hero{
+    position:relative;
+    padding:64px 32px 40px;
+    max-width:900px;
+    overflow:hidden;
+  }
+  .hero .enso{width:520px;height:520px;top:-160px;right:-220px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--orange);margin-bottom:14px;font-weight:600;
+  }
+  h1{
+    font-size:clamp(28px,4vw,42px);
+    line-height:1.15;
+    margin:0 0 16px;
+    font-weight:600;
+    max-width:16ch;
+  }
+  .lede{color:var(--ink-dim);font-size:16px;max-width:60ch;margin:0 0 28px;}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;}
+  .badge{
+    font-size:12px;color:var(--ink-dim);
+    border:1px solid var(--line);border-radius:999px;
+    padding:6px 12px;
+  }
+
+  .pro-promo{
+    background:var(--bg-panel);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    padding:56px 32px;
+  }
+  .pro-promo-inner{max-width:900px;margin:0 auto;}
+  .pro-promo-header{margin-bottom:32px;max-width:60ch;}
+  .pro-promo-title{font-size:clamp(22px,3vw,30px);font-weight:600;margin:0 0 10px;line-height:1.25;}
+  .pro-promo-lede{color:var(--ink-dim);font-size:15px;margin:0;}
+  .pro-carousel{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .pro-carousel-track{position:relative;flex:1;min-height:200px;}
+  .pro-feature{
+    position:absolute;inset:0;
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
+    opacity:0;visibility:hidden;
+    transition:opacity 0.4s ease;
+  }
+  .pro-feature.active{opacity:1;visibility:visible;}
+  .pro-carousel-arrow{
+    background:none;border:1px solid var(--line);color:var(--ink-dim);
+    border-radius:50%;width:32px;height:32px;font-size:18px;line-height:1;
+    cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    transition:border-color 0.2s,color 0.2s;
+  }
+  .pro-carousel-arrow:hover{border-color:var(--orange);color:var(--orange);}
+  .pro-carousel-dots{display:flex;justify-content:center;gap:8px;margin-bottom:16px;}
+  .pro-dot{
+    width:8px;height:8px;border-radius:50%;cursor:pointer;
+    background:rgba(247,147,26,0.25);transition:background 0.2s;
+  }
+  .pro-dot.active{background:var(--orange);}
+  .pro-feature-icon{font-size:22px;margin-bottom:10px;}
+  .pro-feature-title{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--ink);}
+  .pro-feature-desc{font-size:13px;color:var(--ink-dim);line-height:1.5;}
+  .pro-cta-button{
+    background:var(--orange);color:#000;border:none;border-radius:6px;
+    padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;
+    margin-top:20px;
+  }
+  .pro-cta-sub{font-size:13px;color:var(--ink-faint);margin-top:14px;}
+
+  /* Slow, gentle beckoning motion for the two small Pro hints — deliberately
+     not a hard blink, which reads as insistent/dated. A soft nudge toward
+     the text plus a slight opacity lift is enough to catch the eye at rest,
+     without competing for attention while someone's actively using the
+     calculator. Respects the OS-level "reduce motion" setting. */
+  @keyframes proNudge {
+    0%, 100% { transform: translateX(0); opacity: 0.75; }
+    50% { transform: translateX(2px); opacity: 1; }
+  }
+  .pro-nudge-arrow {
+    display: inline-block;
+    color: var(--orange);
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+    animation: proNudge 3s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pro-nudge-arrow { animation: none; opacity: 1; }
+  }
+  .pro-badge {
+    display: inline-block;
+    background: var(--orange);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  #proPanelLockedHint {
+    border-color: var(--orange-dim) !important;
+    background: rgba(247,147,26,0.05) !important;
+  }
+  /* Shared look for every "this is a Pro pitch" callout on the page — kept
+     as one class so all three always move together if adjusted again.
+     Full border all the way around (not a left-accent stripe like
+     ivSkewWarning uses) so a promo box never reads as a caution message. */
+  .pro-pitch {
+    font-size: 14px;
+    color: var(--ink);
+    background: rgba(247,147,26,0.05);
+    border: 1px solid var(--orange-dim);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* Mobile/stacked layout only (below the desktop breakpoint further down):
+     center the CTA button under the dots, and add breathing room below the
+     whole promo band so it doesn't touch whatever comes right after it. */
+  @media(max-width:1099px){
+    .pro-cta-button{display:block;margin-left:auto;margin-right:auto;margin-top:44px;}
+    .pro-cta-sub{margin-top:32px;}
+    .pro-promo{margin-bottom:24px;}
+  }
+
+  /* Desktop/laptop only — hero and Pro promo sit side by side in the space
+     that's otherwise empty next to the hero text. Below this width,
+     everything reverts to the original stacked layout (the rules above),
+     completely untouched. */
+  @media(min-width:1100px){
+    .hero-promo-wrap{
+      display:flex;
+      align-items:flex-start;
+      gap:40px;
+      max-width:1560px;
+      margin:0 auto;
+      padding:0 32px;
+      margin-bottom:8px;
+    }
+    .hero-promo-wrap .hero{
+      flex:1 1 50%;
+      max-width:none;
+      padding-left:0;
+      padding-right:0;
+    }
+    .hero-promo-wrap .pro-promo{
+      flex:1 1 50%;
+      background:var(--bg-panel);
+      border:1px solid var(--line);
+      border-radius:12px;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      margin-top:32px;
+      padding:32px;
+    }
+    /* Grid instead of two independent flex columns — row 2 (the button and
+       the subtext) is a single shared track, so the two are guaranteed to
+       start at exactly the same height regardless of how tall the header
+       text or the carousel above them turns out to be. No margin-guessing. */
+    .hero-promo-wrap .pro-promo-inner{
+      max-width:none;
+      display:grid;
+      grid-template-columns:40% 1fr;
+      column-gap:32px;
+    }
+    .hero-promo-wrap .pro-promo-header{grid-column:1;grid-row:1;margin-bottom:0;}
+    .hero-promo-wrap .pro-promo-right{grid-column:2;grid-row:1;margin-top:34px;}
+    .hero-promo-wrap .pro-cta-button{grid-column:1;grid-row:2;align-self:start;margin-top:10px;}
+    .hero-promo-wrap .pro-cta-sub{grid-column:2;grid-row:2;align-self:start;margin-top:10px;}
+  }
+
+  main{max-width:900px;margin:0 auto;padding:0 32px 80px;}
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px;
+    margin-bottom:20px;
+  }
+  .panel-title{
+    font-size:14px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--ink-dim);margin:0 0 20px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+  @media(max-width:640px){.grid-3{grid-template-columns:1fr;}}
+  @media(max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  /* Forces a line break only below the mobile breakpoint -- used to
+     deliberately control where the cancellation banner wraps on phones,
+     while leaving it as flowing text on wider screens. */
+  br.mobile-break{display:none;}
+  @media(max-width:640px){br.mobile-break{display:inline;}}
+
+  /* Keeps "PRO — logged in as [email]" together as one group on mobile,
+     pushing "Manage billing" to its own line below rather than letting it
+     wrap awkwardly mid-phrase the way plain inline text would. */
+  @media(max-width:640px){.quickbar-manage-billing{flex-basis:100%;}}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--ink-dim);margin-bottom:8px;
+  }
+  .field label .val{color:var(--orange);font-weight:600;font-variant-numeric:tabular-nums;}
+  .field input[type=range]{
+    width:100%;accent-color:var(--orange);
+    height:4px;background:var(--line);
+  }
+  .field input[type=number],.field input[type=text]{
+    width:100%;background:var(--bg-panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;
+    color-scheme:dark;
+  }
+  .field .hint{font-size:13px;color:var(--ink-faint);margin-top:6px;}
+
+  /* Every text/number field and dropdown-style button site-wide, recolored
+     from the browser's native blue focus ring to match the orange theme.
+     The glow uses the same --orange-dim hue as the border itself (not the
+     brighter --orange) so the two don't visually clash -- that mismatch is
+     what made an earlier version of this look muddy/dark on some fields. */
+  input:focus, textarea:focus, select:focus, .quick-select > button:focus,
+  .quick-select.open > button{
+    outline:none;border-color:var(--orange-dim);
+    box-shadow:0 0 0 3px rgba(201,121,26,0.3);
+  }
+
+  .list-tooltip{position:relative;}
+  .list-tooltip::after{
+    content:attr(data-tooltip);
+    position:absolute;top:100%;left:0;margin-top:6px;
+    background:var(--bg-panel-2);border:1px solid var(--orange-dim);color:var(--ink);
+    padding:6px 10px;border-radius:6px;font-size:12px;white-space:normal;
+    max-width:320px;width:max-content;opacity:0;pointer-events:none;
+    transition:opacity 0.15s ease 300ms;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  }
+  .list-tooltip:hover::after{opacity:1;}
+
+  .clear-btn{
+    position:relative;
+    background:none;
+    border:1px solid var(--orange-dim);
+    border-radius:6px;
+  }
+  .clear-btn::before,.clear-btn::after{
+    content:"";position:absolute;left:9px;right:9px;height:3px;
+    background:var(--bg-panel);
+  }
+  .clear-btn::before{top:-1px;}
+  .clear-btn::after{bottom:-1px;}
+
+  .quick-select{position:relative;}
+  .quick-select > button{
+    width:100%;text-align:left;background:var(--bg-panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    font-family:inherit;
+  }
+  .quick-select > button:hover{border-color:var(--orange-dim);}
+  .quick-select-caret{color:var(--ink-faint);font-size:12px;}
+  .quick-select-menu{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:50;
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;
+    max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .quick-select-item{padding:10px 12px;font-size:14px;color:var(--ink);cursor:pointer;}
+  .quick-select-item:hover{background:rgba(247,147,26,0.12);}
+  .quick-select-empty{padding:10px 12px;font-size:13px;color:var(--ink-faint);}
+
+  /* Custom calendar widget -- replaces the native <input type="date"> picker
+     everywhere it appears, since browsers give no CSS hook to recolor its
+     internal day-highlight away from native blue (accent-color is scoped to
+     checkboxes/radios/sliders/progress bars only). Reuses .quick-select's
+     button/menu shell, adding the month-grid layout on top of it. */
+  .cal-menu{padding:10px;width:260px;max-height:none;}
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-month-label{font-size:14px;font-weight:600;color:var(--ink);}
+  .cal-nav{background:none;border:1px solid var(--line);border-radius:6px;color:var(--ink-dim);
+    width:28px;height:28px;font-size:16px;line-height:1;cursor:pointer;font-family:inherit;}
+  .cal-nav:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
+    font-size:11px;color:var(--ink-faint);margin-bottom:4px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+  .cal-day{background:none;border:none;border-radius:6px;color:var(--ink);
+    font-size:13px;font-family:inherit;padding:7px 0;cursor:pointer;}
+  .cal-day:hover{background:rgba(247,147,26,0.12);}
+  .cal-day:focus{outline:2px solid var(--orange-dim);outline-offset:-2px;}
+  .cal-day.today{color:var(--orange);font-weight:600;}
+  .cal-day.selected{background:var(--orange);color:#12100c;font-weight:600;}
+  .cal-day.other-month{visibility:hidden;}
+
+
+  .toggle-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .toggle-row button{
+    background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink-dim);
+    font-size:13.5px;padding:11px 18px;border-radius:999px;cursor:pointer;
+    min-height:44px;
+  }
+  .toggle-row button:hover{border-color:var(--orange-dim);color:var(--ink);}
+  .toggle-row button.active{background:var(--orange);border-color:var(--orange);color:#12100c;font-weight:600;}
+
+  .return-live-btn{
+    display:inline-block;background:var(--orange);border:none;border-radius:999px;
+    color:#12100c;font-size:12px;font-weight:600;padding:6px 16px;
+    cursor:pointer;margin:8px 0 12px;
+  }
+  .return-live-btn:hover{background:var(--orange-dim);}
+  .mnav-reset-row{margin-top:20px;text-align:right;}
+  @media(max-width:640px){.mnav-reset-row{text-align:center;}}
+
+  .reset-buttons-row{
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:16px;margin-top:20px;margin-bottom:24px;
+  }
+  @media(max-width:640px){
+    .reset-buttons-row{flex-direction:column;align-items:center;gap:16px;margin-bottom:20px;}
+  }
+
+  .source-line{font-size:13px;color:var(--ink-faint);margin-top:-8px;margin-bottom:18px;}
+
+  .results-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
+  @media(max-width:640px){.results-grid{grid-template-columns:1fr;}}
+  .result-card{
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;padding:18px;
+  }
+  .result-card .label{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+  .result-card .value{font-size:24px;font-weight:600;color:var(--orange);}
+  .result-card .sub{font-size:13px;color:var(--ink-faint);margin-top:4px;}
+  .result-card.total{grid-column:1/-1;background:linear-gradient(135deg,var(--bg-panel-2),#1c1611);border-color:var(--orange-dim);}
+  .result-card.total .value{font-size:32px;}
+  .result-card.highlight{border-color:var(--orange-dim);}
+
+  .greeks-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media(max-width:640px){.greeks-grid{grid-template-columns:repeat(2,1fr);}}
+  .greek-card{text-align:center;padding:14px 8px;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:8px;}
+  .greek-card .sym{font-size:20px;color:var(--orange);margin-bottom:4px;}
+  .greek-card .gval{font-size:16px;font-weight:600;}
+  .greek-card .glabel{font-size:13px;color:var(--ink-faint);margin-top:3px;}
+
+  .methodology{
+    font-size:13px;color:var(--ink-dim);line-height:1.7;
+  }
+  .methodology code{
+    background:var(--bg-panel-2);border:1px solid var(--line);border-radius:4px;
+    padding:1px 6px;color:var(--orange);font-size:12px;
+  }
+  .fix-note{
+    font-size:12px;color:var(--green);background:rgba(76,175,125,0.08);
+    border:1px solid rgba(76,175,125,0.3);border-radius:8px;padding:12px 16px;margin-bottom:18px;
+  }
+
+  .disclaimer{font-size:12px;color:var(--ink-faint);line-height:1.7;}
+
+  footer{
+    border-top:1px solid var(--line);padding:28px 32px;
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;row-gap:10px;
+    color:var(--ink-faint);font-size:13px;
+  }
+  footer a{color:var(--orange-dim);text-decoration:none;}
+  footer .brand-mark{display:inline-flex;align-items:center;gap:8px;font-size:15px;}
+  footer .brand-mark img{width:22px;height:22px;display:block;}
+  @media(max-width:640px){
+    footer{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      padding:20px;
+      text-align:center;
+    }
+  }
+
+  ::selection{background:var(--orange);color:#12100c;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="wisesatoshi">wise<span>satoshi</span>.com</a>
+  <nav>
+    <span class="nav-links">
+      <a href="index.html">projector</a>
+      <a href="index.html#about">about</a>
+      <a href="learn.html">learn</a>
+    </span>
+    <a href="index.html" style="margin-left:auto;">log in</a>
+  </nav>
+</header>
+
+<main class="hero" style="padding-top:32px;max-width:900px;">
+  <p style="margin-bottom:28px;"><a href="index.html" style="color:var(--orange-dim);text-decoration:none;font-size:14px;">&larr; Back to wisesatoshi.com</a></p>
+
+  <div class="panel" id="terms">
+    <div class="panel-title">Terms of Service</div>
+    <div class="methodology">
+      <p style="color:var(--ink-faint);font-size:12px;">Effective date: September 5, 2026</p>
+      <p>These Terms of Service ("Terms") govern your use of the MSTR Options Projector at wisesatoshi.com (the "Service"), operated by Wise Satoshi, a sole proprietorship. By using the Service, you agree to these Terms.</p>
+
+      <p><strong>1. Description of Service</strong></p>
+      <p>Wise Satoshi provides an educational and informational tool that models potential MSTR option scenarios using the Black-Scholes pricing model and user-supplied assumptions about Bitcoin price, mNAV, and related inputs. The Service is not financial, investment, tax, or legal advice, and should not be relied upon for making investment decisions.</p>
+
+      <p><strong>2. No Financial Advice</strong></p>
+      <p>Nothing on this Service constitutes a recommendation to buy, sell, or hold any security or financial instrument. All projections are based on model assumptions you provide and may differ materially from actual market outcomes. You are solely responsible for your own investment decisions. Consult a licensed financial advisor before making investment decisions.</p>
+
+      <p><strong>3. Accounts and Subscriptions</strong></p>
+      <p>A free tier of the Service is available without an account. WS Model Pro is a paid subscription offering additional features, billed on a recurring basis through Stripe. New Pro accounts receive a 7-day free trial with no payment method required to start. You may cancel your subscription at any time through the "Manage billing" link available in your account; cancellation takes effect at the end of the current billing period. You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Accounts are limited to two concurrent login sessions.</p>
+
+      <p><strong>4. Acceptable Use</strong></p>
+      <p>You agree not to use the Service for any unlawful purpose; attempt to gain unauthorized access to the Service, other accounts, or underlying infrastructure; scrape, resell, or redistribute the Service's data or output at scale without permission; or interfere with the normal operation of the Service.</p>
+
+      <p><strong>5. Intellectual Property</strong></p>
+      <p>The Service, including its design, code, and content, is owned by Wise Satoshi. You may use the Service for personal, non-commercial purposes. You may not copy, modify, or create derivative works of the Service without prior written permission.</p>
+
+      <p><strong>6. Disclaimers</strong></p>
+      <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF ACCURACY, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. Market data displayed may be delayed, estimated, or derived from third-party sources and may not reflect real-time or accurate values. Implied volatility, especially for long-dated or illiquid contracts, may differ significantly from live market quotes.</p>
+
+      <p><strong>7. Limitation of Liability</strong></p>
+      <p>TO THE FULLEST EXTENT PERMITTED BY LAW, WISE SATOSHI SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR INVESTMENT LOSSES, ARISING FROM YOUR USE OF OR RELIANCE ON THE SERVICE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY FOR ANY CLAIM ARISING FROM THE SERVICE SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE 12 MONTHS PRECEDING THE CLAIM.</p>
+
+      <p><strong>8. Termination</strong></p>
+      <p>We may suspend or terminate your access to the Service at our discretion, including for violation of these Terms, without prior notice.</p>
+
+      <p><strong>9. Changes to These Terms</strong></p>
+      <p>We may update these Terms from time to time. Continued use of the Service after changes take effect constitutes acceptance of the revised Terms.</p>
+
+      <p><strong>10. Governing Law</strong></p>
+      <p>These Terms are governed by the laws of the State of Alaska, without regard to conflict-of-law principles, unless otherwise required by applicable law.</p>
+
+      <p><strong>11. Contact</strong></p>
+      <p>Questions about these Terms can be sent to help@wisesatoshi.com.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
+  <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
+  <span><a href="privacy.html">Privacy</a> &nbsp;&middot;&nbsp; <a href="terms.html" style="color:var(--ink);">Terms</a></span>
+  <span><a href="index.html#contact">Contact</a></span>
+</footer>
+
+</body>
+</html>
