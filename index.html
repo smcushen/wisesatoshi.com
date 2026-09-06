@@ -851,35 +851,6 @@
     <p class="disclaimer">This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ. MSTR price is derived from BTC holdings and a user-supplied mNAV multiple — this is a model assumption, not a prediction. Implied volatility for long-dated, deep out-of-the-money contracts is illiquid and can vary meaningfully from theoretical values — check a live quote where possible. Nothing here constitutes financial advice. Do your own research.</p>
   </div>
 
-  <div class="panel" id="contact">
-    <div class="panel-title">Contact</div>
-    <p class="lede" style="margin:0 0 20px;font-size:14px;">Question, bug report, or feedback? Send a message and it'll land straight in my inbox.</p>
-    <form id="contactForm">
-      <!-- Honeypot: hidden from real visitors, bots tend to fill every field -->
-      <input type="text" name="website" id="contactWebsite" tabindex="-1" autocomplete="off"
-        style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
-
-      <div class="field" style="margin-bottom:14px;">
-        <label for="contactName">Name</label>
-        <input type="text" id="contactName" required style="font-size:16px;">
-      </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label for="contactEmail">Email</label>
-        <input type="email" id="contactEmail" required style="font-size:16px;">
-      </div>
-      <div class="field" style="margin-bottom:18px;">
-        <label for="contactMessage">Message</label>
-        <textarea id="contactMessage" required rows="5"
-          style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);
-          border-radius:6px;padding:9px 11px;font-size:16px;font-family:inherit;resize:vertical;
-          color-scheme:dark;"></textarea>
-      </div>
-
-      <button type="submit" id="contactSubmitBtn"
-        style="background:var(--orange);color:#12100c;border:none;border-radius:6px;
-        padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;">Send Message</button>
-      <div id="contactStatus" style="font-size:13px;margin-top:12px;min-height:18px;"></div>
-    </form>
   </div>
 
 </main>
@@ -887,7 +858,35 @@
 <footer>
   <span class="brand-mark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjMgMyAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIgZmlsbD0iIzAwMDAwMCIvPgo8cG9seWdvbiBwb2ludHM9IjguMzQ3LDEwLjIzOCAxNi42NjcsOS4zNDMgMTYuMzMwLDEwLjgwNSA4LjAxMSwxMS43MDAiIGZpbGw9IiNmZmZmZmYiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjY2OCwxMy4xOTQgMTUuOTg0LDEyLjMwNCAxNS42NDgsMTMuNzY2IDcuMzMyLDE0LjY1NiIgZmlsbD0iI2ZmZmZmZiIvPgo8cG9seWdvbiBwb2ludHM9IjE0LjIxOSw1LjY5MiAxMy44MTMsNy40NjYgMTIuMzY1LDcuMDc0IDEyLjc3Miw1LjMwMCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjguNjkzLDguNzQyIDE2LjMzMCwxMC44MDUgMTYuNjY3LDkuMzQzIDkuMDI5LDcuMjgwIiBmaWxsPSIjZjc5MzFhIi8+Cjxwb2x5Z29uIHBvaW50cz0iMTUuNjQ4LDEzLjc2NiA4LjAxMSwxMS43MDAgOC4zNDcsMTAuMjM4IDE1Ljk4NCwxMi4zMDQiIGZpbGw9IiNmNzkzMWEiLz4KPHBvbHlnb24gcG9pbnRzPSI3LjMzMiwxNC42NTYgMTQuOTcwLDE2LjcyMCAxNS4zMDYsMTUuMjU4IDcuNjY4LDEzLjE5NCIgZmlsbD0iI2Y3OTMxYSIvPgo8cG9seWdvbiBwb2ludHM9IjExLjIyNywxOC43MDAgMTEuNjM1LDE2LjkyNiAxMC4xODcsMTYuNTM1IDkuNzc5LDE4LjMwOSIgZmlsbD0iI2Y3OTMxYSIvPgo8L3N2Zz4=" alt="">wisesatoshi.com</span>
   <span>built by a Bitcoiner — <a href="https://x.com/wisesatoshi" target="_blank" rel="noopener">@wisesatoshi on X</a></span>
+  <span><a href="#" onclick="openContactModal(); return false;">Contact</a></span>
 </footer>
+
+<!-- Contact Modal -->
+<div id="contactModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-panel);border:1px solid var(--line);border-radius:12px;padding:2rem;max-width:420px;width:90%;position:relative;">
+    <button onclick="closeContactModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;">×</button>
+    <div style="font-size:20px;margin-bottom:4px;text-align:center;">✉️&nbsp;&nbsp;Get in Touch</div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:1.5rem;text-align:center;">Question, bug report, or feedback? Send a message and it'll land straight in my inbox.</div>
+
+    <form id="contactForm">
+      <!-- Honeypot: hidden from real visitors, bots tend to fill every field -->
+      <input type="text" name="website" id="contactWebsite" tabindex="-1" autocomplete="off"
+        style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Name</label>
+      <input type="text" id="contactName" required style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;color-scheme:dark;">
+
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Email</label>
+      <input type="email" id="contactEmail" required style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;color-scheme:dark;">
+
+      <label style="display:block;font-size:13px;color:var(--ink-dim);margin-bottom:6px;">Message</label>
+      <textarea id="contactMessage" required rows="4" style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:10px 12px;font-size:14px;margin-bottom:14px;box-sizing:border-box;font-family:inherit;resize:vertical;color-scheme:dark;"></textarea>
+
+      <button type="submit" id="contactSubmitBtn" style="width:100%;background:var(--orange);color:#000;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Send Message</button>
+      <div id="contactStatus" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center;"></div>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -966,6 +965,7 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
       status.style.color = 'var(--green)';
       status.textContent = "Message sent — thanks, I'll get back to you soon.";
       e.target.reset();
+      setTimeout(closeContactModal, 1800);
     } else {
       status.style.color = 'var(--red)';
       status.textContent = 'Something went wrong. Please try again.';
@@ -1013,6 +1013,14 @@ function openSessionLimitModal() {
 }
 function closeSessionLimitModal() {
   el('sessionLimitModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function openContactModal() {
+  el('contactModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeContactModal() {
+  el('contactModal').style.display = 'none';
   document.body.style.overflow = '';
 }
 function showAuthView(view) {
