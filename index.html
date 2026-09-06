@@ -851,6 +851,37 @@
     <p class="disclaimer">This tool is for educational and informational purposes only. It uses the Black-Scholes model, which is designed for European-style options; MSTR calls are American-style, so actual market prices may differ. MSTR price is derived from BTC holdings and a user-supplied mNAV multiple — this is a model assumption, not a prediction. Implied volatility for long-dated, deep out-of-the-money contracts is illiquid and can vary meaningfully from theoretical values — check a live quote where possible. Nothing here constitutes financial advice. Do your own research.</p>
   </div>
 
+  <div class="panel" id="contact">
+    <div class="panel-title">Contact</div>
+    <p class="lede" style="margin:0 0 20px;font-size:14px;">Question, bug report, or feedback? Send a message and it'll land straight in my inbox.</p>
+    <form id="contactForm">
+      <!-- Honeypot: hidden from real visitors, bots tend to fill every field -->
+      <input type="text" name="website" id="contactWebsite" tabindex="-1" autocomplete="off"
+        style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+
+      <div class="field" style="margin-bottom:14px;">
+        <label for="contactName">Name</label>
+        <input type="text" id="contactName" required style="font-size:16px;">
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label for="contactEmail">Email</label>
+        <input type="email" id="contactEmail" required style="font-size:16px;">
+      </div>
+      <div class="field" style="margin-bottom:18px;">
+        <label for="contactMessage">Message</label>
+        <textarea id="contactMessage" required rows="5"
+          style="width:100%;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);
+          border-radius:6px;padding:9px 11px;font-size:16px;font-family:inherit;resize:vertical;
+          color-scheme:dark;"></textarea>
+      </div>
+
+      <button type="submit" id="contactSubmitBtn"
+        style="background:var(--orange);color:#12100c;border:none;border-radius:6px;
+        padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;">Send Message</button>
+      <div id="contactStatus" style="font-size:13px;margin-top:12px;min-height:18px;"></div>
+    </form>
+  </div>
+
 </main>
 
 <footer>
@@ -907,6 +938,45 @@ window._calOnChange = window._calOnChange || {};
 const SUPABASE_URL = 'https://oqtjogdgisbwsvgcmfos.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_Sv9_EgWDNdgGb_R5s8W0lQ_XU32fk02';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Contact form -- posts to the send-contact-email Edge Function, which
+// relays through Mailtrap SMTP to help@wisesatoshi.com. No auth needed,
+// so this hits the function URL directly rather than via supabaseClient.
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('contactSubmitBtn');
+  const status = document.getElementById('contactStatus');
+  btn.disabled = true;
+  status.style.color = 'var(--ink-dim)';
+  status.textContent = 'Sending...';
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-contact-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('contactName').value,
+        email: document.getElementById('contactEmail').value,
+        message: document.getElementById('contactMessage').value,
+        website: document.getElementById('contactWebsite').value,
+      }),
+    });
+
+    if (res.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = "Message sent — thanks, I'll get back to you soon.";
+      e.target.reset();
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = 'Something went wrong. Please try again.';
+    }
+  } catch (err) {
+    status.style.color = 'var(--red)';
+    status.textContent = 'Something went wrong. Please try again.';
+  } finally {
+    btn.disabled = false;
+  }
+});
 let currentUser = null;
 let currentProfile = null;
 
