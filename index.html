@@ -1023,6 +1023,12 @@ function closeContactModal() {
   el('contactModal').style.display = 'none';
   document.body.style.overflow = '';
 }
+// Lets https://wisesatoshi.com/#contact open the modal directly on load --
+// useful as a standalone shareable link (e.g. Stripe's Support URL field)
+// without needing to land on the page and click the footer link manually.
+if (window.location.hash === '#contact') {
+  openContactModal();
+}
 function showAuthView(view) {
   el('authViewLogin').style.display = view === 'login' ? 'block' : 'none';
   el('authViewSignup').style.display = view === 'signup' ? 'block' : 'none';
