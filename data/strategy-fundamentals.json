@@ -1,9 +1,8 @@
 {
   "btcHeld": 845050,
-  "sharesOutstandingMillions": 420.43,
-  "usdReserveBillions": 5.10,
-  "usdCashBillions": 1.61,
-  "preferredStockBillions": 14.82,
-  "convertibleDebtBillions": 6.75,
-  "lastUpdated": "2026-09-01"
+  "sharesOutstandingMillions": 420.497,
+  "convertibleDebtBillions": 6.714,
+  "preferredStockBillions": 14.625,
+  "usdReserveBillions": 5.1,
+  "usdCashBillions": 1.438
 }
