@@ -13,7 +13,40 @@ jobs:
   publish-latest-ready-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Skip on NYSE holidays
+        id: guard
+        run: |
+          TODAY_ET=$(TZ='America/New_York' date +%F)
+
+          # Same NYSE holiday list as mnav-close-core.mjs and the old
+          # capture-mnav-close.yml workflow — kept in sync by hand across
+          # all three, since none of them can literally import from one
+          # another. On a holiday there's nothing new to publish (the mNAV
+          # close capture itself already skipped), so re-publishing the
+          # prior day's already-live deploy would just be a needless
+          # no-op call — harmless to data, but worth avoiding on principle
+          # rather than re-touching values that shouldn't move.
+          HOLIDAYS_2026="2026-01-01 2026-01-19 2026-02-16 2026-04-03 2026-05-25 2026-06-19 2026-07-03 2026-09-07 2026-11-26 2026-12-25"
+          HOLIDAYS_2027="2027-01-01 2027-01-18 2027-02-15 2027-03-26 2027-05-31 2027-06-18 2027-07-05 2027-09-06 2027-11-25 2027-12-24"
+          HOLIDAYS="$HOLIDAYS_2026 $HOLIDAYS_2027"
+
+          IS_HOLIDAY="false"
+          for d in $HOLIDAYS; do
+            if [ "$d" == "$TODAY_ET" ]; then
+              IS_HOLIDAY="true"
+              break
+            fi
+          done
+
+          if [ "$IS_HOLIDAY" == "true" ]; then
+            echo "$TODAY_ET is an NYSE holiday — skipping publish."
+            echo "skip=true" >> "$GITHUB_ENV"
+          else
+            echo "skip=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Find and publish the latest ready deploy
+        if: env.skip != 'true'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
