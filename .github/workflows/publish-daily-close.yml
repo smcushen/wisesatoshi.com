@@ -1,0 +1,33 @@
+name: Publish Daily Close Deploy
+
+on:
+  schedule:
+    # 4:35pm ET — 15 min after the mNAV close capture fires, giving the
+    # resulting Netlify build time to finish. Written in UTC while ET is
+    # UTC-4 (EDT). Once ET shifts to UTC-5 (EST, ~early Nov), change to
+    # '35 21 * * 1-5' — same DST pattern as the other scheduled workflows.
+    - cron: '35 20 * * 1-5'
+  workflow_dispatch:  # allows manual trigger anytime, for testing first
+
+jobs:
+  publish-latest-ready-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and publish the latest ready deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          DEPLOYS=$(curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?branch=main&per_page=1")
+          DEPLOY_ID=$(echo "$DEPLOYS" | jq -r '.[0].id')
+          STATE=$(echo "$DEPLOYS" | jq -r '.[0].state')
+
+          if [ "$STATE" != "ready" ]; then
+            echo "Latest deploy isn't ready yet (state: $STATE) — skipping."
+            exit 0
+          fi
+
+          echo "Publishing deploy $DEPLOY_ID..."
+          curl -s -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys/$DEPLOY_ID/restore"
