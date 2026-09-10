@@ -1,5 +1,4 @@
 name: Capture Live MSTR Price
-
 on:
   schedule:
     # Every 5 min across a window a bit wider than NYSE hours (9:30 AM-4:00 PM
@@ -9,33 +8,41 @@ on:
     # scheduled workflows in this repo. Runs outside actual market hours are
     # harmless: index.html's own isMarketOpenNow() check decides whether to
     # treat this file's contents as "live," independent of when this ran.
+    #
+    # Sole source of data/mstr-price.json as of Sept 2026 — refresh-mstr-price.yml
+    # was deleted after it turned out to duplicate this same job on a
+    # different cron, occasionally colliding on the same commit. This
+    # workflow was kept over that one since it's scoped to actual market
+    # hours/weekdays rather than running needlessly around the clock.
+    #
+    # Like every other scheduled workflow in this repo, GitHub's scheduler
+    # doesn't reliably honor short intervals on public repos — observed
+    # real-world gaps have run well over an hour despite the 5-minute cron.
+    # index.html's own live-fetch fallback (fetchMstrPriceData()) already
+    # compensates for this: it treats this static file as stale during
+    # market hours and falls through to the live Netlify Function instead.
     - cron: '*/5 13-21 * * 1-5'
   workflow_dispatch:  # allows manual trigger anytime
-
 permissions:
   contents: write
-
 jobs:
   capture-live-price:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Fetch MSTR price from Finnhub
         env:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: |
           RESPONSE=$(curl -s "https://finnhub.io/api/v1/quote?symbol=MSTR&token=$FINNHUB_API_KEY")
           PRICE=$(echo "$RESPONSE" | jq '.c')
-
           # Guard against a failed fetch or an empty/zero quote — never commit bad data.
           if [ -z "$PRICE" ] || [ "$PRICE" == "null" ] || [ "$PRICE" == "0" ]; then
             echo "Failed to fetch MSTR price — aborting without committing."
             exit 1
           fi
           echo "MSTR_PRICE=$PRICE" >> "$GITHUB_ENV"
-
       - name: Write live price snapshot
         run: |
           mkdir -p data
@@ -46,7 +53,6 @@ jobs:
             "lastFetched": "$NOW"
           }
           EOF
-
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
