@@ -623,7 +623,7 @@
 
   <div class="panel">
     <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag a slider, or type into any field below, to explore a scenario — Bitcoin price, mNAV, and the seven fundamentals below all update the model live until you do.</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag a slider, or type into any field below, to explore a scenario — Bitcoin price, mNAV, and the eight fundamentals below all update the model live until you do.</div>
 
     <div class="field">
       <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
@@ -655,6 +655,11 @@
         <input type="number" id="preferred" value="14.625" step="0.01">
       </div>
       <div class="field">
+        <label>Annual interest + preferred dividends — Cost of Capital ($B)</label>
+        <input type="number" id="costOfCapital" value="1.703" step="0.001">
+        <div class="hint">What Strategy owes per year to service the debt and preferred above — drives BTC Duration and USD Duration below. From the investor briefing, not weekly filings, so this updates less often than the other fundamentals.</div>
+      </div>
+      <div class="field">
         <label>USD Reserve ($B)</label>
         <input type="number" id="usdReserve" value="5.1" step="0.01">
         <div class="hint">Cash earmarked to cover debt and preferred stock payments — added to the total Bitcoin backing, partially counteracting what debt and preferred subtract from it.</div>
@@ -665,8 +670,8 @@
         <div class="hint">General-purpose liquidity — not earmarked for debt/preferred payments the way USD Reserve is, but added back to the total Bitcoin backing the same way.</div>
       </div>
       <div class="field">
-        <label>mNAV multiple <span class="val" id="lblMnav">1.05×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
-        <input type="range" id="mnav" min="0.5" max="10.0" step="0.01" value="1.05" oninput="window._userMovedMnav=true;">
+        <label>mNAV multiple <span class="val" id="lblMnav">1.09×</span> <span id="mnavStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:8px;"></span></label>
+        <input type="range" id="mnav" min="0.5" max="10.0" step="0.01" value="1.09" oninput="window._userMovedMnav=true;">
       </div>
     </div>
 
@@ -796,6 +801,14 @@
       <div class="greek-card"><div class="sym">Γ</div><div class="gval" id="outGamma">—</div><div class="glabel">Gamma — Δ change / $1</div></div>
       <div class="greek-card"><div class="sym">Θ</div><div class="gval" id="outTheta">—</div><div class="glabel">Theta — per day decay</div></div>
       <div class="greek-card"><div class="sym">ν</div><div class="gval" id="outVega">—</div><div class="glabel">Vega — per 1% IV</div></div>
+    </div>
+
+    <div class="hint" style="margin-top:20px;margin-bottom:8px;">Strategy balance-sheet health, under this scenario's Bitcoin price and fundamentals:</div>
+    <div class="greeks-grid">
+      <div class="greek-card"><div class="sym">Amp</div><div class="gval" id="outAmplification">—</div><div class="glabel">Amplification — BTC Reserve / Net Reserve</div></div>
+      <div class="greek-card"><div class="sym">Rtg</div><div class="gval" id="outBtcRating">—</div><div class="glabel">BTC Rating — Net Reserve / market cap</div></div>
+      <div class="greek-card"><div class="sym">₿yr</div><div class="gval" id="outBtcDuration">—</div><div class="glabel">BTC Duration — years of BTC Reserve vs. Cost of Capital</div></div>
+      <div class="greek-card"><div class="sym">$yr</div><div class="gval" id="outUsdDuration">—</div><div class="glabel">USD Duration — years of USD Assets vs. Cost of Capital</div></div>
     </div>
   </div>
 
@@ -1351,6 +1364,7 @@ async function saveScenario() {
     preferred: parseFloat(el('preferred').value),
     usdReserve: parseFloat(el('usdReserve').value),
     usdCash: parseFloat(el('usdCash').value),
+    costOfCapital: parseFloat(el('costOfCapital').value),
     mnav: parseFloat(el('mnav').value),
     contracts: parseFloat(el('contracts').value),
     contractsCustom: el('contractsCustom').value || null,
@@ -1725,6 +1739,12 @@ function loadSavedPosition(id) {
   if (cd.preferred != null) el('preferred').value = cd.preferred;
   if (cd.usdReserve != null) el('usdReserve').value = cd.usdReserve;
   if (cd.usdCash != null) el('usdCash').value = cd.usdCash;
+  // Scenarios saved before Cost of Capital existed have no cd.costOfCapital --
+  // leave today's current field value in place rather than blanking it, since
+  // this figure isn't something the scenario was ever testing a hypothesis
+  // about (same reasoning as the FDSO fallback above, but there's no older
+  // equivalent field to fall back to here).
+  if (cd.costOfCapital != null) el('costOfCapital').value = cd.costOfCapital;
   if (cd.mnav != null) el('mnav').value = cd.mnav;
   if (cd.contracts != null) el('contracts').value = cd.contracts;
   el('contractsCustom').value = cd.contractsCustom || '';
@@ -1758,7 +1778,7 @@ function exportSavedPositionsCSV() {
   const headers = [
     'Strike', 'Expiration Date', 'Note',
     'BTC Price', 'BTC Held', 'Basic Shares Outstanding (M)', 'FDSO (M)', 'Convertible Debt ($B)',
-    'Preferred Stock ($B)', 'USD Reserve ($B)', 'USD Cash ($B)', 'mNAV Multiple',
+    'Preferred Stock ($B)', 'USD Reserve ($B)', 'USD Cash ($B)', 'Cost of Capital ($B)', 'mNAV Multiple',
     'Contracts', 'Custom Contract Count', 'IV (%)', 'Risk-Free Rate (%)', 'Projection Date', 'Manual Price Override',
     'Derived MSTR Price', 'Option Price', 'Total Position Value', 'Saved At'
   ];
@@ -1774,7 +1794,7 @@ function exportSavedPositionsCSV() {
     lines.push([
       c.strike, c.expiration_date, c.notes || '',
       cd.btcPrice, cd.btcHeld, cd.shares, cd.fdso, cd.debt,
-      cd.preferred, cd.usdReserve, cd.usdCash, cd.mnav,
+      cd.preferred, cd.usdReserve, cd.usdCash, cd.costOfCapital, cd.mnav,
       cd.contracts, cd.contractsCustom || '', cd.iv, cd.rate, cd.projDate, cd.manualPrice || '',
       cd.derivedPrice, cd.optionPrice, cd.totalPositionValue, c.created_at
     ].map(csvEscape).join(','));
@@ -2287,6 +2307,7 @@ function recalc(){
   const preferredB = parseFloat(el('preferred').value);
   const usdReserveB = parseFloat(el('usdReserve').value);
   const usdCashB = parseFloat(el('usdCash').value);
+  const costOfCapitalB = parseFloat(el('costOfCapital').value);
   const mnav = parseFloat(el('mnav').value);
   const strike = parseFloat(el('strike').value);
   const contractsOverride = el('contractsCustom').value;
@@ -2372,6 +2393,30 @@ function recalc(){
     : '—';
   el('scenarioMarketCap').textContent = (sharesM > 0) ? fmtUSD0(S * sharesM * 1e6) : '—';
 
+  // Strategy balance-sheet health metrics -- Amplification, BTC Rating, BTC
+  // Duration, USD Duration. These react to the same scenario inputs as
+  // everything else above (whatever BTC price and fundamentals are currently
+  // in the fields, live-tracking or a deliberate hypothetical) rather than
+  // being pinned to today's real numbers -- so under a Quick Scenario, these
+  // show what the balance sheet's cushion would look like under that
+  // hypothetical, not just today's actual reading. Formulas match Strategy's
+  // own published definitions (investor briefing, Aug 2026).
+  const btcReserveUSD = btcHeld * btcPrice;
+  const netReserveUSD = netValuePerShare * fdsoM * 1e6; // equals netBtc × btcPrice
+  const scenarioMarketCapUSD = sharesM > 0 ? S * sharesM * 1e6 : null;
+  const usdAssetsUSD = (usdReserveB + usdCashB) * 1e9;
+  const costOfCapitalUSD = costOfCapitalB * 1e9;
+
+  const amplification = netReserveUSD > 0 ? (btcReserveUSD / netReserveUSD) : null;
+  const btcRating = (scenarioMarketCapUSD && scenarioMarketCapUSD > 0) ? (netReserveUSD / scenarioMarketCapUSD) : null;
+  const btcDurationYears = costOfCapitalUSD > 0 ? (btcReserveUSD / costOfCapitalUSD) : null;
+  const usdDurationYears = costOfCapitalUSD > 0 ? (usdAssetsUSD / costOfCapitalUSD) : null;
+
+  el('outAmplification').textContent = amplification != null ? amplification.toFixed(2) + '×' : '—';
+  el('outBtcRating').textContent = btcRating != null ? btcRating.toFixed(2) + '×' : '—';
+  el('outBtcDuration').textContent = btcDurationYears != null ? btcDurationYears.toFixed(1) + ' yrs' : '—';
+  el('outUsdDuration').textContent = usdDurationYears != null ? usdDurationYears.toFixed(1) + ' yrs' : '—';
+
   el('outDelta').textContent = delta.toFixed(3);
   el('outTheta').textContent = fmtUSD(theta);
   el('outVega').textContent = fmtUSD(vega);
@@ -2379,7 +2424,7 @@ function recalc(){
 }
 
 // wire up all inputs
-['btcPrice','btcHeld','shares','fdso','debt','preferred','usdReserve','usdCash','mnav',
+['btcPrice','btcHeld','shares','fdso','debt','preferred','usdReserve','usdCash','costOfCapital','mnav',
  'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice']
  .forEach(id => el(id).addEventListener('input', recalc));
 
@@ -2439,8 +2484,11 @@ document.querySelectorAll('.toggle-row button').forEach(btn=>{
       // Other scenarios are hypothetical, so a clean baseline assumption makes
       // sense — and mark it as user-controlled so a background live refresh
       // doesn't silently overwrite this scenario's baseline a few minutes later.
+      // 1.09 matches the most recent real close under the FDSO-based mNAV
+      // convention (as of Sep 2026) -- re-check periodically as the real
+      // number drifts, same as any other baseline assumption.
       window._userMovedMnav = true;
-      el('mnav').value = 1.05;
+      el('mnav').value = 1.09;
     }
     recalc();
   });
@@ -3033,6 +3081,7 @@ function loadStrategyFundamentals() {
       // (e.g. index.html and the JSON get uploaded out of sync), keep the
       // HTML's own default rather than setting the input to "undefined".
       if (data.usdCashBillions !== undefined) el('usdCash').value = data.usdCashBillions;
+      if (data.annualInterestAndPrefDividendsBillions !== undefined) el('costOfCapital').value = data.annualInterestAndPrefDividendsBillions;
       // Same defensive fallback for FDSO -- and if it's genuinely missing,
       // fall back to basic shares rather than leaving a stale hardcoded FDSO
       // value in place, which would silently understate net value/share.
