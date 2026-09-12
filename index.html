@@ -831,6 +831,12 @@
     </div>
   </div>
 
+  <div class="panel">
+    <div class="panel-title">Value over time</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Your total position's value between now and expiration, assuming BTC price and mNAV hold at today's current scenario levels — isolates time decay from price movement. Chart powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener" style="color:var(--orange-dim);text-decoration:none;">TradingView</a> Lightweight Charts.</div>
+    <div id="valueOverTimeChart" style="height:260px;"></div>
+  </div>
+
   <div class="panel" id="proPanelLockedHint">
     <div class="panel-title">Your Saved Positions</div>
     <div style="display:flex;align-items:flex-start;">
@@ -926,6 +932,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <script>
 // ---------- Normal CDF / PDF ----------
 function normPdf(x){ return Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI); }
@@ -2318,6 +2325,74 @@ function toggleManualEntry() {
   recalc();
 }
 
+// ---------- Value over time chart (Tier 1: flat BTC price, isolates time decay) ----------
+// Built on TradingView's Lightweight Charts (Apache 2.0, self-hosted data --
+// see the CDN script tag near the top of the file). The chart and series are
+// created once on page load; recalc() below just calls setData() on every
+// update rather than recreating the chart each time, which is both the
+// correct usage pattern for this library and far cheaper than rebuilding a
+// canvas-based chart on every keystroke.
+let _valueOverTimeChart = null;
+let _valueOverTimeSeries = null;
+
+function initValueOverTimeChart() {
+  const container = el('valueOverTimeChart');
+  if (!container) return;
+  if (!window.LightweightCharts) {
+    // CDN failed to load (blocked, offline, etc.) -- fail visibly rather
+    // than silently leaving an empty box with no explanation.
+    container.innerHTML = '<div class="hint" style="margin:0;">Chart library failed to load — refresh the page to try again.</div>';
+    return;
+  }
+  _valueOverTimeChart = LightweightCharts.createChart(container, {
+    width: container.clientWidth,
+    height: 260,
+    layout: { background: { color: 'transparent' }, textColor: '#9aa0a6' },
+    grid: { vertLines: { color: '#262b30' }, horzLines: { color: '#262b30' } },
+    rightPriceScale: { borderColor: '#262b30' },
+    timeScale: { borderColor: '#262b30' },
+  });
+  _valueOverTimeSeries = _valueOverTimeChart.addAreaSeries({
+    lineColor: '#f7931a',
+    topColor: 'rgba(247,147,26,0.25)',
+    bottomColor: 'rgba(247,147,26,0.0)',
+    lineWidth: 2,
+  });
+  window.addEventListener('resize', () => {
+    if (_valueOverTimeChart) _valueOverTimeChart.applyOptions({ width: container.clientWidth });
+  });
+}
+
+// Recomputes the same blackScholesCall() already used for outOptionPrice,
+// just run across weekly steps from today through expiration instead of a
+// single Projection Date -- holding S (this scenario's BTC-derived or manual
+// price), strike, rate, and IV fixed the whole way, so the only thing that
+// moves along the curve is time. That isolates theta specifically: this is
+// what the position quietly loses even if BTC does nothing at all between
+// now and expiration.
+function updateValueOverTimeChart(S, strike, r, sigma, expiry, contracts) {
+  if (!_valueOverTimeSeries) return;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalDays = Math.max(Math.round((expiry - today) / (1000 * 60 * 60 * 24)), 1);
+  const stepDays = 7;
+  const points = [];
+  for (let d = 0; d <= totalDays; d += stepDays) {
+    const pointDate = new Date(today.getTime() + d * 24 * 60 * 60 * 1000);
+    const tRemaining = Math.max((expiry - pointDate) / (1000 * 60 * 60 * 24 * 365), 0.0001);
+    const val = blackScholesCall(S, strike, tRemaining, r, sigma).price * 100 * contracts;
+    points.push({ time: pointDate.toISOString().slice(0, 10), value: val });
+  }
+  // Make sure the curve actually ends exactly on expiration day at intrinsic
+  // value, rather than stopping a few days short/past it depending on how
+  // the weekly steps happen to line up with the real expiry date.
+  const expiryStr = expiry.toISOString().slice(0, 10);
+  if (points[points.length - 1].time !== expiryStr) {
+    points.push({ time: expiryStr, value: Math.max(S - strike, 0) * 100 * contracts });
+  }
+  _valueOverTimeSeries.setData(points);
+}
+
 function recalc(){
   const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
   el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
@@ -2480,6 +2555,8 @@ function recalc(){
   el('outTheta').textContent = fmtUSD(theta);
   el('outVega').textContent = fmtUSD(vega);
   el('outGamma').textContent = gamma.toFixed(5);
+
+  updateValueOverTimeChart(S, strike, r, sigma, expiry, contracts);
 }
 
 // wire up all inputs
@@ -3191,6 +3268,7 @@ _initialCloseSnapshotPromise.then(triggerMnavCloseBackfill); // triggerMnavClose
 fetchLiveRate();
 loadStrategyFundamentals();
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
+initValueOverTimeChart();
 
 recalc();
 
