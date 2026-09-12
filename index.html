@@ -1831,8 +1831,14 @@ function calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB,
 let _pickerMode = false;
 let _optionsChainData = null;
 
+// Fetched directly from GitHub's raw content, same reasoning as the mNAV
+// close snapshot above: this file is edited on GitHub (manually, as new
+// LEAPS get listed), and reading it from the same place removes any
+// dependency on Netlify's publish-locked build ever going stale here too.
+const OPTIONS_CHAIN_RAW_URL = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/data/mstr-options-chain.json';
+
 function loadOptionsChain() {
-  return fetch('data/mstr-options-chain.json')
+  return fetch(OPTIONS_CHAIN_RAW_URL + '?t=' + Date.now(), { cache: 'no-store' })
     .then(res => res.json())
     .then(data => { _optionsChainData = data; return data; })
     .catch(err => {
@@ -2982,6 +2988,12 @@ function proCarouselResetTimer() {
 // Load weekly-updated Strategy fundamentals (BTC held, shares, debt, preferred, USD reserve)
 // from the JSON file the weekly update-form automation writes to. Falls back to the
 // hardcoded defaults above if the file is missing or the fetch fails.
+// Fetched directly from GitHub's raw content -- this file is written by the
+// weekly Issue Form -> GitHub Action pipeline (process-strategy-update.yml),
+// not by anything on Netlify, so reading it straight from GitHub removes the
+// same publish-lock staleness risk the mNAV close snapshot had.
+const STRATEGY_FUNDAMENTALS_RAW_URL = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/data/strategy-fundamentals.json';
+
 function loadStrategyFundamentals() {
   function formatDate(iso) {
     const d = new Date(iso + 'T00:00:00');
@@ -2989,7 +3001,7 @@ function loadStrategyFundamentals() {
     return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   }
 
-  fetch('data/strategy-fundamentals.json')
+  fetch(STRATEGY_FUNDAMENTALS_RAW_URL + '?t=' + Date.now(), { cache: 'no-store' })
     .then(res => res.json())
     .then(data => {
       // Kept separately from the input fields themselves, since those can be
