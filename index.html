@@ -833,7 +833,10 @@
 
   <div class="panel">
     <div class="panel-title">Value over time</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Your total position's value between now and expiration, assuming BTC price and mNAV hold at today's current scenario levels — isolates time decay from price movement. Chart powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener" style="color:var(--orange-dim);text-decoration:none;">TradingView</a> Lightweight Charts.</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:12px;">Your total position's value between now and expiration, assuming BTC price and mNAV hold at today's current scenario levels — isolates time decay from price movement. Chart powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener" style="color:var(--orange-dim);text-decoration:none;">TradingView</a> Lightweight Charts.</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <button type="button" class="return-live-btn" style="margin:0;" onclick="resetValueOverTimeChartView()">↺ Reset chart view</button>
+    </div>
     <div id="valueOverTimeChart" style="height:260px;"></div>
   </div>
 
@@ -2363,6 +2366,17 @@ function initValueOverTimeChart() {
   });
 }
 
+// Undoes any manual drag/scroll/zoom on the chart -- fitContent() resets the
+// time axis back to showing the whole curve, and re-enabling autoScale
+// undoes the price axis lock that happens if someone drags directly on the
+// price scale itself. Both can drift independently, so both get reset here
+// regardless of which one the person actually messed with.
+function resetValueOverTimeChartView() {
+  if (!_valueOverTimeChart) return;
+  _valueOverTimeChart.timeScale().fitContent();
+  _valueOverTimeChart.priceScale('right').applyOptions({ autoScale: true });
+}
+
 // Recomputes the same blackScholesCall() already used for outOptionPrice,
 // just run across weekly steps from today through expiration instead of a
 // single Projection Date -- holding S (this scenario's BTC-derived or manual
@@ -2391,6 +2405,14 @@ function updateValueOverTimeChart(S, strike, r, sigma, expiry, contracts) {
     points.push({ time: expiryStr, value: Math.max(S - strike, 0) * 100 * contracts });
   }
   _valueOverTimeSeries.setData(points);
+  // Keeps the view correctly fit to the new curve on every recalculation --
+  // without this, changing strike/expiry/contracts while the chart was
+  // already zoomed, panned, or price-locked would redraw the data but leave
+  // the old, now-mismatched view in place. The dedicated reset button below
+  // still matters for the case where someone drags the chart around without
+  // changing any inputs at all, since that wouldn't trigger recalc().
+  _valueOverTimeChart.timeScale().fitContent();
+  _valueOverTimeChart.priceScale('right').applyOptions({ autoScale: true });
 }
 
 function recalc(){
