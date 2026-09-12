@@ -54,7 +54,8 @@ jobs:
             - [ ] **USD Reserve** (current: $${f.usdReserveBillions}B)
             - [ ] **USD Cash** (current: $${f.usdCashBillions ?? 'not set'}B)
             - [ ] **Preferred stock — STRK/STRF/STRD/STRC** (current: $${f.preferredStockBillions}B)
-
+            - [ ] **Fully Diluted Shares Outstanding (FDSO)** (current: ${f.fdsoMillions ?? 'not set'}M)
+            - [ ] **Annual interest + preferred dividends — Cost of Capital** (current: $${f.annualInterestAndPrefDividendsBillions ?? 'not set'}B)
             ### Step 3 — Check latest SEC 8-K filing
             - [ ] **Convertible debt** (current: $${f.convertibleDebtBillions}B)
             ${holidaySection}
