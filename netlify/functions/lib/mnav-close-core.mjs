@@ -49,6 +49,23 @@ function isWeekday(date) {
   return !['Sat', 'Sun'].includes(day);
 }
 
+// Returns the Eastern-calendar date string of the most recently completed
+// trading day as of `now` — the day whose close price is actually correct
+// to report, regardless of what the current wall-clock date is. This is
+// what protects marketDate from ever getting mislabeled when a force=true
+// capture runs outside the normal post-close window (e.g. 1am ET, or a
+// weekend), which would otherwise stamp "today" onto what is really still
+// the last completed trading day's frozen closing price.
+function mostRecentTradingDay(now) {
+  let d = isAfterCloseET(now) ? new Date(now) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  let dateStr = easternDateString(d);
+  while (!isWeekday(d) || HOLIDAYS.has(dateStr)) {
+    d = new Date(d.getTime() - 24 * 60 * 60 * 1000);
+    dateStr = easternDateString(d);
+  }
+  return dateStr;
+}
+
 // Identical formula to index.html's calcNetValuePerShare() and the GitHub
 // Actions version it replaces — kept in sync by hand across all three,
 // since none of them can literally import from one another.
@@ -121,23 +138,32 @@ async function fetchBtcPrice() {
 // The one function both trigger files call. Returns an object describing
 // what happened — never throws for the "nothing to do" cases (holiday,
 // already captured, before close), only for genuine failures.
+//
+// The weekend/holiday/before-close guards below only apply to the normal
+// scheduled/on-visit path (force=false). A forced backfill's job is to
+// correctly label whatever the last real close was, regardless of what
+// day or time it's actually called — so it skips these guards entirely
+// and relies on mostRecentTradingDay() to find the right target date.
 export async function captureIfNeeded({ force = false } = {}) {
   const now = new Date();
   const todayET = easternDateString(now);
+  const marketDate = mostRecentTradingDay(now);
 
-  if (HOLIDAYS.has(todayET)) {
-    return { skipped: true, reason: 'holiday', marketDate: todayET };
-  }
-  if (!isWeekday(now)) {
-    return { skipped: true, reason: 'weekend', marketDate: todayET };
-  }
-  if (!force && !isAfterCloseET(now)) {
-    return { skipped: true, reason: 'before_close', marketDate: todayET };
+  if (!force) {
+    if (HOLIDAYS.has(todayET)) {
+      return { skipped: true, reason: 'holiday', marketDate };
+    }
+    if (!isWeekday(now)) {
+      return { skipped: true, reason: 'weekend', marketDate };
+    }
+    if (!isAfterCloseET(now)) {
+      return { skipped: true, reason: 'before_close', marketDate };
+    }
   }
 
   const existing = await githubGetFile(SNAPSHOT_PATH);
-  if (!force && existing.content && existing.content.marketDate === todayET) {
-    return { skipped: true, reason: 'already_captured', marketDate: todayET };
+  if (!force && existing.content && existing.content.marketDate === marketDate) {
+    return { skipped: true, reason: 'already_captured', marketDate };
   }
 
   const mstrPrice = await fetchMstrPrice();
@@ -163,7 +189,7 @@ export async function captureIfNeeded({ force = false } = {}) {
     btcPriceAtClose: btcPrice,
     netValuePerShareAtClose: netValuePerShare,
     mnav,
-    marketDate: todayET,
+    marketDate,
     capturedAt: now.toISOString(),
   };
 
