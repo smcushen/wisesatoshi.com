@@ -623,7 +623,7 @@
 
   <div class="panel">
     <div class="panel-title">Bitcoin &amp; MSTR fundamentals</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag a slider, or type into any field below, to explore a scenario — Bitcoin price, mNAV, and the six fundamentals below all update the model live until you do.</div>
+    <div class="hint" style="margin-top:-8px;margin-bottom:16px;">Drag a slider, or type into any field below, to explore a scenario — Bitcoin price, mNAV, and the seven fundamentals below all update the model live until you do.</div>
 
     <div class="field">
       <label>Bitcoin price ($) <span class="val" id="lblBtc">$63,063</span></label>
@@ -637,8 +637,14 @@
         <input type="number" id="btcHeld" value="845050">
       </div>
       <div class="field">
-        <label>Shares outstanding (millions)</label>
+        <label>Basic shares outstanding (millions)</label>
         <input type="number" id="shares" value="420.497" step="0.1">
+        <div class="hint">Actual shares currently issued — used only for the "Strategy market cap" comparison card, matching how market cap is conventionally reported.</div>
+      </div>
+      <div class="field">
+        <label>Fully diluted shares outstanding — FDSO (millions)</label>
+        <input type="number" id="fdso" value="424.51" step="0.01">
+        <div class="hint">Basic shares plus options/RSUs and any in-the-money convertibles or STRK — this is what Strategy's own mNAV formula divides by, and what this model uses for Net value/share and mNAV below.</div>
       </div>
       <div class="field">
         <label>Convertible debt ($B)</label>
@@ -669,7 +675,7 @@
       <button type="button" class="return-live-btn" onclick="loadStrategyFundamentals();">Reset fundamentals to live values</button>
     </div>
 
-    <div class="source-line" id="sourceLine">Defaults last updated: Sep 9, 2026 · Source: Strategy SEC 8-K &amp; Investor Briefing · Basic shares ≈420.497M · BTC: 845,050</div>
+    <div class="source-line" id="sourceLine">Defaults last updated: Sep 9, 2026 · Source: Strategy SEC 8-K &amp; Investor Briefing · Basic shares ≈420.497M · FDSO ≈424.51M · BTC: 845,050</div>
 
     <div class="grid-3">
       <div class="field">
@@ -840,8 +846,8 @@
     <div class="panel-title">Methodology</div>
     <div class="methodology">
       <p><strong>Net BTC per share</strong> is calculated as:</p>
-      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve + USD cash) ÷ shares outstanding</code></p>
-      <p>This mirrors Strategy's own published capital-structure accounting: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack. Earlier versions of this tool only netted out convertible debt, which overstated fair value per share by roughly 30% at current prices.</p>
+      <p><code>(BTC held × BTC price − convertible debt − preferred stock + USD reserve + USD cash) ÷ fully diluted shares outstanding (FDSO)</code></p>
+      <p>This mirrors Strategy's own published capital-structure accounting, including its official mNAV methodology as of July 23, 2026: common shareholders have a residual claim on the Bitcoin treasury, standing behind both convertible debt <em>and</em> the STRK/STRF/STRD/STRC preferred stack, and the per-share denominator is Strategy's Fully Diluted Shares Outstanding — basic shares plus options, RSUs, and any in-the-money convertibles or STRK — not basic shares alone. Earlier versions of this tool only netted out convertible debt against basic shares, which overstated fair value per share by roughly 30% at current prices.</p>
       <p>The derived MSTR price is then <code>net value per share × mNAV multiple</code>. Option pricing uses Black-Scholes as a European-style approximation for MSTR's American-style calls — early exercise is rarely optimal for a non-dividend-paying stock, so the approximation is close in practice.</p>
     </div>
   </div>
@@ -1340,6 +1346,7 @@ async function saveScenario() {
     btcPrice: parseFloat(el('btcPrice').value),
     btcHeld: parseFloat(el('btcHeld').value),
     shares: parseFloat(el('shares').value),
+    fdso: parseFloat(el('fdso').value),
     debt: parseFloat(el('debt').value),
     preferred: parseFloat(el('preferred').value),
     usdReserve: parseFloat(el('usdReserve').value),
@@ -1556,7 +1563,7 @@ function compareSelectedScenarios() {
     }
 
     const btcHeld = off ? off.btcHeld : cd.btcHeld;
-    const shares = off ? off.sharesOutstandingMillions : cd.shares;
+    const shares = off ? off.fdsoMillions : (cd.fdso != null ? cd.fdso : cd.shares);
     const debt = off ? off.convertibleDebtBillions : (cd.debt || 0);
     const preferred = off ? off.preferredStockBillions : (cd.preferred || 0);
     const usdReserve = off ? off.usdReserveBillions : (cd.usdReserve || 0);
@@ -1708,6 +1715,12 @@ function loadSavedPosition(id) {
   if (cd.btcPrice != null) el('btcPrice').value = cd.btcPrice;
   if (cd.btcHeld != null) el('btcHeld').value = cd.btcHeld;
   if (cd.shares != null) el('shares').value = cd.shares;
+  // Scenarios saved before FDSO existed as a separate field have no cd.fdso --
+  // fall back to whatever basic-share value was saved rather than leaving
+  // today's live FDSO in place, which could quietly mismatch the rest of an
+  // otherwise-frozen historical scenario.
+  if (cd.fdso != null) el('fdso').value = cd.fdso;
+  else if (cd.shares != null) el('fdso').value = cd.shares;
   if (cd.debt != null) el('debt').value = cd.debt;
   if (cd.preferred != null) el('preferred').value = cd.preferred;
   if (cd.usdReserve != null) el('usdReserve').value = cd.usdReserve;
@@ -1744,7 +1757,7 @@ function exportSavedPositionsCSV() {
 
   const headers = [
     'Strike', 'Expiration Date', 'Note',
-    'BTC Price', 'BTC Held', 'Shares Outstanding (M)', 'Convertible Debt ($B)',
+    'BTC Price', 'BTC Held', 'Basic Shares Outstanding (M)', 'FDSO (M)', 'Convertible Debt ($B)',
     'Preferred Stock ($B)', 'USD Reserve ($B)', 'USD Cash ($B)', 'mNAV Multiple',
     'Contracts', 'Custom Contract Count', 'IV (%)', 'Risk-Free Rate (%)', 'Projection Date', 'Manual Price Override',
     'Derived MSTR Price', 'Option Price', 'Total Position Value', 'Saved At'
@@ -1760,7 +1773,7 @@ function exportSavedPositionsCSV() {
     const cd = c.contract_data || {};
     lines.push([
       c.strike, c.expiration_date, c.notes || '',
-      cd.btcPrice, cd.btcHeld, cd.shares, cd.debt,
+      cd.btcPrice, cd.btcHeld, cd.shares, cd.fdso, cd.debt,
       cd.preferred, cd.usdReserve, cd.usdCash, cd.mnav,
       cd.contracts, cd.contractsCustom || '', cd.iv, cd.rate, cd.projDate, cd.manualPrice || '',
       cd.derivedPrice, cd.optionPrice, cd.totalPositionValue, c.created_at
@@ -2268,7 +2281,8 @@ function recalc(){
   const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
   el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
   const btcHeld = parseFloat(el('btcHeld').value);
-  const sharesM = parseFloat(el('shares').value);
+  const sharesM = parseFloat(el('shares').value); // basic shares -- market cap card only
+  const fdsoM = parseFloat(el('fdso').value); // fully diluted -- drives net value/share and mNAV
   const debtB = parseFloat(el('debt').value);
   const preferredB = parseFloat(el('preferred').value);
   const usdReserveB = parseFloat(el('usdReserve').value);
@@ -2294,7 +2308,7 @@ function recalc(){
   el('lblIv').textContent = ivPct + '%';
   el('lblRate').textContent = ratePct.toFixed(1) + '%';
 
-  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
+  const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, fdsoM);
   const derivedPrice = netValuePerShare * mnav;
   el('derivedPrice').value = fmtUSD(derivedPrice);
   el('netValuePerShareDisplay').value = fmtUSD(netValuePerShare);
@@ -2365,7 +2379,7 @@ function recalc(){
 }
 
 // wire up all inputs
-['btcPrice','btcHeld','shares','debt','preferred','usdReserve','usdCash','mnav',
+['btcPrice','btcHeld','shares','fdso','debt','preferred','usdReserve','usdCash','mnav',
  'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice']
  .forEach(id => el(id).addEventListener('input', recalc));
 
@@ -2687,13 +2701,13 @@ async function fetchLiveMnav(preferLive = false) {
     // are currently in the inputs (BTC price should already be live by this point).
     const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
     const btcHeld = parseFloat(el('btcHeld').value);
-    const sharesM = parseFloat(el('shares').value);
+    const fdsoM = parseFloat(el('fdso').value);
     const debtB = parseFloat(el('debt').value);
     const preferredB = parseFloat(el('preferred').value);
     const usdReserveB = parseFloat(el('usdReserve').value);
     const usdCashB = parseFloat(el('usdCash').value);
 
-    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, sharesM);
+    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, fdsoM);
     const liveMnav = data.price / netValuePerShare;
 
     // Sanity check before applying — if fundamentals are still mid-load (a race
@@ -2845,7 +2859,7 @@ function calibrateIV() {
   } else {
     const btcPriceForCalib = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
     const btcHeldForCalib = parseFloat(el('btcHeld').value);
-    const sharesForCalib = parseFloat(el('shares').value);
+    const sharesForCalib = parseFloat(el('fdso').value);
     const debtForCalib = parseFloat(el('debt').value);
     const preferredForCalib = parseFloat(el('preferred').value);
     const usdReserveForCalib = parseFloat(el('usdReserve').value);
@@ -3019,11 +3033,17 @@ function loadStrategyFundamentals() {
       // (e.g. index.html and the JSON get uploaded out of sync), keep the
       // HTML's own default rather than setting the input to "undefined".
       if (data.usdCashBillions !== undefined) el('usdCash').value = data.usdCashBillions;
+      // Same defensive fallback for FDSO -- and if it's genuinely missing,
+      // fall back to basic shares rather than leaving a stale hardcoded FDSO
+      // value in place, which would silently understate net value/share.
+      if (data.fdsoMillions !== undefined) el('fdso').value = data.fdsoMillions;
+      else el('fdso').value = data.sharesOutstandingMillions;
 
       const sourceLine = el('sourceLine');
       if (sourceLine) {
+        const fdsoNote = data.fdsoMillions !== undefined ? ` · FDSO ≈${data.fdsoMillions}M` : '';
         sourceLine.textContent =
-          `Defaults last updated: ${formatDate(data.lastUpdated)} · Source: Strategy SEC 8-K & Investor Briefing · Basic shares ≈${data.sharesOutstandingMillions}M · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
+          `Defaults last updated: ${formatDate(data.lastUpdated)} · Source: Strategy SEC 8-K & Investor Briefing · Basic shares ≈${data.sharesOutstandingMillions}M${fdsoNote} · BTC: ${data.btcHeld.toLocaleString('en-US')}`;
       }
 
       recalc();
