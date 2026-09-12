@@ -614,6 +614,11 @@
           <div id="projDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>
         </div>
       </div>
+      <div class="field">
+        <label>Cost basis (optional)</label>
+        <input type="number" id="costBasis" placeholder="Total $ you paid" min="0" step="1">
+        <div class="hint">Total $ you paid for this position — used to show your gain/loss below.</div>
+      </div>
     </div>
     <div class="hint" id="pickerToggleHint" style="display:none;">
       <span id="optionSymbolDisplay" class="mono"></span>&nbsp;·&nbsp;<a href="#" id="manualToggleLink" onclick="toggleManualEntry(); return false;" style="color:var(--orange);text-decoration:none;">Don't see your exact strike? Enter it manually</a>
@@ -793,6 +798,20 @@
       <div class="result-card total">
         <div class="label">Total position value</div>
         <div class="value" id="outTotal">—</div>
+      </div>
+      <div class="result-card" style="grid-column:1/-1;" id="returnCard">
+        <div class="label">Your return</div>
+        <div id="returnCardEmpty" class="hint" style="margin:0;">Enter your cost basis above to see your current and projected P&amp;L here.</div>
+        <div id="returnCardFilled" style="display:none;gap:28px;flex-wrap:wrap;align-items:baseline;">
+          <div>
+            <div class="value" id="outReturnNow" style="font-size:22px;">—</div>
+            <div class="sub">Now</div>
+          </div>
+          <div>
+            <div class="value" id="outReturnProjected" style="font-size:22px;">—</div>
+            <div class="sub">At projection</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1372,6 +1391,7 @@ async function saveScenario() {
     rate: parseFloat(el('rate').value),
     projDate: el('projDate').value,
     manualPrice: el('manualPrice').value || null,
+    costBasis: el('costBasis').value || null,
     derivedPrice: el('derivedPrice').value,
     optionPrice: el('outOptionPrice').textContent,
     totalPositionValue: el('outTotal').textContent
@@ -1752,6 +1772,7 @@ function loadSavedPosition(id) {
   if (cd.rate != null) el('rate').value = cd.rate;
   if (cd.projDate) setDateFieldValue('projDate', cd.projDate);
   el('manualPrice').value = cd.manualPrice || '';
+  el('costBasis').value = cd.costBasis || '';
 
   if (typeof checkIvWarning === 'function') checkIvWarning();
   recalc();
@@ -2379,8 +2400,46 @@ function recalc(){
   el('outIntrinsic').textContent = fmtUSD(intrinsic);
   el('outOptionPrice').textContent = fmtUSD(price);
   el('outContractValue').textContent = fmtUSD0(price*100);
-  el('outTotal').textContent = fmtUSD0(price*100*contracts);
+  const projectedTotal = price*100*contracts;
+  el('outTotal').textContent = fmtUSD0(projectedTotal);
   el('outMnavCheck').textContent = (S/netValuePerShare).toFixed(3) + '×';
+
+  // Your return: "Now" uses the real actual MSTR price (not this scenario's
+  // derived/manual/hypothetical price) and today's real calendar date --
+  // a genuine, live fact about what the position is actually worth right
+  // now, independent of whatever BTC scenario or projection date is dialed
+  // in. "At projection" reuses the exact same price/total already computed
+  // above for the rest of the Results panel -- whatever this scenario's
+  // Projection Date and BTC price currently produce. Only shown once a cost
+  // basis is entered; otherwise the card explains what to do instead of
+  // showing a meaningless "—".
+  const costBasisTotal = parseFloat(el('costBasis').value);
+  const returnEmptyEl = el('returnCardEmpty');
+  const returnFilledEl = el('returnCardFilled');
+  if (costBasisTotal > 0) {
+    const actualPriceForReturn = parseFloat((el('actualMstrPrice').value || '').replace(/[$,]/g, ''));
+    const todayForReturn = new Date();
+    const tNow = Math.max((expiry - todayForReturn) / (1000*60*60*24*365), 0.0001);
+    const nowPrice = actualPriceForReturn > 0
+      ? blackScholesCall(actualPriceForReturn, strike, tNow, r, sigma).price
+      : null;
+    const nowTotal = nowPrice != null ? nowPrice*100*contracts : null;
+
+    const fmtReturn = (total) => {
+      const gl = total - costBasisTotal;
+      const pct = (gl / costBasisTotal) * 100;
+      const sign = gl >= 0 ? '+' : '';
+      return sign + fmtUSD0(gl) + ' (' + sign + pct.toFixed(1) + '%)';
+    };
+
+    el('outReturnNow').textContent = nowTotal != null ? fmtReturn(nowTotal) : '—';
+    el('outReturnProjected').textContent = fmtReturn(projectedTotal);
+    returnEmptyEl.style.display = 'none';
+    returnFilledEl.style.display = 'flex';
+  } else {
+    returnEmptyEl.style.display = 'block';
+    returnFilledEl.style.display = 'none';
+  }
 
   // Strategy market cap: today's real live price × real shares outstanding
   // (both already on the page for other purposes) vs. the same math run on
@@ -2425,7 +2484,7 @@ function recalc(){
 
 // wire up all inputs
 ['btcPrice','btcHeld','shares','fdso','debt','preferred','usdReserve','usdCash','costOfCapital','mnav',
- 'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice']
+ 'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice','costBasis']
  .forEach(id => el(id).addEventListener('input', recalc));
 
 // Corrects what's actually displayed in the custom contract count box to
