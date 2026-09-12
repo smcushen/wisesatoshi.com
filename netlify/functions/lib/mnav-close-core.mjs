@@ -180,7 +180,7 @@ export async function captureIfNeeded({ force = false } = {}) {
     fundamentals.preferredStockBillions,
     fundamentals.usdReserveBillions,
     fundamentals.usdCashBillions || 0,
-    fundamentals.sharesOutstandingMillions
+    fundamentals.fdsoMillions || fundamentals.sharesOutstandingMillions
   );
   const mnav = mstrPrice / netValuePerShare;
 
