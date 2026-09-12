@@ -2498,9 +2498,21 @@ async function fetchLiveBtcPrice() {
 // falls back to a GitHub-Action-refreshed static file only if that's unreachable.
 
 // ---------- mNAV close-time snapshot (captured server-side once/day, near market close) ----------
+// Fetched directly from GitHub's raw content, NOT from this site's own
+// published build. The capture functions (capture-mnav-close-scheduled.mjs,
+// capture-mnav-close-check.mjs) write straight to the repo via GitHub's
+// Contents API -- that write has nothing to do with, and does not trigger,
+// a Netlify deploy/publish. Reading from the same place those writes land
+// means the badge below always reflects the latest commit within seconds,
+// with zero dependency on anyone clicking "Publish deploy" on Netlify.
+// This is what actually fixes the recurring "shows yesterday's close"
+// symptom -- the underlying data was correct all along; only the site's own
+// published copy of it was stuck behind a manual publish step.
+const MNAV_SNAPSHOT_RAW_URL = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/data/mnav-close-snapshot.json';
+
 async function fetchMnavCloseSnapshot() {
   try {
-    const resp = await fetch('data/mnav-close-snapshot.json?t=' + Date.now(), { cache: 'no-store' });
+    const resp = await fetch(MNAV_SNAPSHOT_RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error('bad response');
     const data = await resp.json();
     if (typeof data.mnav !== 'number' || !data.marketDate) throw new Error('malformed snapshot');
