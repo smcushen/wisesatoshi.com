@@ -2487,6 +2487,24 @@ function recalc(){
  'strike','contracts','contractsCustom','iv','rate','expiryDate','projDate','manualPrice','costBasis']
  .forEach(id => el(id).addEventListener('input', recalc));
 
+// Enter-to-blur for every manually-typed number field on the page. Pressing
+// Enter in these fields doesn't submit anything (there's no form action tied
+// to them) and previously just did nothing, which reads as broken even
+// though the underlying calculation already updated on every keystroke via
+// each field's own 'input' listener above. Blurring on Enter gives a real,
+// visible "confirmed" moment -- the focus ring drops -- and, on mobile,
+// dismisses the on-screen keyboard, which is the biggest practical win.
+// Delegated on document rather than wired to specific elements, since
+// several number fields (strike, in particular) get recreated via
+// innerHTML when toggling between the Pro contract picker and manual entry
+// -- a listener attached to one specific element would silently stop
+// working the moment that element gets replaced.
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type === 'number') {
+    e.target.blur();
+  }
+});
+
 // Corrects what's actually displayed in the custom contract count box to
 // match the 1-1000 clamp recalc() already enforces for the math -- without
 // this, someone could type e.g. 5000, see the result computed with 1000
