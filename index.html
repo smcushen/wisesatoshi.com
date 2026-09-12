@@ -778,7 +778,7 @@
           </div>
           <div>
             <div class="value" id="scenarioMarketCap" style="font-size:22px;">—</div>
-            <div class="sub">Under this scenario</div>
+            <div class="sub">Under this scenario <span id="scenarioMarketCapPct" style="color:var(--orange);font-weight:600;"></span></div>
           </div>
         </div>
       </div>
@@ -2548,6 +2548,15 @@ function recalc(){
     ? fmtUSD0(actualPriceRaw * sharesM * 1e6)
     : '—';
   el('scenarioMarketCap').textContent = (sharesM > 0) ? fmtUSD0(S * sharesM * 1e6) : '—';
+  // % change between today's real market cap and this scenario's -- only
+  // meaningful once both sides have a real number to compare against.
+  if (actualPriceRaw > 0 && sharesM > 0) {
+    const marketCapPct = ((S - actualPriceRaw) / actualPriceRaw) * 100;
+    const sign = marketCapPct >= 0 ? '+' : '';
+    el('scenarioMarketCapPct').textContent = '(' + sign + marketCapPct.toFixed(1) + '%)';
+  } else {
+    el('scenarioMarketCapPct').textContent = '';
+  }
 
   // Strategy balance-sheet health metrics -- Amplification, BTC Rating, BTC
   // Duration, USD Duration. These react to the same scenario inputs as
