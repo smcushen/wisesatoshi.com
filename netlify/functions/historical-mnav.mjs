@@ -40,14 +40,26 @@
 // ---------- Fundamentals timelines (real, sourced data points only) ----------
 
 // BTC held, in whole coins. Sources: original 2020 8-Ks, strategy.com/shares,
-// 2026 weekly 8-Ks, investor briefings.
+// individual quarterly earnings press releases (pulled specifically this
+// session to fix the 2021-2024 sparse-data problem below), 2026 weekly
+// 8-Ks, investor briefings.
 const BTC_HOLDINGS = [
   { date: '2020-08-11', value: 21454 },
   { date: '2020-09-14', value: 38250 },
   { date: '2020-12-21', value: 70470 },
+  { date: '2021-03-31', value: 91353 },
+  { date: '2021-06-30', value: 105085 }, // not directly confirmed this session -- widely-cited secondary figure, verify against Q2'21 8-K directly if precision here matters
+  { date: '2021-09-30', value: 114042 },
   { date: '2021-12-31', value: 124391 },
+  { date: '2022-03-31', value: 129218 },
+  { date: '2022-06-30', value: 129699 },
+  { date: '2022-09-30', value: 130000 },
   { date: '2022-12-31', value: 132500 },
+  { date: '2023-06-30', value: 152333 }, // 2023-03-31 not yet pulled -- carries 132,500 forward through Q1'23
+  { date: '2023-09-30', value: 158245 },
   { date: '2023-12-31', value: 189150 },
+  { date: '2024-03-31', value: 214278 },
+  { date: '2024-06-30', value: 226500 }, // 2024-09-30 not yet pulled -- carries this forward through Q3'24
   { date: '2024-12-31', value: 447470 },
   { date: '2025-12-31', value: 672500 },
   { date: '2026-01-04', value: 673783 },
