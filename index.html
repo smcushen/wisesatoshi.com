@@ -839,11 +839,6 @@
     </div>
     <div id="valueOverTimeChart" style="height:260px;"></div>
   </div>
-    <div class="panel">
-    <div class="panel-title">Historical mNAV</div>
-    <div class="hint" style="margin-top:-8px;margin-bottom:12px;">Strategy's mNAV since it first began holding Bitcoin, August 11, 2020 — reconstructed from real daily BTC/MSTR prices and Strategy's own SEC-filed fundamentals. Gaps reflect a genuine period (Nov–Dec 2022) where debt briefly exceeded raw BTC value during that year's market crash.</div>
-    <div id="historicalMnavChart" style="height:260px;"></div>
-  </div>
 
   <div class="panel" id="proPanelLockedHint">
     <div class="panel-title">Your Saved Positions</div>
@@ -2382,47 +2377,7 @@ function resetValueOverTimeChartView() {
   _valueOverTimeChart.priceScale('right').applyOptions({ autoScale: true });
 
 }
-// ---------- Historical mNAV chart ----------
-let _historicalMnavChart = null;
-let _historicalMnavSeries = null;
 
-function initHistoricalMnavChart() {
-  const container = el('historicalMnavChart');
-  if (!container || !window.LightweightCharts) return;
-  _historicalMnavChart = LightweightCharts.createChart(container, {
-    width: container.clientWidth,
-    height: 260,
-    layout: { background: { color: 'transparent' }, textColor: '#9aa0a6' },
-    grid: { vertLines: { color: '#262b30' }, horzLines: { color: '#262b30' } },
-    rightPriceScale: { borderColor: '#262b30' },
-    timeScale: { borderColor: '#262b30' },
-  });
-  _historicalMnavSeries = _historicalMnavChart.addAreaSeries({
-    lineColor: '#f7931a',
-    topColor: 'rgba(247,147,26,0.25)',
-    bottomColor: 'rgba(247,147,26,0.0)',
-    lineWidth: 2,
-  });
-  window.addEventListener('resize', () => {
-    if (_historicalMnavChart) _historicalMnavChart.applyOptions({ width: container.clientWidth });
-  });
-}
-
-async function loadHistoricalMnavChart() {
-  if (!_historicalMnavSeries) return;
-  try {
-    const url = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/data/historical-mnav.json?t=' + Date.now();
-    const res = await fetch(url, { cache: 'no-store' });
-    const data = await res.json();
-    const points = data.series
-      .filter(d => d.mnav !== null)
-      .map(d => ({ time: d.date, value: d.mnav }));
-    _historicalMnavSeries.setData(points);
-    _historicalMnavChart.timeScale().fitContent();
-  } catch (err) {
-    console.warn('Could not load historical mNAV data.', err);
-  }
-}
 // Recomputes the same blackScholesCall() already used for outOptionPrice,
 // just run across weekly steps from today through expiration instead of a
 // single Projection Date -- holding S (this scenario's BTC-derived or manual
@@ -3346,8 +3301,6 @@ fetchLiveRate();
 loadStrategyFundamentals();
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
 initValueOverTimeChart();
-initHistoricalMnavChart();
-loadHistoricalMnavChart();
 
 recalc();
 
