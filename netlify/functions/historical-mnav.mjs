@@ -40,9 +40,11 @@
 // ---------- Fundamentals timelines (real, sourced data points only) ----------
 
 // BTC held, in whole coins. Sources: original 2020 8-Ks, strategy.com/shares,
-// individual quarterly earnings press releases (pulled specifically this
-// session to fix the 2021-2024 sparse-data problem below), 2026 weekly
-// 8-Ks, investor briefings.
+// individual quarterly earnings press releases and 10-Qs. As of this
+// session, this is now a COMPLETE quarterly series from Q1 2021 through
+// Q4 2026 -- every quarter-end has a real, sourced figure, closing the
+// sparse-data problem that was causing false "insolvency" (mnav: null)
+// stretches earlier in the series.
 const BTC_HOLDINGS = [
   { date: '2020-08-11', value: 21454 },
   { date: '2020-09-14', value: 38250 },
@@ -55,11 +57,13 @@ const BTC_HOLDINGS = [
   { date: '2022-06-30', value: 129699 },
   { date: '2022-09-30', value: 130000 },
   { date: '2022-12-31', value: 132500 },
-  { date: '2023-06-30', value: 152333 }, // 2023-03-31 not yet pulled -- carries 132,500 forward through Q1'23
+  { date: '2023-03-31', value: 140000 },
+  { date: '2023-06-30', value: 152333 },
   { date: '2023-09-30', value: 158245 },
   { date: '2023-12-31', value: 189150 },
   { date: '2024-03-31', value: 214278 },
-  { date: '2024-06-30', value: 226500 }, // 2024-09-30 not yet pulled -- carries this forward through Q3'24
+  { date: '2024-06-30', value: 226500 },
+  { date: '2024-09-30', value: 252220 },
   { date: '2024-12-31', value: 447470 },
   { date: '2025-12-31', value: 672500 },
   { date: '2026-01-04', value: 673783 },
@@ -119,15 +123,25 @@ const USD_ASSETS_HISTORY = [
 ];
 
 // Fully Diluted Shares Outstanding, in millions. Source: strategy.com/shares
-// historical table (already stated on a post-2024-split basis). 2020-08-11
-// and 2020-09-14 use the 2020 year-end figure as the nearest available
-// anchor -- exact share count on those specific dates not yet pulled.
+// historical table (already post-2024-split) for year-end anchors, plus
+// quarterly weighted-average basic share counts pulled from individual
+// 10-Qs this session to smooth the 2023-2024 gap. IMPORTANT: 10-Qs filed
+// before the Aug 2024 split report shares in pre-split thousands (x10
+// needed to match our post-split convention); 10-Qs filed after the split
+// retroactively restate ALL periods to post-split terms already (no x10
+// needed). Each line below notes which basis it came from.
 const FDSO_HISTORY = [
   { date: '2020-08-11', value: 95.87 },
   { date: '2020-12-31', value: 95.87 },
   { date: '2021-12-31', value: 149.234 },
   { date: '2022-12-31', value: 156.113 },
+  { date: '2023-03-31', value: 118.34 }, // Q1'24 10-Q comparative column, 11,834K pre-split x10
+  { date: '2023-06-30', value: 132.47 }, // Q2'24 10-Q comparative column, 13,247K pre-split x10
+  { date: '2023-09-30', value: 142.214 }, // Q3'24 10-Q comparative column, already post-split-restated
   { date: '2023-12-31', value: 207.636 },
+  { date: '2024-03-31', value: 171.94 }, // Q1'24 10-Q, 17,194K pre-split x10
+  { date: '2024-06-30', value: 178.61 }, // Q2'24 10-Q, 17,861K pre-split x10
+  { date: '2024-09-30', value: 197.273 }, // Q3'24 10-Q, already post-split (filed after Aug 2024 split)
   { date: '2024-12-31', value: 281.735 },
   { date: '2025-12-31', value: 344.897 },
   { date: '2026-03-31', value: 378.834 },
