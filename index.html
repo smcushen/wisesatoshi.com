@@ -260,10 +260,25 @@
   margin-top:1px;
   margin-bottom:-30px;
 }
+.modler-header-img-pro{
+  width:40.9%;
+  max-width:755px;
+  display:block;
+  margin-top:1px;
+  margin-bottom:-30px;
+}
 @media(max-width:640px){
   .modler-header-img{
     width:85%;
     max-width:340px;
+    margin-top:0;
+    margin-bottom:-32px;
+  }
+}
+@media(max-width:640px){
+  .modler-header-img-pro{
+    width:100%;
+    max-width:400px;
     margin-top:0;
     margin-bottom:-32px;
   }
@@ -499,7 +514,7 @@
 </header>
 
 <div style="max-width:1560px;margin:0 auto;padding:17px 32px 0;">
-  <img src="mstr-modler-header.png" alt="MSTR MODLer" class="modler-header-img">
+  <img id="modlerHeaderImg" src="mstr-modler-header.png" alt="MSTR MODLer" class="modler-header-img">
 </div>
 <div class="hero-promo-wrap">
 <section class="hero">
@@ -1262,6 +1277,13 @@ async function onLoggedIn(user) {
   const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt || inGracePeriod;
 
   if (hasAccess) {
+        const modlerImg = document.getElementById('modlerHeaderImg');
+    if (modlerImg) {
+      modlerImg.src = 'mstr-modler-pro-header.png';
+      modlerImg.alt = 'MSTR MODLer Pro';
+      modlerImg.classList.remove('modler-header-img');
+      modlerImg.classList.add('modler-header-img-pro');
+    }
     el('proPanel').style.display = 'block';
     el('proQuickBar').style.display = 'block';
     el('upgradePanel').style.display = 'none';
