@@ -144,7 +144,7 @@ async function fetchBtcPrice() {
 // correctly label whatever the last real close was, regardless of what
 // day or time it's actually called — so it skips these guards entirely
 // and relies on mostRecentTradingDay() to find the right target date.
-export async function captureIfNeeded({ force = false } = {}) {
+export async function captureIfNeeded({ force = false, allowOverwrite = false } = {}) {
   const now = new Date();
   const todayET = easternDateString(now);
   const marketDate = mostRecentTradingDay(now);
@@ -162,7 +162,7 @@ export async function captureIfNeeded({ force = false } = {}) {
   }
 
   const existing = await githubGetFile(SNAPSHOT_PATH);
-  if (!force && existing.content && existing.content.marketDate === marketDate) {
+  if (!force && !allowOverwrite && existing.content && existing.content.marketDate === marketDate) {
     return { skipped: true, reason: 'already_captured', marketDate };
   }
 
