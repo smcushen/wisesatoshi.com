@@ -276,8 +276,11 @@
   pointer-events:none;
 }
 @media(max-width:640px){
-  body{
+  html, body{
     overflow-x:hidden;
+  }
+  .modler-header-outer{
+    overflow:hidden;
   }
   .modler-header-wrap{
     width:71.4%;
@@ -516,7 +519,7 @@
   </nav>
 </header>
 
-<div style="max-width:1560px;margin:0 auto;padding:17px 32px 0;">
+<div class="modler-header-outer" style="max-width:1560px;margin:0 auto;padding:17px 32px 0;">
   <div class="modler-header-wrap">
     <img id="modlerHeaderImg" src="mstr-modler-header.png" alt="MSTR MODLer" class="modler-header-img">
     <img id="modlerProBadge" src="pro-badge.png" alt="Pro" class="modler-pro-badge" style="display:none;">
