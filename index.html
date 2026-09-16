@@ -3512,11 +3512,11 @@ document.addEventListener('visibilitychange', () => {
   const panel = document.getElementById('debugPanel');
   function log(msg){
     const line = document.createElement('div');
-    line.textContent = new Date().toISOString().slice(11,23) + ' | w=' + document.documentElement.clientWidth + ' | ' + msg;
+    line.textContent = new Date().toISOString().slice(11,23) + ' | scale=' + window.visualViewport.scale.toFixed(4) + ' | clientWidth=' + document.documentElement.clientWidth + ' | ' + msg;
     panel.appendChild(line);
     panel.scrollTop = panel.scrollHeight;
   }
-  let lastWidth = document.documentElement.clientWidth;
+  let lastScale = window.visualViewport.scale;
   log('initial load');
   let lastMutationInfo = 'none';
   const observer = new MutationObserver(function(mutations){
@@ -3526,13 +3526,13 @@ document.addEventListener('visibilitychange', () => {
     }
   });
   observer.observe(document.body, {childList:true, subtree:true, attributes:true});
-  setInterval(function(){
-    const w = document.documentElement.clientWidth;
-    if (w !== lastWidth) {
-      log('WIDTH CHANGED from ' + lastWidth + ' to ' + w + ' | last DOM change near: ' + lastMutationInfo);
-      lastWidth = w;
+  window.visualViewport.addEventListener('resize', function(){
+    const s = window.visualViewport.scale;
+    if (Math.abs(s - lastScale) > 0.001) {
+      log('SCALE CHANGED from ' + lastScale.toFixed(4) + ' to ' + s.toFixed(4) + ' | last DOM change near: ' + lastMutationInfo);
+      lastScale = s;
     }
-  }, 100);
+  });
 })();
 </script>
 </body>
