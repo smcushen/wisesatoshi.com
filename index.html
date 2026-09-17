@@ -1324,6 +1324,7 @@ async function onLoggedIn(user) {
     }
     loadSavedPositions();
     enablePicker();
+    if (window._debugLog) window._debugLog('onLoggedIn finished running');
   } else {
     const wasGracePeriod = profile.subscription_status === 'past_due' || profile.subscription_status === 'canceled';
     showUpgradePrompt(wasGracePeriod ? graceEndsAt : trialEndsAt, wasGracePeriod);
@@ -1407,6 +1408,7 @@ async function openBillingPortal() {
 // click required, matching the "just go to wisesatoshi.com" flow.
 function checkExistingSession() {
   supabaseClient.auth.getUser().then(({ data }) => {
+    if (window._debugLog) window._debugLog('checkExistingSession resolved, user=' + (data.user ? 'yes' : 'no'));
     if (data.user) onLoggedIn(data.user);
   });
 }
@@ -1464,7 +1466,7 @@ async function saveScenario() {
   statusEl.textContent = 'Saved.';
   statusEl.style.color = 'var(--green)';
   el('scenarioNotes').value = '';
-  loadSavedPositions();
+  
 }
 
 async function loadSavedPositions() {
@@ -2115,6 +2117,7 @@ function setPickerValue(fieldId, rawValue, isExpiry) {
 
 function enablePicker() {
   loadOptionsChain().then(data => {
+    if (window._debugLog) window._debugLog('options chain loaded, entries=' + (data ? data.expirations.length : 0));
     if (!data || !data.expirations || !data.expirations.length) return;
 
     const currentExpiry = el('expiryDate').value;
@@ -3512,24 +3515,17 @@ document.addEventListener('visibilitychange', () => {
   const panel = document.getElementById('debugPanel');
   function log(msg){
     const line = document.createElement('div');
-    line.textContent = new Date().toISOString().slice(11,23) + ' | scale=' + window.visualViewport.scale.toFixed(4) + ' | clientWidth=' + document.documentElement.clientWidth + ' | ' + msg;
+    line.textContent = new Date().toISOString().slice(11,23) + ' | scale=' + window.visualViewport.scale.toFixed(4) + ' | ' + msg;
     panel.appendChild(line);
     panel.scrollTop = panel.scrollHeight;
   }
-  let lastScale = window.visualViewport.scale;
+  window._debugLog = log;
   log('initial load');
-  let lastMutationInfo = 'none';
-  const observer = new MutationObserver(function(mutations){
-    if (mutations.length) {
-      const t = mutations[mutations.length-1].target;
-      lastMutationInfo = (t.id ? '#'+t.id : '') + (t.className ? '.'+String(t.className).slice(0,40) : t.tagName);
-    }
-  });
-  observer.observe(document.body, {childList:true, subtree:true, attributes:true});
+  let lastScale = window.visualViewport.scale;
   window.visualViewport.addEventListener('resize', function(){
     const s = window.visualViewport.scale;
     if (Math.abs(s - lastScale) > 0.001) {
-      log('SCALE CHANGED from ' + lastScale.toFixed(4) + ' to ' + s.toFixed(4) + ' | last DOM change near: ' + lastMutationInfo);
+      log('*** SCALE CHANGED from ' + lastScale.toFixed(4) + ' to ' + s + ' ***');
       lastScale = s;
     }
   });
