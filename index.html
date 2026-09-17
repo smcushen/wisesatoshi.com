@@ -3539,9 +3539,6 @@ document.addEventListener('visibilitychange', () => {
     let found = [];
     all.forEach(el => {
       if (el.id === 'debugPanel' || el.closest('#debugPanel')) return;
-      // Skip anything already contained by a clipping ancestor -- its own
-      // bounding box might look wide, but it can't actually be contributing
-      // to real page overflow if something upstream already clips it.
       let ancestor = el.parentElement;
       let isClipped = false;
       while (ancestor && ancestor !== document.body) {
@@ -3555,7 +3552,10 @@ document.addEventListener('visibilitychange', () => {
       if (isClipped) return;
       const rect = el.getBoundingClientRect();
       if (rect.right > vw + 2 || rect.width > vw + 2) {
-        found.push(el);
+        found.push({el, reason: 'outer box wide', detail: 'right=' + rect.right.toFixed(0) + ' width=' + rect.width.toFixed(0)});
+      }
+      if (el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0) {
+        found.push({el, reason: 'internal content overflow', detail: 'scrollWidth=' + el.scrollWidth + ' clientWidth=' + el.clientWidth});
       }
     });
     return found;
@@ -3568,9 +3568,9 @@ document.addEventListener('visibilitychange', () => {
       log('*** SCALE CHANGED from ' + lastScale.toFixed(4) + ' to ' + s + ' *** documentElement.scrollWidth=' + document.documentElement.scrollWidth);
       const wide = findWideElements();
       if (wide.length) {
-        wide.slice(0, 5).forEach(el => {
-          const rect = el.getBoundingClientRect();
-          log('WIDE: <' + el.tagName + (el.id ? ' id=' + el.id : '') + (el.className ? ' class=' + String(el.className).slice(0,50) : '') + '> right=' + rect.right.toFixed(0) + ' width=' + rect.width.toFixed(0));
+        wide.slice(0, 8).forEach(item => {
+          const el = item.el;
+          log('WIDE (' + item.reason + '): <' + el.tagName + (el.id ? ' id=' + el.id : '') + (el.className ? ' class=' + String(el.className).slice(0,50) : '') + '> ' + item.detail);
         });
       } else {
         log('No elements found exceeding viewport width');
