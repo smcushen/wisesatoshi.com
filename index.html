@@ -3539,6 +3539,20 @@ document.addEventListener('visibilitychange', () => {
     let found = [];
     all.forEach(el => {
       if (el.id === 'debugPanel' || el.closest('#debugPanel')) return;
+      // Skip anything already contained by a clipping ancestor -- its own
+      // bounding box might look wide, but it can't actually be contributing
+      // to real page overflow if something upstream already clips it.
+      let ancestor = el.parentElement;
+      let isClipped = false;
+      while (ancestor && ancestor !== document.body) {
+        const style = getComputedStyle(ancestor);
+        if (style.overflow === 'hidden' || style.overflowX === 'hidden' || style.overflow === 'clip' || style.overflowX === 'clip') {
+          isClipped = true;
+          break;
+        }
+        ancestor = ancestor.parentElement;
+      }
+      if (isClipped) return;
       const rect = el.getBoundingClientRect();
       if (rect.right > vw + 2 || rect.width > vw + 2) {
         found.push(el);
