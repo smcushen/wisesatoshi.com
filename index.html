@@ -3047,6 +3047,7 @@ async function fetchLiveMnav(preferLive = false) {
     // re-ran recalc() later once its own fetch resolved. Free users had no
     // equivalent second call, so the badge stayed stuck on stale data.
     recalc();
+    if (window._debugLog) window._debugLog('fetchLiveMnav finished');
   } catch (err) {
     setMnavStatus(false);
   }
