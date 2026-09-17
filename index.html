@@ -3330,6 +3330,7 @@ function loadStrategyFundamentals() {
       }
 
       recalc();
+      if (window._debugLog) window._debugLog('loadStrategyFundamentals fetch completed');
     })
     .catch(err => {
       console.warn('Could not load live fundamentals, keeping hardcoded defaults.', err);
@@ -3343,12 +3344,17 @@ function loadStrategyFundamentals() {
 // real, current snapshot exists and finishes loading moments later.
 const _initialBtcPricePromise = fetchLiveBtcPrice();
 const _initialCloseSnapshotPromise = fetchMnavCloseSnapshot();
-Promise.all([_initialBtcPricePromise, _initialCloseSnapshotPromise]).then(() => fetchLiveMnav());
+Promise.all([_initialBtcPricePromise, _initialCloseSnapshotPromise]).then(() => {
+  if (window._debugLog) window._debugLog('BTC price + close snapshot both resolved');
+  fetchLiveMnav();
+});
 _initialCloseSnapshotPromise.then(triggerMnavCloseBackfill); // triggerMnavCloseBackfill() guards itself against calling Netlify outside the post-close window or once already current
-fetchLiveRate();
+fetchLiveRate().then(() => { if (window._debugLog) window._debugLog('fetchLiveRate finished'); });
 loadStrategyFundamentals();
+if (window._debugLog) window._debugLog('loadStrategyFundamentals called (fires async internally)');
 checkExistingSession(); // shows the Pro panel immediately if a session already exists
 initValueOverTimeChart();
+if (window._debugLog) window._debugLog('initValueOverTimeChart called');
 
 recalc();
 
