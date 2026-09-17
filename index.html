@@ -2161,12 +2161,16 @@ function enablePicker() {
     }
     el('strike').value = resolvedStrike;
     el('strikePickerLabel').textContent = formatStrikeLabel(resolvedStrike);
+    if (window._debugLog) window._debugLog('before renderStrikeMenu, strikes.length=' + strikes.length);
     renderStrikeMenu(strikes, resolvedStrike);
+    if (window._debugLog) window._debugLog('after renderStrikeMenu');
 
     el('pickerToggleHint').style.display = 'block';
     updateOptionSymbolDisplay();
     checkIvWarning();
+    if (window._debugLog) window._debugLog('before recalc');
     recalc();
+    if (window._debugLog) window._debugLog('after recalc');
   });
 }
 
