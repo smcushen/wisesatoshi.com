@@ -3554,7 +3554,7 @@ document.addEventListener('visibilitychange', () => {
       if (rect.right > vw + 2 || rect.width > vw + 2) {
         found.push({el, reason: 'outer box wide', detail: 'right=' + rect.right.toFixed(0) + ' width=' + rect.width.toFixed(0)});
       }
-      if (el.scrollWidth > el.clientWidth + 2 && el.clientWidth > 0) {
+      if (el.scrollWidth > el.clientWidth + 10 && el.clientWidth > 0) {
         found.push({el, reason: 'internal content overflow', detail: 'scrollWidth=' + el.scrollWidth + ' clientWidth=' + el.clientWidth});
       }
     });
@@ -3568,7 +3568,7 @@ document.addEventListener('visibilitychange', () => {
       log('*** SCALE CHANGED from ' + lastScale.toFixed(4) + ' to ' + s + ' *** documentElement.scrollWidth=' + document.documentElement.scrollWidth);
       const wide = findWideElements();
       if (wide.length) {
-        wide.slice(0, 8).forEach(item => {
+        wide.slice(0, 15).forEach(item => {
           const el = item.el;
           log('WIDE (' + item.reason + '): <' + el.tagName + (el.id ? ' id=' + el.id : '') + (el.className ? ' class=' + String(el.className).slice(0,50) : '') + '> ' + item.detail);
         });
