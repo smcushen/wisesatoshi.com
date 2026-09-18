@@ -1,0 +1,13 @@
+name: Trial Follow-up Email Check
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch: {}
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call trial-followup edge function
+        run: |
+          curl -sf -X POST "https://oqtjogdgisbwsvgcmfos.supabase.co/functions/v1/send-trial-followup" \
+            -H "x-cron-secret: ${{ secrets.TRIAL_FOLLOWUP_CRON_SECRET }}"
