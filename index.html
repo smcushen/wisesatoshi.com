@@ -2982,8 +2982,18 @@ async function fetchLiveMnav(preferLive = false) {
     const usdReserveB = parseFloat(el('usdReserve').value);
     const usdCashB = parseFloat(el('usdCash').value);
 
-    const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, fdsoM);
-    const liveMnav = data.price / netValuePerShare;
+ const netValuePerShare = calcNetValuePerShare(btcHeld, btcPrice, debtB, preferredB, usdReserveB, usdCashB, fdsoM);
+
+    // After hours, the generic price feed (data.price) can be stale relative
+    // to the authoritative close snapshot -- especially if this tab has been
+    // open since before the close and this function hasn't re-run since.
+    // Prefer the close snapshot's price whenever the market's shut and one
+    // exists, so the mNAV estimate always tracks against the real close,
+    // not whatever the last live-mode fetch happened to catch.
+    const mktOpenForCalc = isMarketOpenNow();
+    const closeSnapForCalc = window._mnavCloseSnapshot;
+    const effectivePrice = (!mktOpenForCalc && closeSnapForCalc) ? closeSnapForCalc.mstrClosePrice : data.price;
+    const liveMnav = effectivePrice / netValuePerShare;
 
     // Sanity check before applying — if fundamentals are still mid-load (a race
     // condition with loadStrategyFundamentals()), netValuePerShare can briefly be
@@ -3007,7 +3017,7 @@ async function fetchLiveMnav(preferLive = false) {
     const fetchedAt = data.lastFetched ? new Date(data.lastFetched) : null;
     const stamp = fetchedAt ? fetchedAt.toISOString().slice(11,16) + ' UTC' : new Date().toISOString().slice(11,16) + ' UTC';
     const staleMinutes = (data.isLive || !fetchedAt) ? null : Math.round((Date.now() - fetchedAt.getTime()) / 60000);
-    const liveDisplayMnav = netValuePerShare > 0 ? (data.price / netValuePerShare).toFixed(2) : null;
+    const liveDisplayMnav = netValuePerShare > 0 ? (effectivePrice / netValuePerShare).toFixed(2) : null;
     setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
 
     // Show the actual real-world MSTR price alongside the model's own output,
@@ -3410,11 +3420,14 @@ function checkPreciseRefreshTimes(){
 }
 
 function startDataPolling(){
-  // Market-hours-only: the underlying price can't move once the market's
-  // closed, so there's no reason to make the network call at all outside
-  // trading hours — not really about cost (negligible either way), just not
-  // doing pointless work.
-  mnavInterval = setInterval(() => { if (isMarketOpenNow()) fetchLiveMnav(); }, 5 * 60 * 1000);
+  // Runs regardless of market hours now -- BTC price keeps moving 24/7, so
+  // the after-hours "live BTC-adjusted estimate" needs to keep recomputing
+  // too, using the close snapshot as its price anchor (handled inside
+  // fetchLiveMnav() itself). Previously gated to market-open only, which
+  // meant the estimate silently froze at whatever the last live fetch
+  // caught before close, drifting out of sync with a moving BTC price for
+  // the rest of the evening.
+  mnavInterval = setInterval(() => { fetchLiveMnav(); }, 5 * 60 * 1000);
   rateInterval = setInterval(fetchLiveRate, 2 * 60 * 60 * 1000);
   preciseRefreshInterval = setInterval(checkPreciseRefreshTimes, 30 * 1000);
   // Re-checks the close snapshot every 20 min so a stuck CDN/browser cache
