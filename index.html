@@ -821,6 +821,19 @@
           </div>
         </div>
       </div>
+      <div class="result-card" style="grid-column:1/-1;">
+        <div class="label">Bitcoin market cap</div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:baseline;">
+          <div>
+            <div class="value" id="currentBtcMarketCap" style="color:var(--ink);font-size:22px;">—</div>
+            <div class="sub">Today, live</div>
+          </div>
+          <div>
+            <div class="value" id="scenarioBtcMarketCap" style="font-size:22px;">—</div>
+            <div class="sub">Under this scenario <span id="scenarioBtcMarketCapPct" style="color:var(--orange);font-weight:600;"></span></div>
+          </div>
+        </div>
+      </div>
       <div class="result-card">
         <div class="label">Intrinsic value / share</div>
         <div class="value" id="outIntrinsic">—</div>
@@ -991,6 +1004,33 @@ function normCdf(x){
   }
 }
 
+// Circulating BTC supply at any given date, computed purely from the
+// halving schedule (genesis block, 10-min average block time, 210,000
+// blocks/halving, 50 BTC initial subsidy). Self-updating with no manual
+// maintenance -- used for both "today" and any future projection date,
+// so the model stays accurate as new halvings occur (the next is ~2028).
+function btcCirculatingSupplyAt(date) {
+  const GENESIS_MS = Date.UTC(2009, 0, 3, 18, 15, 5);
+  const BLOCK_MINUTES = 10;
+  const BLOCKS_PER_HALVING = 210000;
+  const INITIAL_SUBSIDY = 50;
+
+  const elapsedMs = date.getTime() - GENESIS_MS;
+  if (elapsedMs <= 0) return 0;
+  const blocksElapsed = Math.floor(elapsedMs / (BLOCK_MINUTES * 60 * 1000));
+
+  let supply = 0, blocksRemaining = blocksElapsed, epoch = 0;
+  while (blocksRemaining > 0) {
+    const subsidy = INITIAL_SUBSIDY / Math.pow(2, epoch);
+    if (subsidy < 1e-8) break; // rounds to 0 satoshis, ~year 2140
+    const blocksInEpoch = Math.min(BLOCKS_PER_HALVING, blocksRemaining);
+    supply += blocksInEpoch * subsidy;
+    blocksRemaining -= blocksInEpoch;
+    epoch++;
+  }
+  return supply;
+}
+  
 function blackScholesCall(S,K,T,r,sigma){
   if(T<=0){
     const price=Math.max(S-K,0);
@@ -2599,7 +2639,28 @@ function recalc(){
   } else {
     el('scenarioMarketCapPct').textContent = '';
   }
+  // Bitcoin market cap: today's real circulating supply × today's real live
+  // BTC price, vs. projected circulating supply at the Projection Date
+  // (halving-schedule issuance included) × this scenario's modeled BTC
+  // price. Mirrors the Strategy market cap card immediately above it.
+  const liveBtcPriceForCap = (window._liveBtcExact && window._liveBtcExact > 0) ? window._liveBtcExact : btcPrice;
+  const currentBtcSupply = btcCirculatingSupplyAt(new Date());
+  const projDateObj = new Date(el('projDate').value);
+  const projectedBtcSupply = !isNaN(projDateObj.getTime()) ? btcCirculatingSupplyAt(projDateObj) : currentBtcSupply;
 
+  el('currentBtcMarketCap').textContent = (liveBtcPriceForCap > 0) ? fmtUSD0(liveBtcPriceForCap * currentBtcSupply) : '—';
+  el('scenarioBtcMarketCap').textContent = (btcPrice > 0) ? fmtUSD0(btcPrice * projectedBtcSupply) : '—';
+  if (liveBtcPriceForCap > 0 && currentBtcSupply > 0) {
+    const btcCapNow = liveBtcPriceForCap * currentBtcSupply;
+    const btcCapScenario = btcPrice * projectedBtcSupply;
+    const btcMarketCapPct = ((btcCapScenario - btcCapNow) / btcCapNow) * 100;
+    const sign = btcMarketCapPct >= 0 ? '+' : '';
+    el('scenarioBtcMarketCapPct').textContent = '(' + sign + btcMarketCapPct.toFixed(1) + '%)';
+  } else {
+    el('scenarioBtcMarketCapPct').textContent = '';
+  }
+
+  
   // Strategy balance-sheet health metrics -- Amplification, BTC Rating, BTC
   // Duration, USD Duration. These react to the same scenario inputs as
   // everything else above (whatever BTC price and fundamentals are currently
