@@ -866,6 +866,11 @@
         </div>
       </div>
     </div>
+        <div style="margin-top:20px;text-align:center;">
+      <button id="shareScenarioBtn" onclick="downloadScenarioCard()" style="background:var(--orange);color:#0b0d0f;border:none;border-radius:8px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;">
+        📸 Share this scenario
+      </button>
+    </div>
 
     <div class="greeks-grid">
       <div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
@@ -1029,6 +1034,158 @@ function btcCirculatingSupplyAt(date) {
     epoch++;
   }
   return supply;
+}
+function loadImageCORS(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Shrinks font size until text fits maxWidth, so long dollar figures
+// (e.g. Strategy market cap) never overflow their column on the card.
+function fitFontSize(ctx, text, maxWidth, startSize, minSize, weight, family) {
+  let size = startSize;
+  while (size > minSize) {
+    ctx.font = weight + ' ' + size + 'px ' + family;
+    if (ctx.measureText(text).width <= maxWidth) break;
+    size -= 2;
+  }
+  return size;
+}
+
+async function downloadScenarioCard() {
+  const btn = document.getElementById('shareScenarioBtn');
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+
+  const FONT = '-apple-system, Helvetica, Arial, sans-serif';
+  const COLORS = {
+    bg: '#0b0d0f', panel: '#131619', line: '#262b30',
+    ink: '#e9e6df', inkFaint: '#7f858b', orange: '#f7931a'
+  };
+
+  try {
+    const isPro = !!window._hasProAccess;
+    const mascotUrl = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/' +
+      (isPro ? 'mstr-modler-pro-header.png' : 'mstr-modler-header.png');
+    const logoUrl = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/corner-bug-highres.png';
+
+    const [mascotImg, logoImg] = await Promise.all([loadImageCORS(mascotUrl), loadImageCORS(logoUrl)]);
+
+    const W = 1080, H = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.textAlign = 'center';
+
+    ctx.fillStyle = COLORS.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Mascot/wordmark, centered up top
+    const mascotMaxW = W - 160;
+    const mascotScale = Math.min(mascotMaxW / mascotImg.width, 1);
+    const mascotW = mascotImg.width * mascotScale;
+    const mascotH = mascotImg.height * mascotScale;
+    ctx.drawImage(mascotImg, (W - mascotW) / 2, 70, mascotW, mascotH);
+
+    let y = 70 + mascotH + 50;
+    ctx.fillStyle = COLORS.inkFaint;
+    ctx.font = '28px ' + FONT;
+    const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    ctx.fillText('Scenario Summary — ' + todayStr, W / 2, y);
+    y += 60;
+
+    // Position details strip
+    const fmtDate = (iso) => {
+      const d = new Date(iso);
+      return isNaN(d.getTime()) ? (iso || '—') : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    };
+    const contracts = el('contractsCustom').value || el('lblContracts').textContent;
+    const posFields = [
+      ['CONTRACTS', contracts],
+      ['STRIKE', '$' + el('strike').value],
+      ['EXPIRATION', fmtDate(el('expiryDate').value)],
+      ['PROJECTION DATE', fmtDate(el('projDate').value)]
+    ];
+
+    ctx.fillStyle = COLORS.panel;
+    ctx.fillRect(80, y, W - 160, 110);
+    ctx.strokeStyle = COLORS.line;
+    ctx.strokeRect(80, y, W - 160, 110);
+
+    const posColW = (W - 160) / posFields.length;
+    posFields.forEach((f, i) => {
+      const cx = 80 + posColW * i + posColW / 2;
+      ctx.font = '600 16px ' + FONT;
+      ctx.fillStyle = COLORS.inkFaint;
+      ctx.fillText(f[0], cx, y + 38);
+      const size = fitFontSize(ctx, f[1], posColW - 20, 24, 14, '600', FONT);
+      ctx.font = '600 ' + size + 'px ' + FONT;
+      ctx.fillStyle = COLORS.ink;
+      ctx.fillText(f[1], cx, y + 78);
+    });
+
+    y += 110 + 55;
+
+    // Results grid, 2 columns
+    const results = [
+      ['BTC PRICE', el('lblBtc').textContent],
+      ['mNAV MULTIPLE', el('lblMnav').textContent],
+      ['STRATEGY MARKET CAP', el('scenarioMarketCap').textContent],
+      ['BITCOIN MARKET CAP', el('scenarioBtcMarketCap').textContent],
+      ['OPTION PRICE', el('outOptionPrice').textContent],
+      ['VALUE PER CONTRACT', el('outContractValue').textContent],
+      ['TOTAL POSITION VALUE', el('outTotal').textContent],
+      ['IMPLIED mNAV vs DERIVED', el('outMnavCheck').textContent]
+    ];
+
+    const gridColW = (W - 160) / 2;
+    const rowH = 140;
+    results.forEach((r, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const cx = 80 + gridColW * col + gridColW / 2;
+      const cy = y + row * rowH;
+
+      ctx.font = '600 18px ' + FONT;
+      ctx.fillStyle = COLORS.inkFaint;
+      ctx.fillText(r[0], cx, cy);
+
+      const size = fitFontSize(ctx, r[1], gridColW - 50, 34, 18, '700', FONT);
+      ctx.font = '700 ' + size + 'px ' + FONT;
+      ctx.fillStyle = COLORS.orange;
+      ctx.fillText(r[1], cx, cy + 44);
+    });
+
+    y += Math.ceil(results.length / 2) * rowH + 20;
+
+    // Footer logo
+    const footerLogoW = 260;
+    const footerLogoH = logoImg.height * (footerLogoW / logoImg.width);
+    ctx.drawImage(logoImg, (W - footerLogoW) / 2, H - footerLogoH - 55, footerLogoW, footerLogoH);
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mstr-modler-scenario-' + Date.now() + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+
+  } catch (err) {
+    console.error('Failed to generate scenario card:', err);
+    alert('Something went wrong generating the image — please try again.');
+  } finally {
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+  }
 }
   
 function blackScholesCall(S,K,T,r,sigma){
@@ -1323,6 +1480,7 @@ async function onLoggedIn(user) {
   const inGracePeriod = profile.subscription_status === 'past_due' && graceEndsAt && new Date() < graceEndsAt;
   const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt || inGracePeriod;
 
+  window._hasProAccess = hasAccess;
   if (hasAccess) {
     const proBadge = document.getElementById('modlerProBadge');
     if (proBadge) proBadge.style.display = 'block';
