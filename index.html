@@ -2643,7 +2643,7 @@ function recalc(){
   // BTC price, vs. projected circulating supply at the Projection Date
   // (halving-schedule issuance included) × this scenario's modeled BTC
   // price. Mirrors the Strategy market cap card immediately above it.
-  const liveBtcPriceForCap = (window._liveBtcExact && window._liveBtcExact > 0) ? window._liveBtcExact : btcPrice;
+  const liveBtcPriceForCap = (window._lastKnownLivePrice && window._lastKnownLivePrice > 0) ? window._lastKnownLivePrice : btcPrice;
   const currentBtcSupply = btcCirculatingSupplyAt(new Date());
   const projDateObj = new Date(el('projDate').value);
   const projectedBtcSupply = !isNaN(projDateObj.getTime()) ? btcCirculatingSupplyAt(projDateObj) : currentBtcSupply;
