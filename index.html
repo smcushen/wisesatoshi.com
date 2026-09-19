@@ -866,15 +866,27 @@
         </div>
       </div>
     </div>
-    <div style="margin-top:36px;margin-bottom:36px;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:16px;padding-right:40px;">
-      <span style="color:var(--ink-faint);font-size:14px;text-align:right;max-width:340px;">
-        Generate a snapshot of this scenario to share with friends or save for future reference
-      </span>
-      <span style="color:var(--orange);font-size:20px;">→</span>
-      <button id="shareScenarioBtn" onclick="downloadScenarioCard()" style="background:var(--orange);color:#0b0d0f;border:none;border-radius:8px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;">
-        📸 Share this scenario
-      </button>
-    </div>
+<style>
+  .share-scenario-row { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:16px; margin-top:36px; margin-bottom:36px; }
+  .share-scenario-text { text-align:center; }
+  .share-scenario-text .mobile-line { display:none; }
+  .share-scenario-btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; background:var(--orange); color:#0b0d0f; border:none; border-radius:8px; padding:14px 28px; font-size:15px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .share-scenario-btn .icon { font-size:24px; line-height:1; }
+  @media(max-width:480px){
+    .share-scenario-text .desktop-line { display:none; }
+    .share-scenario-text .mobile-line { display:inline; }
+  }
+</style>
+<div class="share-scenario-row">
+  <span class="hint share-scenario-text" style="margin:0;">
+    <span class="desktop-line">Generate a snapshot of this scenario<br>to share with friends or save for future reference</span>
+    <span class="mobile-line">Generate a snapshot of this scenario<br>to share with friends<br>or save for future reference</span>
+  </span>
+  <span style="color:var(--orange);font-size:20px;">→</span>
+  <button id="shareScenarioBtn" class="share-scenario-btn" onclick="downloadScenarioCard()">
+    <span class="icon">📸</span><span>Share this scenario</span>
+  </button>
+</div>
 
     <div class="greeks-grid">
       <div class="greek-card"><div class="sym">Δ</div><div class="gval" id="outDelta">—</div><div class="glabel">Delta — per $1 move</div></div>
