@@ -1400,9 +1400,10 @@ async function downloadScenarioCard() {
       // or preview that link alongside the shared image. On desktop, or
       // any browser without file-sharing support, this block is skipped
       // and it falls through to a normal file download instead.
+      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       try {
         const file = new File([blob], fileName, { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: 'MSTR MODLer Scenario', text: shareText });
           return;
         }
