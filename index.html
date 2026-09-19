@@ -1077,7 +1077,7 @@ function fitFontSize(ctx, text, maxWidth, startSize, minSize, weight, family) {
 
 async function downloadScenarioCard() {
   const btn = document.getElementById('shareScenarioBtn');
-  const originalLabel = btn.textContent;
+  const originalLabel = btn.innerHTML;
   btn.textContent = 'Generating…';
   btn.disabled = true;
 
@@ -1096,36 +1096,55 @@ async function downloadScenarioCard() {
     const [mascotImg, logoImg] = await Promise.all([loadImageCORS(mascotUrl), loadImageCORS(logoUrl)]);
 
     const W = 1080, H = 1080;
+    const CARD_RADIUS = 40;
+    const BORDER_WIDTH = 6;
+
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.textAlign = 'center';
 
+    // Clip to a rounded rect so the corners are genuinely transparent,
+    // not just a dark shape drawn on a dark page background.
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(0, 0, W, H, CARD_RADIUS);
+    ctx.clip();
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // Mascot/wordmark, centered up top
-    const mascotMaxW = W - 160;
-    const mascotScale = Math.min(mascotMaxW / mascotImg.width, 1);
-    const mascotW = mascotImg.width * mascotScale;
-    const mascotH = mascotImg.height * mascotScale;
-    ctx.drawImage(mascotImg, (W - mascotW) / 2, 70, mascotW, mascotH);
+    // ---- Headline question banner ----
+    const contractsRaw = el('contractsCustom').value || el('lblContracts').textContent;
+    const contractsNum = parseInt(contractsRaw);
+    const contractWord = (contractsNum === 1) ? 'option contract' : 'option contracts';
+    const btcPriceStr = el('lblBtc').textContent;
+    const mnavStr = el('lblMnav').textContent;
+    const headlineLine1 = 'What would ' + contractsRaw + ' ' + contractWord + ' be worth';
+    const headlineLine2 = 'if Bitcoin hit ' + btcPriceStr + ' at a ' + mnavStr + ' mNAV?';
 
-    let y = 70 + mascotH + 50;
-    ctx.fillStyle = COLORS.inkFaint;
-    ctx.font = '28px ' + FONT;
-    const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    ctx.fillText('Scenario Summary — ' + todayStr, W / 2, y);
-    y += 60;
+    const bannerX = 40, bannerY = 40, bannerW = W - 80, bannerH = 170;
+    ctx.beginPath();
+    ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 20);
+    ctx.fillStyle = COLORS.orange;
+    ctx.fill();
 
-    // Position details strip
+    ctx.fillStyle = '#0b0d0f';
+    const hSize1 = fitFontSize(ctx, headlineLine1, bannerW - 80, 34, 22, '700', FONT);
+    ctx.font = '700 ' + hSize1 + 'px ' + FONT;
+    ctx.fillText(headlineLine1, W / 2, bannerY + 68);
+    const hSize2 = fitFontSize(ctx, headlineLine2, bannerW - 80, 34, 22, '700', FONT);
+    ctx.font = '700 ' + hSize2 + 'px ' + FONT;
+    ctx.fillText(headlineLine2, W / 2, bannerY + 120);
+
+    let y = bannerY + bannerH + 40;
+
+    // ---- Position details strip ----
     const fmtDate = (iso) => {
       const d = new Date(iso);
       return isNaN(d.getTime()) ? (iso || '—') : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     };
-    const contracts = el('contractsCustom').value || el('lblContracts').textContent;
     const posFields = [
-      ['CONTRACTS', contracts],
+      ['CONTRACTS', contractsRaw],
       ['STRIKE', '$' + el('strike').value],
       ['EXPIRATION', fmtDate(el('expiryDate').value)],
       ['PROJECTION DATE', fmtDate(el('projDate').value)]
@@ -1150,20 +1169,24 @@ async function downloadScenarioCard() {
 
     y += 110 + 55;
 
-    // Results grid, 2 columns
+    // ---- Results: inputs -> derived pricing -> position economics -> macro context ----
+    const pricingNoteText = el('pricingBasisNote').textContent || '';
+    const derivedMatch = pricingNoteText.match(/\$[\d,.]+/);
+    const derivedPriceStr = derivedMatch ? derivedMatch[0] : '—';
+
     const results = [
-      ['BTC PRICE', el('lblBtc').textContent],
-      ['mNAV MULTIPLE', el('lblMnav').textContent],
-      ['STRATEGY MARKET CAP', el('scenarioMarketCap').textContent],
-      ['BITCOIN MARKET CAP', el('scenarioBtcMarketCap').textContent],
+      ['BTC PRICE', btcPriceStr],
+      ['mNAV MULTIPLE', mnavStr],
+      ['DERIVED MSTR PRICE', derivedPriceStr],
       ['OPTION PRICE', el('outOptionPrice').textContent],
       ['VALUE PER CONTRACT', el('outContractValue').textContent],
       ['TOTAL POSITION VALUE', el('outTotal').textContent],
-      ['IMPLIED mNAV vs DERIVED', el('outMnavCheck').textContent]
+      ['STRATEGY MARKET CAP', el('scenarioMarketCap').textContent],
+      ['BITCOIN MARKET CAP', el('scenarioBtcMarketCap').textContent]
     ];
 
     const gridColW = (W - 160) / 2;
-    const rowH = 140;
+    const rowH = 130;
     results.forEach((r, i) => {
       const col = i % 2, row = Math.floor(i / 2);
       const cx = 80 + gridColW * col + gridColW / 2;
@@ -1173,18 +1196,48 @@ async function downloadScenarioCard() {
       ctx.fillStyle = COLORS.inkFaint;
       ctx.fillText(r[0], cx, cy);
 
-      const size = fitFontSize(ctx, r[1], gridColW - 50, 34, 18, '700', FONT);
+      const size = fitFontSize(ctx, r[1], gridColW - 50, 32, 18, '700', FONT);
       ctx.font = '700 ' + size + 'px ' + FONT;
       ctx.fillStyle = COLORS.orange;
-      ctx.fillText(r[1], cx, cy + 44);
+      ctx.fillText(r[1], cx, cy + 42);
     });
 
-    y += Math.ceil(results.length / 2) * rowH + 20;
+    y += Math.ceil(results.length / 2) * rowH + 30;
 
-    // Footer logo
-    const footerLogoW = 260;
-    const footerLogoH = logoImg.height * (footerLogoW / logoImg.width);
-    ctx.drawImage(logoImg, (W - footerLogoW) / 2, H - footerLogoH - 55, footerLogoW, footerLogoH);
+    // ---- Branding row: mascot+wordmark, "by", wisesatoshi.com lockup ----
+    const brandH = 60;
+    const mascotBrandW = mascotImg.width * (brandH / mascotImg.height);
+    const logoBrandH = 44;
+    const logoBrandW = logoImg.width * (logoBrandH / logoImg.height);
+
+    ctx.font = '500 26px ' + FONT;
+    const byText = 'by';
+    const byWidth = ctx.measureText(byText).width;
+    const gap = 24;
+
+    const totalBrandW = mascotBrandW + gap + byWidth + gap + logoBrandW;
+    let bx = (W - totalBrandW) / 2;
+    const brandY = y;
+
+    ctx.drawImage(mascotImg, bx, brandY, mascotBrandW, brandH);
+    bx += mascotBrandW + gap;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = COLORS.inkFaint;
+    ctx.fillText(byText, bx, brandY + brandH / 2 + 9);
+    bx += byWidth + gap;
+
+    ctx.drawImage(logoImg, bx, brandY + (brandH - logoBrandH) / 2, logoBrandW, logoBrandH);
+
+    ctx.restore(); // release the rounded clip
+
+    // ---- Thin orange border, inset so it isn't clipped at the edge ----
+    const inset = BORDER_WIDTH / 2;
+    ctx.beginPath();
+    ctx.roundRect(inset, inset, W - BORDER_WIDTH, H - BORDER_WIDTH, CARD_RADIUS - inset);
+    ctx.lineWidth = BORDER_WIDTH;
+    ctx.strokeStyle = COLORS.orange;
+    ctx.stroke();
 
     canvas.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
@@ -1201,7 +1254,7 @@ async function downloadScenarioCard() {
     console.error('Failed to generate scenario card:', err);
     alert('Something went wrong generating the image — please try again.');
   } finally {
-    btn.textContent = originalLabel;
+    btn.innerHTML = originalLabel;
     btn.disabled = false;
   }
 }
