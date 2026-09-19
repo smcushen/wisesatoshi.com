@@ -1107,6 +1107,16 @@ function fitTwoSentences(ctx, s1, s2, maxWidth, startSize, minSize, maxLinesEach
   return { lines1, lines2, size };
 }
 
+// Finds one font size that fits every text/maxWidth pair given, so all
+// stat values share the same size instead of each shrinking independently.
+function computeUniformValueSize(ctx, entries, startSize, minSize, weight, family) {
+  let size = startSize;
+  for (const [text, maxWidth] of entries) {
+    size = fitFontSize(ctx, text, maxWidth, size, minSize, weight, family);
+  }
+  return size;
+}
+
 async function downloadScenarioCard() {
   const btn = document.getElementById('shareScenarioBtn');
   const originalLabel = btn.innerHTML;
@@ -1144,12 +1154,27 @@ async function downloadScenarioCard() {
     const expirationStr = fmtDate(el('expiryDate').value);
     const btcPriceStr = el('lblBtc').textContent;
     const mnavStr = el('lblMnav').textContent;
+    const projDateStr = fmtDate(el('projDate').value);
     const pricingNoteText = el('pricingBasisNote').textContent || '';
     const derivedMatch = pricingNoteText.match(/\$[\d,.]+/);
     const derivedPriceStr = derivedMatch ? derivedMatch[0] : '—';
+    const optionPriceStr = el('outOptionPrice').textContent;
+    const contractValueStr = el('outContractValue').textContent;
+    const strategyCapStr = el('scenarioMarketCap').textContent;
+    const bitcoinCapStr = el('scenarioBtcMarketCap').textContent;
 
     const sentence1 = 'I own ' + contractsRaw + ' call option ' + contractWord + ' for MSTR with a strike price of $' + strikeVal + ' and an expiration date of ' + expirationStr + '.';
-    const sentence2 = 'What would ' + pronoun + ' be worth if the value of Bitcoin were to reach ' + btcPriceStr + ' and the mNAV of MSTR were ' + mnavStr + '?';
+    const sentence2 = 'What would ' + pronoun + ' be worth if the value of Bitcoin were to reach ' + btcPriceStr + ' on ' + projDateStr + ' and the mNAV of MSTR were ' + mnavStr + '?';
+
+    // Shared font size for every non-highlighted stat value on the card.
+    const colWPair = CONTENT_W / 2;
+    const colWTotalRow = (CONTENT_W - 24) / 2;
+    const sharedValueSize = computeUniformValueSize(ctx, [
+      [btcPriceStr, colWTotalRow - 40],
+      [mnavStr, colWPair - 50], [derivedPriceStr, colWPair - 50],
+      [optionPriceStr, colWPair - 50], [contractValueStr, colWPair - 50],
+      [strategyCapStr, colWPair - 50], [bitcoinCapStr, colWPair - 50]
+    ], 34, 16, '700', FONT);
 
     const blocks = [];
 
@@ -1185,7 +1210,7 @@ async function downloadScenarioCard() {
     // Block: question banner
     {
       const bannerPad = 36, bottomPad = 30;
-      const { lines1, lines2, size: qSize } = fitTwoSentences(ctx, sentence1, sentence2, CONTENT_W - bannerPad * 2, 32, 18, 3, '700', FONT);
+      const { lines1, lines2, size: qSize } = fitTwoSentences(ctx, sentence1, sentence2, CONTENT_W - bannerPad * 2, 26, 16, 4, '700', FONT);
       const lineHeight = Math.round(qSize * 1.3);
       const paragraphGap = 14;
       const bannerInnerH = (lines1.length + lines2.length) * lineHeight + paragraphGap;
@@ -1212,7 +1237,7 @@ async function downloadScenarioCard() {
       const stripH = 110, bottomPad = 30;
       const posFields = [
         ['CONTRACTS', contractsRaw], ['STRIKE', '$' + strikeVal],
-        ['EXPIRATION', expirationStr], ['PROJECTION DATE', fmtDate(el('projDate').value)]
+        ['EXPIRATION', expirationStr], ['PROJECTION DATE', projDateStr]
       ];
       const colW = CONTENT_W / posFields.length;
       blocks.push({
@@ -1236,7 +1261,7 @@ async function downloadScenarioCard() {
       });
     }
 
-    // Block: Total position value (highlighted box) | Bitcoin price -- two columns
+    // Block: Total position value (highlighted box, centered) | Bitcoin price -- two columns
     {
       const rowH = 150, pad = 28, bottomPad = 24, gap = 24;
       const colW = (CONTENT_W - gap) / 2;
@@ -1257,22 +1282,21 @@ async function downloadScenarioCard() {
           ctx.strokeStyle = COLORS.orange;
           ctx.stroke();
 
-          ctx.textAlign = 'left';
-          ctx.font = '600 18px ' + FONT;
-          ctx.fillStyle = COLORS.inkFaint;
-          ctx.fillText('TOTAL POSITION VALUE', boxX + pad, yTop + 42);
-          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 46, 26, '700', FONT);
-          ctx.font = '700 ' + totalSize + 'px ' + FONT;
-          ctx.fillStyle = COLORS.orange;
-          ctx.fillText(totalStr, boxX + pad, yTop + 100);
-
-          const rightCx = MARGIN + colW + gap + colW / 2;
+          const boxCx = boxX + colW / 2;
           ctx.textAlign = 'center';
           ctx.font = '600 18px ' + FONT;
           ctx.fillStyle = COLORS.inkFaint;
+          ctx.fillText('TOTAL POSITION VALUE', boxCx, yTop + 58);
+          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 46, 26, '700', FONT);
+          ctx.font = '700 ' + totalSize + 'px ' + FONT;
+          ctx.fillStyle = COLORS.orange;
+          ctx.fillText(totalStr, boxCx, yTop + 105);
+
+          const rightCx = MARGIN + colW + gap + colW / 2;
+          ctx.font = '600 18px ' + FONT;
+          ctx.fillStyle = COLORS.inkFaint;
           ctx.fillText('BITCOIN PRICE', rightCx, yTop + 42);
-          const btcSize = fitFontSize(ctx, btcStr, colW - 40, 40, 22, '700', FONT);
-          ctx.font = '700 ' + btcSize + 'px ' + FONT;
+          ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
           ctx.fillStyle = COLORS.orange;
           ctx.fillText(btcStr, rightCx, yTop + 96);
         }
@@ -1292,8 +1316,7 @@ async function downloadScenarioCard() {
             ctx.font = '600 18px ' + FONT;
             ctx.fillStyle = COLORS.inkFaint;
             ctx.fillText(r[0], cx, yTop + 20);
-            const size = fitFontSize(ctx, r[1], colW - 50, 34, 18, '700', FONT);
-            ctx.font = '700 ' + size + 'px ' + FONT;
+            ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
             ctx.fillStyle = COLORS.orange;
             ctx.fillText(r[1], cx, yTop + 66);
           });
@@ -1304,7 +1327,7 @@ async function downloadScenarioCard() {
     // Block: Option Price | Value per contract -- two columns
     {
       const rowH = 100, bottomPad = 24;
-      const pair = [['OPTION PRICE', el('outOptionPrice').textContent], ['VALUE PER CONTRACT', el('outContractValue').textContent]];
+      const pair = [['OPTION PRICE', optionPriceStr], ['VALUE PER CONTRACT', contractValueStr]];
       const colW = CONTENT_W / 2;
       blocks.push({
         h: rowH + bottomPad,
@@ -1314,8 +1337,7 @@ async function downloadScenarioCard() {
             ctx.font = '600 18px ' + FONT;
             ctx.fillStyle = COLORS.inkFaint;
             ctx.fillText(r[0], cx, yTop + 20);
-            const size = fitFontSize(ctx, r[1], colW - 50, 34, 18, '700', FONT);
-            ctx.font = '700 ' + size + 'px ' + FONT;
+            ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
             ctx.fillStyle = COLORS.orange;
             ctx.fillText(r[1], cx, yTop + 66);
           });
@@ -1326,7 +1348,7 @@ async function downloadScenarioCard() {
     // Block: Strategy Market Cap | Bitcoin Market Cap -- two columns
     {
       const rowH = 100, bottomPad = 50;
-      const pair = [['STRATEGY MARKET CAP', el('scenarioMarketCap').textContent], ['BITCOIN MARKET CAP', el('scenarioBtcMarketCap').textContent]];
+      const pair = [['STRATEGY MARKET CAP', strategyCapStr], ['BITCOIN MARKET CAP', bitcoinCapStr]];
       const colW = CONTENT_W / 2;
       blocks.push({
         h: rowH + bottomPad,
@@ -1336,8 +1358,7 @@ async function downloadScenarioCard() {
             ctx.font = '600 18px ' + FONT;
             ctx.fillStyle = COLORS.inkFaint;
             ctx.fillText(r[0], cx, yTop + 20);
-            const size = fitFontSize(ctx, r[1], colW - 50, 30, 16, '700', FONT);
-            ctx.font = '700 ' + size + 'px ' + FONT;
+            ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
             ctx.fillStyle = COLORS.orange;
             ctx.fillText(r[1], cx, yTop + 66);
           });
@@ -1369,11 +1390,31 @@ async function downloadScenarioCard() {
     ctx.strokeStyle = COLORS.orange;
     ctx.stroke();
 
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async (blob) => {
+      const fileName = 'mstr-modler-scenario-' + Date.now() + '.png';
+      const shareText = 'Check out this MSTR options scenario, modeled with MSTR MODLer — https://wisesatoshi.com';
+
+      // On phones/tablets that support sharing files, this opens the
+      // native share sheet with the image AND the wisesatoshi.com link
+      // as accompanying text -- most apps (Messages, X, Instagram) show
+      // or preview that link alongside the shared image. On desktop, or
+      // any browser without file-sharing support, this block is skipped
+      // and it falls through to a normal file download instead.
+      try {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'MSTR MODLer Scenario', text: shareText });
+          return;
+        }
+      } catch (shareErr) {
+        if (shareErr && shareErr.name === 'AbortError') return; // user cancelled the share sheet on purpose
+        // any other share failure falls through to the download below
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'mstr-modler-scenario-' + Date.now() + '.png';
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
