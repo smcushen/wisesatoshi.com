@@ -1127,13 +1127,11 @@ async function downloadScenarioCard() {
     const logoUrl = 'https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/corner-bug-highres.png';
     const [mascotImg, logoImg] = await Promise.all([loadImageCORS(mascotUrl), loadImageCORS(logoUrl)]);
 
-    // Temp canvas just to get a measuring context -- height doesn't matter yet.
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = 10;
     const ctx = canvas.getContext('2d');
     ctx.textAlign = 'center';
 
-    // ---- Gather all the values up front ----
     const fmtDate = (iso) => {
       const d = new Date(iso);
       return isNaN(d.getTime()) ? (iso || '—') : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
@@ -1153,12 +1151,11 @@ async function downloadScenarioCard() {
     const sentence1 = 'I own ' + contractsRaw + ' call option ' + contractWord + ' for MSTR with a strike price of $' + strikeVal + ' and an expiration date of ' + expirationStr + '.';
     const sentence2 = 'What would ' + pronoun + ' be worth if the value of Bitcoin were to reach ' + btcPriceStr + ' and the mNAV of MSTR were ' + mnavStr + '?';
 
-    // ---- Build a list of layout blocks, each knowing its own height and how to draw itself ----
     const blocks = [];
 
     // Block: branding (top, enlarged)
     {
-      const brandH = 100, topPad = 40, bottomPad = 30;
+      const brandH = 100, topPad = 40, bottomPad = 48;
       const mascotBrandW = mascotImg.width * (brandH / mascotImg.height);
       const logoBrandH = 68;
       const logoBrandW = logoImg.width * (logoBrandH / logoImg.height);
@@ -1239,18 +1236,21 @@ async function downloadScenarioCard() {
       });
     }
 
-    // Block: Total position value -- styled like the site's highlighted total card
+    // Block: Total position value (highlighted box) | Bitcoin price -- two columns
     {
-      const boxH = 160, pad = 36, bottomPad = 30;
+      const rowH = 150, pad = 28, bottomPad = 24, gap = 24;
+      const colW = (CONTENT_W - gap) / 2;
       const totalStr = el('outTotal').textContent;
+      const btcStr = btcPriceStr;
       blocks.push({
-        h: boxH + bottomPad,
+        h: rowH + bottomPad,
         draw(yTop) {
-          const grad = ctx.createLinearGradient(MARGIN, yTop, MARGIN + CONTENT_W, yTop + boxH);
+          const boxX = MARGIN;
+          const grad = ctx.createLinearGradient(boxX, yTop, boxX + colW, yTop + rowH);
           grad.addColorStop(0, COLORS.totalBg);
           grad.addColorStop(1, COLORS.panel);
           ctx.beginPath();
-          ctx.roundRect(MARGIN, yTop, CONTENT_W, boxH, 16);
+          ctx.roundRect(boxX, yTop, colW, rowH, 16);
           ctx.fillStyle = grad;
           ctx.fill();
           ctx.lineWidth = 2;
@@ -1258,32 +1258,23 @@ async function downloadScenarioCard() {
           ctx.stroke();
 
           ctx.textAlign = 'left';
-          ctx.font = '600 20px ' + FONT;
-          ctx.fillStyle = COLORS.inkFaint;
-          ctx.fillText('TOTAL POSITION VALUE', MARGIN + pad, yTop + 48);
-          const size = fitFontSize(ctx, totalStr, CONTENT_W - pad * 2, 62, 36, '700', FONT);
-          ctx.font = '700 ' + size + 'px ' + FONT;
-          ctx.fillStyle = COLORS.orange;
-          ctx.fillText(totalStr, MARGIN + pad, yTop + 118);
-          ctx.textAlign = 'center';
-        }
-      });
-    }
-
-    // Block: Bitcoin price -- single centered row
-    {
-      const rowH = 92, bottomPad = 24;
-      const valStr = btcPriceStr;
-      blocks.push({
-        h: rowH + bottomPad,
-        draw(yTop) {
           ctx.font = '600 18px ' + FONT;
           ctx.fillStyle = COLORS.inkFaint;
-          ctx.fillText('BITCOIN PRICE', W / 2, yTop + 20);
-          const size = fitFontSize(ctx, valStr, CONTENT_W - 60, 40, 22, '700', FONT);
-          ctx.font = '700 ' + size + 'px ' + FONT;
+          ctx.fillText('TOTAL POSITION VALUE', boxX + pad, yTop + 42);
+          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 46, 26, '700', FONT);
+          ctx.font = '700 ' + totalSize + 'px ' + FONT;
           ctx.fillStyle = COLORS.orange;
-          ctx.fillText(valStr, W / 2, yTop + 68);
+          ctx.fillText(totalStr, boxX + pad, yTop + 100);
+
+          const rightCx = MARGIN + colW + gap + colW / 2;
+          ctx.textAlign = 'center';
+          ctx.font = '600 18px ' + FONT;
+          ctx.fillStyle = COLORS.inkFaint;
+          ctx.fillText('BITCOIN PRICE', rightCx, yTop + 42);
+          const btcSize = fitFontSize(ctx, btcStr, colW - 40, 40, 22, '700', FONT);
+          ctx.font = '700 ' + btcSize + 'px ' + FONT;
+          ctx.fillStyle = COLORS.orange;
+          ctx.fillText(btcStr, rightCx, yTop + 96);
         }
       });
     }
@@ -1354,12 +1345,10 @@ async function downloadScenarioCard() {
       });
     }
 
-    // ---- Now that every block knows its height, size the real canvas ----
     const totalH = blocks.reduce((sum, b) => sum + b.h, 0);
     canvas.width = W;
     canvas.height = totalH;
 
-    // Resizing the canvas clears it and resets ctx state, so re-set what we need.
     ctx.textAlign = 'center';
     ctx.save();
     ctx.beginPath();
