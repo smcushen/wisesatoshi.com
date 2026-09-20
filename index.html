@@ -759,7 +759,8 @@
     <div class="grid">
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
-        <input type="range" id="iv" min="20" max="250" value="84">
+        <div id="ivStatus" style="font-size:13px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;display:none;"></div>
+        <input type="range" id="iv" min="20" max="250" value="84" oninput="window._userMovedIv=true;">
         <div class="hint">IV varies by strike and expiration — 84% is just a starting assumption. If you have a brokerage account, check its live quote for your exact contract. If not, look it up free on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> (account required).</div>
       </div>
       <div class="field">
@@ -2899,6 +2900,7 @@ function updateValueOverTimeChart(S, strike, r, sigma, expiry, contracts) {
 }
 
 function recalc(){
+  updateLiveIv();
   const btcPrice = window._userMovedBtcSlider ? parseFloat(el('btcPrice').value) : (window._liveBtcExact || parseFloat(el('btcPrice').value));
   el('lblBtc').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
   const btcHeld = parseFloat(el('btcHeld').value);
@@ -3250,6 +3252,61 @@ async function fetchLiveBtcPrice() {
   setPriceStatus(false);
 }
 
+window._optionsIvData = null;
+
+// Loads the pre-fetched options IV data (updated every 15 min by a
+// GitHub Action during market hours) from the repo. This is a static
+// JSON read, not a live API call from the browser -- cheap, no API key
+// exposed client-side, and it simply falls back to the existing 84%
+// default if the fetch fails or the data hasn't loaded yet.
+async function loadOptionsIvData() {
+  try {
+    const resp = await fetch('https://raw.githubusercontent.com/smcushen/wisesatoshi.com/main/data/mstr-options-iv.json?_=' + Date.now());
+    if (!resp.ok) return;
+    window._optionsIvData = await resp.json();
+    recalc();
+  } catch (err) {
+    // silent fail -- the slider keeps whatever value it already has
+  }
+}
+
+// Checks the live IV data for the CURRENT strike + expiration selected.
+// If a real match exists and the user hasn't manually dragged the IV
+// slider, auto-updates it and shows a "live as of ..." status line. If
+// there's no match (e.g. a manually-entered strike/expiration outside
+// the curated chain) or no data has loaded yet, this does nothing --
+// the slider silently keeps showing the 84% baseline or whatever value
+// is already there.
+function updateLiveIv() {
+  const ivStatusEl = el('ivStatus');
+  if (window._userMovedIv) {
+    if (ivStatusEl) ivStatusEl.style.display = 'none';
+    return;
+  }
+
+  const ivData = window._optionsIvData;
+  if (!ivData || !ivData.expirations || !ivData.expirations.length) return;
+
+  const strikeVal = parseFloat(el('strike').value);
+  const expirationVal = el('expiryDate').value;
+
+  const expMatch = ivData.expirations.find(e => e.date === expirationVal);
+  const contractMatch = expMatch && expMatch.contracts.find(c => c.strike === strikeVal);
+
+  if (contractMatch) {
+    const livePct = Math.round(contractMatch.iv * 100);
+    el('iv').value = livePct;
+    el('lblIv').textContent = livePct + '%';
+    if (ivStatusEl) {
+      const updatedTime = new Date(ivData.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      ivStatusEl.textContent = 'Live IV for this contract as of ' + updatedTime;
+      ivStatusEl.style.display = 'block';
+    }
+  } else if (ivStatusEl) {
+    ivStatusEl.style.display = 'none';
+  }
+}
+  
 // live mNAV: reads MSTR price from a live Netlify Function (fetchMstrPriceData
 // below), which proxies Finnhub directly with its own short server-side cache —
 // falls back to a GitHub-Action-refreshed static file only if that's unreachable.
@@ -3913,13 +3970,15 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     fetchLiveBtcPrice().then(fetchLiveMnav);
     fetchLiveRate();
+    loadOptionsIvData();
     startDataPolling();
   } else {
     stopDataPolling();
   }
 });
-</script>
 
+window.addEventListener('load', loadOptionsIvData);
+</script>
 
 <!-- Auth Modal -->
 <div id="authModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
