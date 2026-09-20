@@ -3229,9 +3229,27 @@ function updateLiveIv() {
     const livePct = Math.round(contractMatch.iv * 100);
     el('iv').value = livePct;
     el('lblIv').textContent = livePct + '%';
+
     if (ivStatusEl) {
-      const updatedTime = new Date(ivData.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      ivStatusEl.textContent = 'Live IV for this contract as of ' + updatedTime;
+      const lastUpdatedDate = new Date(ivData.lastUpdated);
+      // "Fresh" means this data was captured within the last 20 minutes --
+      // wider than the 15-minute fetch interval to allow for a run taking
+      // a little longer than usual, but tight enough that stale weekend/
+      // after-hours data never gets mislabeled as live.
+      const ageMinutes = (Date.now() - lastUpdatedDate.getTime()) / 60000;
+      const isFresh = ageMinutes < 20;
+
+      if (isFresh) {
+        const updatedTime = lastUpdatedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        ivStatusEl.textContent = 'Live IV for this contract as of ' + updatedTime;
+        ivStatusEl.style.color = 'var(--green)';
+      } else {
+        const updatedStr = lastUpdatedDate.toLocaleString('en-US', {
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        });
+        ivStatusEl.textContent = 'IV for this contract as of last close, ' + updatedStr;
+        ivStatusEl.style.color = 'var(--ink-faint)';
+      }
       ivStatusEl.style.display = 'block';
     }
   } else if (ivStatusEl) {
