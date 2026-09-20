@@ -1093,19 +1093,17 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// Finds the largest shared font size where BOTH sentences wrap to at
-// most maxLinesEach -- keeps the two sentences visually consistent
-// rather than each picking its own independent size.
-function fitTwoSentences(ctx, s1, s2, maxWidth, startSize, minSize, maxLinesEach, weight, family) {
-  let size = startSize, lines1, lines2;
+// Finds the largest font size where the paragraph wraps to at most
+// maxLines -- used for the single-block question text.
+function fitParagraph(ctx, text, maxWidth, startSize, minSize, maxLines, weight, family) {
+  let size = startSize, lines;
   while (size >= minSize) {
     ctx.font = weight + ' ' + size + 'px ' + family;
-    lines1 = wrapText(ctx, s1, maxWidth);
-    lines2 = wrapText(ctx, s2, maxWidth);
-    if (lines1.length <= maxLinesEach && lines2.length <= maxLinesEach) break;
+    lines = wrapText(ctx, text, maxWidth);
+    if (lines.length <= maxLines) break;
     size -= 2;
   }
-  return { lines1, lines2, size };
+  return { lines, size };
 }
 
 // Finds one font size that fits every text/maxWidth pair given, so all
@@ -1161,11 +1159,9 @@ async function downloadScenarioCard() {
     const derivedPriceStr = derivedMatch ? derivedMatch[0] : '—';
     const optionPriceStr = el('outOptionPrice').textContent;
     const contractValueStr = el('outContractValue').textContent;
-    const strategyCapStr = el('scenarioMarketCap').textContent;
-    const bitcoinCapStr = el('scenarioBtcMarketCap').textContent;
 
-    const sentence1 = 'Suppose I own ' + contractsRaw + ' call option ' + contractWord + ' for MSTR with a strike price of $' + strikeVal + ' and an expiration date of ' + expirationStr + '.';
-    const sentence2 = 'What would ' + pronoun + ' be worth if the value of Bitcoin were to reach ' + btcPriceStr + ' on ' + projDateStr + ' and the mNAV of MSTR were ' + mnavStr + '?';
+    // Combined into one flowing paragraph -- no paragraph break.
+    const questionText = 'Suppose I own ' + contractsRaw + ' call option ' + contractWord + ' for MSTR with a strike price of $' + strikeVal + ' and an expiration date of ' + expirationStr + '. What would ' + pronoun + ' be worth if the value of Bitcoin were to reach ' + btcPriceStr + ' on ' + projDateStr + ' and the mNAV of MSTR were ' + mnavStr + '?';
 
     // Shared font size for every non-highlighted stat value on the card.
     const colWPair = CONTENT_W / 2;
@@ -1173,91 +1169,41 @@ async function downloadScenarioCard() {
     const sharedValueSize = computeUniformValueSize(ctx, [
       [btcPriceStr, colWTotalRow - 40],
       [mnavStr, colWPair - 50], [derivedPriceStr, colWPair - 50],
-      [optionPriceStr, colWPair - 50], [contractValueStr, colWPair - 50],
-      [strategyCapStr, colWPair - 50], [bitcoinCapStr, colWPair - 50]
+      [optionPriceStr, colWPair - 50], [contractValueStr, colWPair - 50]
     ], 34, 16, '700', FONT);
 
     const blocks = [];
 
-    // Block: branding (top, enlarged)
+    // Block: mascot/wordmark branding -- top only
     {
-      const brandH = 100, topPad = 40, bottomPad = 48;
+      const brandH = 110, topPad = 44, bottomPad = 40;
       const mascotBrandW = mascotImg.width * (brandH / mascotImg.height);
-      const logoBrandH = 68;
-      const logoBrandW = logoImg.width * (logoBrandH / logoImg.height);
-      ctx.font = '500 32px ' + FONT;
-      const byText = 'by';
-      const byWidth = ctx.measureText(byText).width;
-      const gap = 28;
-      const totalBrandW = mascotBrandW + gap + byWidth + gap + logoBrandW;
       blocks.push({
         h: topPad + brandH + bottomPad,
         draw(yTop) {
           const y0 = yTop + topPad;
-          let bx = (W - totalBrandW) / 2;
-          ctx.drawImage(mascotImg, bx, y0, mascotBrandW, brandH);
-          bx += mascotBrandW + gap;
-          ctx.textAlign = 'left';
-          ctx.fillStyle = COLORS.inkFaint;
-          ctx.font = '500 32px ' + FONT;
-          ctx.fillText(byText, bx, y0 + brandH / 2 + 11);
-          bx += byWidth + gap;
-          ctx.drawImage(logoImg, bx, y0 + (brandH - logoBrandH) / 2, logoBrandW, logoBrandH);
-          ctx.textAlign = 'center';
+          ctx.drawImage(mascotImg, (W - mascotBrandW) / 2, y0, mascotBrandW, brandH);
         }
       });
     }
 
-    // Block: question banner
+    // Block: question banner -- one flowing paragraph, larger text, bigger box
     {
-      const bannerPad = 36, bottomPad = 30;
-      const { lines1, lines2, size: qSize } = fitTwoSentences(ctx, sentence1, sentence2, CONTENT_W - bannerPad * 2, 26, 16, 4, '700', FONT);
-      const lineHeight = Math.round(qSize * 1.3);
-      const paragraphGap = 14;
-      const bannerInnerH = (lines1.length + lines2.length) * lineHeight + paragraphGap;
-      const bannerH = bannerPad * 2 + bannerInnerH;
+      const bannerPad = 44, bottomPad = 36;
+      const { lines, size: qSize } = fitParagraph(ctx, questionText, CONTENT_W - bannerPad * 2, 40, 24, 6, '700', FONT);
+      const lineHeight = Math.round(qSize * 1.32);
+      const bannerH = bannerPad * 2 + lines.length * lineHeight;
       blocks.push({
         h: bannerH + bottomPad,
         draw(yTop) {
           ctx.beginPath();
-          ctx.roundRect(MARGIN, yTop, CONTENT_W, bannerH, 20);
+          ctx.roundRect(MARGIN, yTop, CONTENT_W, bannerH, 24);
           ctx.fillStyle = COLORS.orange;
           ctx.fill();
           ctx.fillStyle = '#0b0d0f';
           ctx.font = '700 ' + qSize + 'px ' + FONT;
           let ty = yTop + bannerPad + qSize * 0.85;
-          lines1.forEach(line => { ctx.fillText(line, W / 2, ty); ty += lineHeight; });
-          ty += paragraphGap;
-          lines2.forEach(line => { ctx.fillText(line, W / 2, ty); ty += lineHeight; });
-        }
-      });
-    }
-
-    // Block: position details strip
-    {
-      const stripH = 110, bottomPad = 30;
-      const posFields = [
-        ['CONTRACTS', contractsRaw], ['STRIKE', '$' + strikeVal],
-        ['EXPIRATION', expirationStr], ['PROJECTION DATE', projDateStr]
-      ];
-      const colW = CONTENT_W / posFields.length;
-      blocks.push({
-        h: stripH + bottomPad,
-        draw(yTop) {
-          ctx.fillStyle = COLORS.panel;
-          ctx.fillRect(MARGIN, yTop, CONTENT_W, stripH);
-          ctx.strokeStyle = COLORS.line;
-          ctx.strokeRect(MARGIN, yTop, CONTENT_W, stripH);
-          posFields.forEach((f, i) => {
-            const cx = MARGIN + colW * i + colW / 2;
-            ctx.font = '600 16px ' + FONT;
-            ctx.fillStyle = COLORS.inkFaint;
-            ctx.fillText(f[0], cx, yTop + 38);
-            const size = fitFontSize(ctx, f[1], colW - 20, 24, 14, '600', FONT);
-            ctx.font = '600 ' + size + 'px ' + FONT;
-            ctx.fillStyle = COLORS.ink;
-            ctx.fillText(f[1], cx, yTop + 78);
-          });
+          lines.forEach(line => { ctx.fillText(line, W / 2, ty); ty += lineHeight; });
         }
       });
     }
@@ -1327,7 +1273,7 @@ async function downloadScenarioCard() {
 
     // Block: Option Price | Value per contract -- two columns
     {
-      const rowH = 100, bottomPad = 24;
+      const rowH = 100, bottomPad = 40;
       const pair = [['OPTION PRICE', optionPriceStr], ['VALUE PER CONTRACT', contractValueStr]];
       const colW = CONTENT_W / 2;
       blocks.push({
@@ -1346,23 +1292,14 @@ async function downloadScenarioCard() {
       });
     }
 
-    // Block: Strategy Market Cap | Bitcoin Market Cap -- two columns
+    // Block: wisesatoshi.com lockup -- bottom only
     {
-      const rowH = 100, bottomPad = 50;
-      const pair = [['STRATEGY MARKET CAP', strategyCapStr], ['BITCOIN MARKET CAP', bitcoinCapStr]];
-      const colW = CONTENT_W / 2;
+      const logoH = 56, topPad = 20, bottomPad = 44;
+      const logoW = logoImg.width * (logoH / logoImg.height);
       blocks.push({
-        h: rowH + bottomPad,
+        h: topPad + logoH + bottomPad,
         draw(yTop) {
-          pair.forEach((r, i) => {
-            const cx = MARGIN + colW * i + colW / 2;
-            ctx.font = '600 18px ' + FONT;
-            ctx.fillStyle = COLORS.inkFaint;
-            ctx.fillText(r[0], cx, yTop + 20);
-            ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
-            ctx.fillStyle = COLORS.orange;
-            ctx.fillText(r[1], cx, yTop + 66);
-          });
+          ctx.drawImage(logoImg, (W - logoW) / 2, yTop + topPad, logoW, logoH);
         }
       });
     }
@@ -1395,12 +1332,6 @@ async function downloadScenarioCard() {
       const fileName = 'mstr-modler-scenario-' + Date.now() + '.png';
       const shareText = 'Check out this MSTR options scenario, modeled with MSTR MODLer — https://wisesatoshi.com';
 
-      // On phones/tablets that support sharing files, this opens the
-      // native share sheet with the image AND the wisesatoshi.com link
-      // as accompanying text -- most apps (Messages, X, Instagram) show
-      // or preview that link alongside the shared image. On desktop, or
-      // any browser without file-sharing support, this block is skipped
-      // and it falls through to a normal file download instead.
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       try {
         const file = new File([blob], fileName, { type: 'image/png' });
@@ -1409,8 +1340,7 @@ async function downloadScenarioCard() {
           return;
         }
       } catch (shareErr) {
-        if (shareErr && shareErr.name === 'AbortError') return; // user cancelled the share sheet on purpose
-        // any other share failure falls through to the download below
+        if (shareErr && shareErr.name === 'AbortError') return;
       }
 
       const url = URL.createObjectURL(blob);
