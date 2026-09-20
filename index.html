@@ -1236,7 +1236,8 @@ async function downloadScenarioCard() {
           ctx.font = '600 18px ' + FONT;
           ctx.fillStyle = COLORS.inkFaint;
           ctx.fillText('TOTAL POSITION VALUE', boxCx, yTop + 46);
-          ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
+          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 60, sharedValueSize, '700', FONT);
+          ctx.font = '700 ' + totalSize + 'px ' + FONT;
           ctx.fillStyle = COLORS.orange;
           ctx.fillText(totalStr, boxCx, yTop + 122);
 
