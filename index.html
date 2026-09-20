@@ -1173,7 +1173,7 @@ async function downloadScenarioCard() {
       [btcPriceStr, colWTotalRow - 40],
       [mnavStr, colWPair - 50], [derivedPriceStr, colWPair - 50],
       [optionPriceStr, colWPair - 50], [contractValueStr, colWPair - 50]
-    ], 44, 24, '700', FONT);
+    ], 54, 34, '700', FONT);
 
     const blocks = [];
 
@@ -1213,7 +1213,7 @@ async function downloadScenarioCard() {
 
     // Block: Total position value (highlighted box, centered) | Bitcoin price -- two columns
     {
-      const rowH = 175, pad = 28, bottomPad = 24, gap = 24;
+      const rowH = 195, pad = 28, bottomPad = 24, gap = 24;
       const colW = (CONTENT_W - gap) / 2;
       const btcStr = btcPriceStr;
       blocks.push({
@@ -1233,28 +1233,28 @@ async function downloadScenarioCard() {
 
           const boxCx = boxX + colW / 2;
           ctx.textAlign = 'center';
-          ctx.font = '600 18px ' + FONT;
+          ctx.font = '600 24px ' + FONT;
           ctx.fillStyle = COLORS.inkFaint;
-          ctx.fillText('TOTAL POSITION VALUE', boxCx, yTop + 46);
-          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 60, sharedValueSize, '700', FONT);
+          ctx.fillText('TOTAL POSITION VALUE', boxCx, yTop + 50);
+          const totalSize = fitFontSize(ctx, totalStr, colW - pad * 2, 70, sharedValueSize, '700', FONT);
           ctx.font = '700 ' + totalSize + 'px ' + FONT;
           ctx.fillStyle = COLORS.orange;
-          ctx.fillText(totalStr, boxCx, yTop + 122);
+          ctx.fillText(totalStr, boxCx, yTop + 135);
 
           const rightCx = MARGIN + colW + gap + colW / 2;
-          ctx.font = '600 18px ' + FONT;
+          ctx.font = '600 24px ' + FONT;
           ctx.fillStyle = COLORS.inkFaint;
-          ctx.fillText('BITCOIN PRICE', rightCx, yTop + 40);
+          ctx.fillText('BITCOIN PRICE', rightCx, yTop + 44);
           ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
           ctx.fillStyle = COLORS.orange;
-          ctx.fillText(btcStr, rightCx, yTop + 116);
+          ctx.fillText(btcStr, rightCx, yTop + 128);
         }
       });
     }
 
     // Block: mNAV Multiple | Derived MSTR Price -- two columns
     {
-      const rowH = 125, bottomPad = 24;
+      const rowH = 155, bottomPad = 24;
       const pair = [['mNAV MULTIPLE', mnavStr], ['DERIVED MSTR PRICE', derivedPriceStr]];
       const colW = CONTENT_W / 2;
       blocks.push({
@@ -1262,12 +1262,12 @@ async function downloadScenarioCard() {
         draw(yTop) {
           pair.forEach((r, i) => {
             const cx = MARGIN + colW * i + colW / 2;
-            ctx.font = '600 18px ' + FONT;
+            ctx.font = '600 24px ' + FONT;
             ctx.fillStyle = COLORS.inkFaint;
-            ctx.fillText(r[0], cx, yTop + 22);
+            ctx.fillText(r[0], cx, yTop + 26);
             ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
             ctx.fillStyle = COLORS.orange;
-            ctx.fillText(r[1], cx, yTop + 82);
+            ctx.fillText(r[1], cx, yTop + 100);
           });
         }
       });
@@ -1275,7 +1275,7 @@ async function downloadScenarioCard() {
 
     // Block: Option Price | Value per contract -- two columns
     {
-      const rowH = 125, bottomPad = 40;
+      const rowH = 155, bottomPad = 40;
       const pair = [['OPTION PRICE', optionPriceStr], ['VALUE PER CONTRACT', contractValueStr]];
       const colW = CONTENT_W / 2;
       blocks.push({
@@ -1283,12 +1283,12 @@ async function downloadScenarioCard() {
         draw(yTop) {
           pair.forEach((r, i) => {
             const cx = MARGIN + colW * i + colW / 2;
-            ctx.font = '600 18px ' + FONT;
+            ctx.font = '600 24px ' + FONT;
             ctx.fillStyle = COLORS.inkFaint;
-            ctx.fillText(r[0], cx, yTop + 22);
+            ctx.fillText(r[0], cx, yTop + 26);
             ctx.font = '700 ' + sharedValueSize + 'px ' + FONT;
             ctx.fillStyle = COLORS.orange;
-            ctx.fillText(r[1], cx, yTop + 82);
+            ctx.fillText(r[1], cx, yTop + 100);
           });
         }
       });
