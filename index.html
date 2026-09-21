@@ -308,8 +308,24 @@
   @media(max-width:640px){.grid-3{grid-template-columns:1fr;}}
   @media(max-width:640px){.grid{grid-template-columns:1fr;}}
 
-  body.focus-mode #tool{ zoom:1.3; }
+  body.zoom-1 #tool{ zoom:1.3; }
+  body.zoom-2 #tool{ zoom:1.95; }
   @media(max-width:1000px){ #focusModeToggle{ display:none; } }
+
+  #focusModeToggle{
+    position:fixed; top:50%; right:0; transform:translateY(-50%);
+    z-index:200;
+    background:var(--bg-panel); border:1px solid var(--line); border-right:none;
+    border-radius:8px 0 0 8px;
+    color:var(--ink-dim);
+    padding:16px 7px;
+    writing-mode:vertical-rl; text-orientation:mixed;
+    font-size:11px; letter-spacing:0.08em; font-weight:600; text-transform:uppercase;
+    cursor:pointer;
+    transition:color 0.2s,border-color 0.2s;
+    font-family:inherit;
+  }
+  #focusModeToggle:hover{ color:var(--orange); border-color:var(--orange-dim); }
 
   /* Forces a line break only below the mobile breakpoint -- used to
      deliberately control where the cancellation banner wraps on phones,
@@ -583,24 +599,30 @@
 </section>
 </div>
 
-<button type="button" id="focusModeToggle" onclick="toggleFocusMode()" title="Zoom in on the calculator">Zoom in</button>
+<button type="button" id="focusModeToggle" onclick="cycleZoom()" title="Zoom in on the calculator">Zoom in</button>
 <script>
-  function applyFocusMode(on){
-    document.body.classList.toggle('focus-mode', on);
+  const ZOOM_LEVELS = ['', 'zoom-1', 'zoom-2'];
+  const ZOOM_LABELS = ['Zoom in', 'Zoom in more', 'Zoom out'];
+  const ZOOM_TITLES = ['Zoom in on the calculator', 'Zoom in even further', 'Return to normal size'];
+
+  function applyZoomLevel(level){
+    ZOOM_LEVELS.forEach(cls => { if (cls) document.body.classList.remove(cls); });
+    if (ZOOM_LEVELS[level]) document.body.classList.add(ZOOM_LEVELS[level]);
     const btn = document.getElementById('focusModeToggle');
     if (btn) {
-      btn.textContent = on ? 'Zoom out' : 'Zoom in';
-      btn.title = on ? 'Return to normal size' : 'Zoom in on the calculator';
+      btn.textContent = ZOOM_LABELS[level];
+      btn.title = ZOOM_TITLES[level];
     }
   }
-  function toggleFocusMode(){
-    const isOn = !document.body.classList.contains('focus-mode');
-    applyFocusMode(isOn);
-    try { localStorage.setItem('mstrModlerFocusMode', isOn ? '1' : '0'); } catch(e) {}
+  function cycleZoom(){
+    let level = parseInt(localStorage.getItem('mstrModlerZoomLevel') || '0', 10);
+    level = (level + 1) % 3;
+    applyZoomLevel(level);
+    try { localStorage.setItem('mstrModlerZoomLevel', String(level)); } catch(e) {}
   }
   try {
-    if (localStorage.getItem('mstrModlerFocusMode') === '1') applyFocusMode(true);
-  } catch(e) {}
+    applyZoomLevel(parseInt(localStorage.getItem('mstrModlerZoomLevel') || '0', 10));
+  } catch(e) { applyZoomLevel(0); }
 </script>
   
 <main id="tool">
