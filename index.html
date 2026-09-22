@@ -792,14 +792,14 @@
     <div class="grid">
       <div class="field">
         <label>Implied volatility (IV) <span class="val" id="lblIv">84%</span></label>
-        <div id="ivStatus" style="font-size:13px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;display:none;"></div>
+        <div id="ivStatus" style="font-size:13px;font-weight:400;color:var(--green);margin-top:2px;margin-bottom:4px;min-height:18px;"></div>
         <input type="range" id="iv" min="20" max="250" value="84" oninput="window._userMovedIv=true;">
         <div class="hint">For strikes and expirations in our standard list, IV updates automatically from live market data during trading hours — you'll see a "Live IV for this contract" note above when that's active. For a manually-entered strike/expiration, or when markets are closed, 84% is a general starting assumption — check your brokerage's live quote for your exact contract, or look it up free on <a href="https://finance.yahoo.com/quote/MSTR/options/" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Yahoo Finance ↗</a> (no account needed) or <a href="https://www.barchart.com/stocks/quotes/MSTR/options" target="_blank" rel="noopener" style="color:var(--orange);text-decoration:none;">Barchart ↗</a> (account required).</div>
       </div>
       <div class="field">
-        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span> <span id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-left:6px;"></span></label>
-        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2" oninput="window._userMovedRate=true;">
-      </div>
+        <label>Risk-free rate <span class="val" id="lblRate">4.2%</span></label>
+        <div id="rateStatus" style="font-size:13px;font-weight:400;color:var(--ink-faint);margin-top:2px;margin-bottom:4px;min-height:18px;"></div>
+        <input type="range" id="rate" min="0" max="8" step="0.1" value="4.2" oninput="window._userMovedRate=true;">      </div>
     </div>
     <div id="ivCalibPanel" style="border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg-panel-2);margin-top:4px;">
       <label style="font-size:13px;color:var(--ink-dim);margin-bottom:6px;display:block;">📐 Calibrate IV from your contract's observed market price</label>
@@ -3245,7 +3245,7 @@ async function loadOptionsIvData() {
 function updateLiveIv() {
   const ivStatusEl = el('ivStatus');
   if (window._userMovedIv) {
-    if (ivStatusEl) ivStatusEl.style.display = 'none';
+    if (ivStatusEl) ivStatusEl.textContent = '';
     return;
   }
 
@@ -3283,10 +3283,9 @@ function updateLiveIv() {
         ivStatusEl.textContent = 'IV for this contract as of last close, ' + updatedStr;
         ivStatusEl.style.color = 'var(--ink-faint)';
       }
-      ivStatusEl.style.display = 'block';
     }
   } else if (ivStatusEl) {
-    ivStatusEl.style.display = 'none';
+    ivStatusEl.textContent = '';
   }
 }
   
