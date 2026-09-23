@@ -3491,11 +3491,21 @@ async function fetchLiveMnav(preferLive = false) {
     // Prefer the close snapshot's price whenever the market's shut and one
     // exists, so the mNAV estimate always tracks against the real close,
     // not whatever the last live-mode fetch happened to catch.
+
     const mktOpenForCalc = isMarketOpenNow();
     const closeSnapForCalc = window._mnavCloseSnapshot;
-    const effectivePrice = (!mktOpenForCalc && closeSnapForCalc) ? closeSnapForCalc.mstrClosePrice : data.price;
-    const liveMnav = effectivePrice / netValuePerShare;
-
+    // After hours, hold the market's mNAV premium fixed at its actual value
+    // from today's close, and let netValuePerShare (already computed live,
+    // above, off the CURRENT Bitcoin price) drive the derived price instead.
+    // Back-solving mNAV from the frozen close price here would make it
+    // mathematically self-cancel with netValuePerShare in recalc()'s
+    // Derived Price formula (netValuePerShare * mnav) -- permanently gluing
+    // the derived price to the close print no matter how far Bitcoin
+    // actually moves overnight. This is exactly that bug's fix.
+    const liveMnav = (!mktOpenForCalc && closeSnapForCalc)
+      ? closeSnapForCalc.mnav
+      : data.price / netValuePerShare;
+    
     // Sanity check before applying — if fundamentals are still mid-load (a race
     // condition with loadStrategyFundamentals()), netValuePerShare can briefly be
     // near-zero or negative, which would otherwise silently clamp the mNAV slider
@@ -3518,7 +3528,7 @@ async function fetchLiveMnav(preferLive = false) {
     const fetchedAt = data.lastFetched ? new Date(data.lastFetched) : null;
     const stamp = fetchedAt ? fetchedAt.toISOString().slice(11,16) + ' UTC' : new Date().toISOString().slice(11,16) + ' UTC';
     const staleMinutes = (data.isLive || !fetchedAt) ? null : Math.round((Date.now() - fetchedAt.getTime()) / 60000);
-    const liveDisplayMnav = netValuePerShare > 0 ? (effectivePrice / netValuePerShare).toFixed(2) : null;
+    const liveDisplayMnav = isFinite(liveMnav) ? liveMnav.toFixed(2) : null;
     setMnavStatus(true, stamp, liveDisplayMnav, staleMinutes);
 
     // Show the actual real-world MSTR price alongside the model's own output,
