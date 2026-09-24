@@ -679,11 +679,14 @@
       <div class="field">
         <label>Projection date</label>
         <input type="hidden" id="projDate">
-        <div class="quick-select cal-select" id="projDateWrap">
-          <button type="button" id="projDateButton" onclick="toggleCalendarMenu('projDate')">
-            <span id="projDateLabel"></span><span class="quick-select-caret">▾</span>
-          </button>
-          <div id="projDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>
+        <div style="display:flex;gap:8px;">
+          <div class="quick-select cal-select" id="projDateWrap" style="flex:1 1 50%;">
+            <button type="button" id="projDateButton" onclick="toggleCalendarMenu('projDate')">
+              <span id="projDateLabel"></span><span class="quick-select-caret">▾</span>
+            </button>
+            <div id="projDateMenu" class="quick-select-menu cal-menu" style="display:none;"></div>
+          </div>
+          <button type="button" onclick="resetProjDateToToday()" style="flex:1 1 50%;background:var(--bg-panel-2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:9px 11px;font-size:16px;cursor:pointer;font-family:inherit;">Today</button>
         </div>
       </div>
       <div class="field">
@@ -2729,6 +2732,11 @@ function selectCalendarDate(fieldId, iso) {
   el(fieldId + 'Button').focus();
   const cb = window._calOnChange[fieldId];
   if (typeof cb === 'function') cb();
+}
+
+function resetProjDateToToday() {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  selectCalendarDate('projDate', todayIso);
 }
 
 document.addEventListener('click', function(e) {
