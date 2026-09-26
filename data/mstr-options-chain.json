@@ -1,8 +1,9 @@
 {
-  "lastUpdated": "2026-08-30",
-  "activityFilter": "Strikes with call open interest <= 25 excluded",
-  "cutoffMonths": 9,
-  "updateCadence": "monthly",
+  "lastUpdated": "2026-09-26",
+  "activityFilter": "Strikes with call open interest <= 25 excluded (already-listed strikes kept while still trading)",
+  "cutoffMonths": 7,
+  "joinRule": "New expirations added once 210+ days out; each stays until it expires",
+  "updateCadence": "daily (commits only when something changes)",
   "expirations": [
     {
       "date": "2027-06-17",
@@ -117,6 +118,7 @@
       "strikes": [
         5,
         35,
+        50,
         60,
         80,
         85,
@@ -306,6 +308,7 @@
       "strikes": [
         5,
         10,
+        25,
         40,
         45,
         50,
@@ -394,6 +397,7 @@
       "date": "2028-06-16",
       "strikes": [
         5,
+        40,
         50,
         55,
         60,
@@ -518,6 +522,30 @@
         335,
         340,
         345
+      ]
+    },
+    {
+      "date": "2029-01-19",
+      "strikes": [
+        60,
+        100,
+        115,
+        120,
+        130,
+        135,
+        150,
+        155,
+        160,
+        165,
+        170,
+        175,
+        180,
+        200,
+        210,
+        220,
+        250,
+        260,
+        270
       ]
     }
   ]
