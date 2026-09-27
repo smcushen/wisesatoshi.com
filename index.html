@@ -1678,8 +1678,7 @@ async function onLoggedIn(user) {
 
   const { data: profile, error } = await supabaseClient
     .from('profiles')
-    .select('trial_ends_at, subscription_status, grace_period_ends_at, cancel_at_period_end, current_period_end')
-    .eq('id', user.id)
+    .select('trial_ends_at, subscription_status, grace_period_ends_at, cancel_at_period_end, current_period_end, comp_access')    .eq('id', user.id)
     .single();
 
   if (error || !profile) {
@@ -1692,7 +1691,7 @@ async function onLoggedIn(user) {
   const trialEndsAt = new Date(profile.trial_ends_at);
   const graceEndsAt = profile.grace_period_ends_at ? new Date(profile.grace_period_ends_at) : null;
   const inGracePeriod = profile.subscription_status === 'past_due' && graceEndsAt && new Date() < graceEndsAt;
-  const hasAccess = profile.subscription_status === 'active' || new Date() < trialEndsAt || inGracePeriod;
+  const hasAccess = profile.comp_access === true || profile.subscription_status === 'active' || new Date() < trialEndsAt || inGracePeriod;
 
   window._hasProAccess = hasAccess;
   if (hasAccess) {
@@ -1713,7 +1712,9 @@ async function onLoggedIn(user) {
     if (promoSection) promoSection.style.display = 'none';
 
     const banner = el('trialBanner');
-    if (inGracePeriod) {
+    if (profile.comp_access === true) {
+      banner.style.display = 'none';
+    } else if (inGracePeriod) {
       const hoursLeft = Math.max(1, Math.ceil((graceEndsAt - new Date()) / (1000 * 60 * 60)));
       const hourWord = hoursLeft === 1 ? 'hour' : 'hours';
       banner.innerHTML = '⚠️ Your last payment didn\'t go through — update your card within ' + hoursLeft + ' ' + hourWord +
