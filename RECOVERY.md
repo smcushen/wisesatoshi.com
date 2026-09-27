@@ -56,6 +56,7 @@ Visitor's browser ──> index.html / learn.html (front end)
 - **Repo:** `github.com/smcushen/wisesatoshi.com` (public, branch `main`)
 - **Hosting:** **GitHub Pages**, served from the repo's top level, with the custom domain set by the `CNAME` file and HTTPS on. Anything in the repo can therefore be reached as a web address (`wisesatoshi.com/<path>`), so never commit secrets.
 - **Netlify (legacy):** the `netlify/` folder and `netlify.toml` remain for the old Treasury-rate function, which is now only a last-resort fallback. An ignore command in `netlify.toml` limits Netlify deploys to changes in `netlify/functions/`. Time-sensitive data is read from `raw.githubusercontent.com` rather than any published build.
+- **Docs:** `docs/strategy-historical-fundamentals.md` (historical Strategy fundamentals reference)
 - **Pages:**
   - `index.html`: the calculator plus all Pro features (login modal, Saved Positions, picker, share card, zoom toggle)
   - `learn.html`: the Options Primer
@@ -72,7 +73,8 @@ Visitor's browser ──> index.html / learn.html (front end)
 | `strategy-fundamentals.json` | `update-content-from-issue.yml` via the Issue Form | BTC held, shares, debt, preferred, USD Reserve |
 | `treasury-rate.json` | `capture-treasury-rate.yml` | Risk-free rate (Treasury XML feed) |
 | `mnav-close-snapshot.json` | mNAV close capture (`mnav-close-core.mjs`) | Prior-close mNAV reference for after hours |
-| **[FILL IN]** live MSTR price file | `capture-mstr-live.yml` | MSTR price (Finnhub) |
+| `mstr-price.json` | `capture-mstr-live.yml` | Live MSTR price (Finnhub) |
+| `historical-mnav.json` | **[FILL IN]** which workflow or script writes it | Historical mNAV series |
 | **[FILL IN]** fallback defaults file | `sync-fallback-defaults.yml` | Fallback values if live fetches fail |
 
 **Access logic, for reference** (in `onLoggedIn()` in `index.html`):
