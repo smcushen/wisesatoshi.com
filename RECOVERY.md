@@ -1,6 +1,6 @@
 # wisesatoshi.com / MSTR MODLer — Recovery Runbook
 
-*Last updated: September 2026. Anything marked **[FILL IN]** or **[CONFIRM]** still needs your input.*
+*Last updated: September 27, 2026. Anything marked **[FILL IN]** or **[CONFIRM]** still needs your input.*
 
 This document describes every piece of the system, how the pieces connect, and the order to rebuild them in. It deliberately contains **no secret values**. Secrets live only in your password manager (see "Secrets inventory"). This repo is **public**, so keep it that way.
 
@@ -54,7 +54,8 @@ Visitor's browser ──> index.html / learn.html (front end)
 ## 3. Front end and hosting
 
 - **Repo:** `github.com/smcushen/wisesatoshi.com` (public, branch `main`)
-- **Hosting:** **[CONFIRM]** GitHub Pages with custom domain + HTTPS, and/or Netlify. Netlify history: a `netlify.toml` ignore command limits deploys to changes in `netlify/functions/`. Auto Publishing was Locked, which is why time-sensitive data is read from `raw.githubusercontent.com` instead of the published build.
+- **Hosting:** **GitHub Pages**, served from the repo's top level, with the custom domain set by the `CNAME` file and HTTPS on. Anything in the repo can therefore be reached as a web address (`wisesatoshi.com/<path>`), so never commit secrets.
+- **Netlify (legacy):** the `netlify/` folder and `netlify.toml` remain for the old Treasury-rate function, which is now only a last-resort fallback. An ignore command in `netlify.toml` limits Netlify deploys to changes in `netlify/functions/`. Time-sensitive data is read from `raw.githubusercontent.com` rather than any published build.
 - **Pages:**
   - `index.html`: the calculator plus all Pro features (login modal, Saved Positions, picker, share card, zoom toggle)
   - `learn.html`: the Options Primer
@@ -171,13 +172,36 @@ Account subdomain: `shawncushen.workers.dev`. Free plan, which allows only 5 cro
 | `comp_access` | bool, default false | free permanent Pro |
 | `created_at` | timestamptz | |
 
-**`saved_contracts`**: saved positions/scenarios per user. **[FILL IN columns]**
+**`saved_contracts`**: saved positions/scenarios per user:
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid | default `gen_random_uuid()` |
+| `user_id` | uuid | default `auth.uid()` |
+| `strike` | numeric | required |
+| `expiration_date` | date | required |
+| `notes` | text | optional |
+| `contract_data` | jsonb | optional; full saved scenario |
+| `created_at` | timestamptz | default `now()` |
+
+**`disposable_email_domains`**: a list of throwaway-email domains used to block trial abuse (column `domain`). Back it up as `rebuild/supabase/disposable_email_domains.csv`; without it, the trial protection below stops working.
+
+### Signup logic (`handle_new_user` trigger function)
+On every new signup it:
+1. normalizes the email (`normalize_email()`),
+2. checks whether that normalized email has signed up before,
+3. checks whether the email's domain is in `disposable_email_domains`,
+4. inserts the `profiles` row with a **7-day** trial, or a **0-day** trial if either check hits.
+
+It fills `normalized_email` but **not** `email`. That's why newer rows have `email` empty (older rows were created before this logic).
 
 ### Security
 - **RLS is on for `profiles`.** It has exactly one policy, "Users can view their own profile" (SELECT). There are **no** UPDATE or INSERT policies, so users can't grant themselves access. Keep it that way.
 - **`profiles` uses column-level grants** ("custom Data API permissions"). Any new column the browser needs requires `grant select (<column>) on public.profiles to authenticated;`
 - **`saved_contracts`** has RLS so users see only their own rows. **[FILL IN policies]**
-- **Session cap:** a trigger on `auth.sessions` keeps each user's 2 newest sessions and deletes older ones.
+- **Session cap:** a trigger on `auth.sessions` runs `enforce_session_limit()`, which keeps each user's 2 newest sessions and deletes older ones.
+- **`rls_auto_enable()`:** an event-trigger function that turns RLS on automatically for new tables.
+- **Function code backups:** `rebuild/supabase/functions-sql/` holds `handle_new_user.sql`, `normalize_email.sql`, `enforce_session_limit.sql`, and `rls_auto_enable.sql`.
 
 ### Edge Functions (6)
 | Function | Purpose |
@@ -191,7 +215,7 @@ Account subdomain: `shawncushen.workers.dev`. Free plan, which allows only 5 cro
 
 - **Function secrets:** see section 10.
 - **Code backup:** `rebuild/supabase/functions/<name>/index.ts` **[CONFIRM whether this code is already in the repo; if not, download each one]**
-- **Schema backup:** `rebuild/supabase/schema.sql` **[run the queries in section 12 and paste the output]**
+- **Schema backup:** `rebuild/supabase/schema-snapshot.md` (tables, policies, triggers, column grants) plus the function files above.
 
 ### Comping an account (free permanent Pro)
 ```sql
@@ -275,7 +299,7 @@ Store the actual values in your password manager under matching names.
 
 ## 12. Capturing the database schema
 
-Run each query in **Supabase → SQL Editor** and paste the results into `rebuild/supabase/schema.sql`.
+Run each query in **Supabase → SQL Editor**. For the first three and the last, use **Export → Copy as Markdown** and paste under its own heading in `rebuild/supabase/schema-snapshot.md`. For the function query, open each function's cell, copy its code from the details panel, and save it as `rebuild/supabase/functions-sql/<function_name>.sql`.
 
 ```sql
 -- Tables and columns
@@ -314,6 +338,7 @@ where table_schema = 'public' and table_name = 'profiles';
 | Weekly (Monday) | Strategy fundamentals via the Issue Form |
 | Monthly | Export `profiles` + `saved_contracts` to CSV and store them **outside** GitHub (they contain customer emails) |
 | After any Cloudflare code change | Copy the worker code into `rebuild/cloudflare/` |
-| After any Supabase change | Re-run section 12 and update `schema.sql` |
+| After any Supabase change | Re-run section 12 and update `schema-snapshot.md` / `functions-sql/` |
+| Occasionally | Re-export `disposable_email_domains` to CSV if you've added domains |
 | ~Aug 2027 | Renew the Cloudflare workers' GitHub token (expires ~Sept 2027) |
 | Yearly | Review this runbook top to bottom |
