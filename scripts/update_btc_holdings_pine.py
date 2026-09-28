@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keeps the TradingView "MSTR BTC Holdings (WiseSatoshi)" indicator in sync
+Keeps the TradingView "MSTR BTC Holdings" and "MSTR mNAV" indicators in sync
 with data/strategy-fundamentals.json.
 
 1. Reads btcHeld + lastUpdated from data/strategy-fundamentals.json.
@@ -8,6 +8,7 @@ with data/strategy-fundamentals.json.
    data/btc-holdings-history.json, appends {date, btcHeld}
    (or corrects the value if that date is already recorded).
 3. Regenerates tradingview/mstr-btc-holdings.pine from the full history.
+4. Regenerates tradingview/mstr-mnav.pine with this week's fundamentals.
 
 Safe to run repeatedly: if nothing changed, nothing is written.
 """
@@ -18,6 +19,17 @@ import sys
 FUNDAMENTALS = "data/strategy-fundamentals.json"
 HISTORY = "data/btc-holdings-history.json"
 PINE_OUT = "tradingview/mstr-btc-holdings.pine"
+MNAV_OUT = "tradingview/mstr-mnav.pine"
+
+# strategy-fundamentals.json field -> Pine variable, for the mNAV indicator
+MNAV_FIELDS = [
+    ("btcHeld", "btcHeld", "BTC held"),
+    ("convertibleDebtBillions", "debtB", "Convertible debt ($B)"),
+    ("preferredStockBillions", "prefB", "Preferred stock ($B)"),
+    ("usdReserveBillions", "usdResB", "USD Reserve ($B)"),
+    ("usdCashBillions", "usdCashB", "USD Cash ($B)"),
+    ("fdsoMillions", "fdsoM", "Fully diluted shares (M)"),
+]
 
 
 def load_json(path):
@@ -128,17 +140,71 @@ if barstate.islast
 '''
 
 
+def build_mnav_pine(f):
+    values = {}
+    for key, var, label in MNAV_FIELDS:
+        v = f.get(key)
+        if not isinstance(v, (int, float)):
+            sys.exit(f"{FUNDAMENTALS} is missing a number for '{key}' ({label}); "
+                     f"mNAV indicator not regenerated")
+        values[var] = v
+    as_of = str(f.get("lastUpdated", ""))[:10]
+    lines = "\n".join(
+        f"{var:<9} = {float(values[var])!r:<14} // {label} ({key})"
+        for key, var, label in MNAV_FIELDS
+    )
+    return f'''//@version=5
+indicator("MSTR mNAV (WiseSatoshi)", overlay=false)
+
+// -----------------------------------------------------------------
+// AUTO-GENERATED from data/strategy-fundamentals.json (as of {as_of})
+// in the wisesatoshi.com repo -- do not hand-edit the numbers below.
+// Regenerated automatically whenever that file changes. To update
+// TradingView: copy this whole file into the Pine Editor, Save.
+//
+// Prices are live (TradingView's own BTCUSD and MSTR feeds); the
+// fundamentals are this week's values, so the line is LIVE-accurate,
+// not historically accurate further back on the chart.
+// -----------------------------------------------------------------
+
+// ---- Fundamentals (as of {as_of}) ----
+{lines}
+
+// ---- Live prices, pulled from TradingView's own real symbols ----
+btcPrice  = request.security("BTCUSD", timeframe.period, close)
+mstrPrice = request.security("NASDAQ:MSTR", timeframe.period, close)
+
+// ---- Same formula as the site's calcNetValuePerShare() ----
+shares       = fdsoM * 1e6
+debt         = debtB * 1e9
+preferred    = prefB * 1e9
+usdReserve   = usdResB * 1e9
+usdCash      = usdCashB * 1e9
+
+netBtc           = btcHeld - (debt/btcPrice) - (preferred/btcPrice) + (usdReserve/btcPrice) + (usdCash/btcPrice)
+netValuePerShare = (netBtc / shares) * btcPrice
+mnav             = mstrPrice / netValuePerShare
+
+plot(mnav, title="mNAV", color=color.orange, linewidth=2)
+hline(1.0, "1.0x (fair value)", color=color.gray, linestyle=hline.style_dashed)
+'''
+
+
+def write_if_changed(path, text):
+    old = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+    if text != old:
+        with open(path, "w", encoding="utf-8") as out:
+            out.write(text)
+        print(f"Wrote {path}")
+    else:
+        print(f"{path} already up to date")
+
+
 def main():
     hist, _ = update_history()
     os.makedirs(os.path.dirname(PINE_OUT), exist_ok=True)
-    new_pine = build_pine(sorted(hist["entries"], key=lambda e: e["date"]))
-    old_pine = open(PINE_OUT, encoding="utf-8").read() if os.path.exists(PINE_OUT) else ""
-    if new_pine != old_pine:
-        with open(PINE_OUT, "w", encoding="utf-8") as out:
-            out.write(new_pine)
-        print(f"Wrote {PINE_OUT}")
-    else:
-        print(f"{PINE_OUT} already up to date")
+    write_if_changed(PINE_OUT, build_pine(sorted(hist["entries"], key=lambda e: e["date"])))
+    write_if_changed(MNAV_OUT, build_mnav_pine(load_json(FUNDAMENTALS)))
 
 
 if __name__ == "__main__":
