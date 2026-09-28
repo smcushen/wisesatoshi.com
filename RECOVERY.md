@@ -1,6 +1,6 @@
 # wisesatoshi.com / MSTR MODLer — Recovery Runbook
 
-*Last updated: September 27, 2026. Anything marked **[FILL IN]** or **[CONFIRM]** still needs your input.*
+*Last updated: September 28, 2026. Anything marked **[FILL IN]** or **[CONFIRM]** still needs your input.*
 
 This document describes every piece of the system, how the pieces connect, and the order to rebuild them in. It deliberately contains **no secret values**. Secrets live only in your password manager (see "Secrets inventory"). This repo is **public**, so keep it that way.
 
@@ -70,7 +70,8 @@ Visitor's browser ──> index.html / learn.html (front end)
 | `mstr-options-chain.json` | Cloudflare `mstr-options-activity` (daily) | Pro picker: expirations + strikes |
 | `mstr-options-iv.json` | Cloudflare `mstr-option-iv` (every 30 min, market hours) | Live IV per contract |
 | `options-activity/YYYY-MM.json` | Cloudflare `mstr-options-activity` | Monthly top-20 LEAPS by volume and by open interest (Morning MODL source) |
-| `strategy-fundamentals.json` | `update-content-from-issue.yml` via the Issue Form | BTC held, shares, debt, preferred, USD Reserve |
+| `strategy-fundamentals.json` | **You, by hand**, each week (see section 4, "Weekly Strategy update") | BTC held, shares, FDSO, convertible debt, preferred, USD Reserve, USD Cash, cost of capital |
+| `btc-holdings-history.json` | `update-btc-holdings-pine.yml` | Every disclosed BTC holdings change since Aug 2020; source for the TradingView holdings indicator |
 | `treasury-rate.json` | `capture-treasury-rate.yml` | Risk-free rate (Treasury XML feed) |
 | `mnav-close-snapshot.json` | mNAV close capture (`mnav-close-core.mjs`) | Prior-close mNAV reference for after hours |
 | `mstr-price.json` | `capture-mstr-live.yml` | Live MSTR price (Finnhub) |
@@ -90,18 +91,22 @@ If the profile row can't be loaded, the code deliberately denies access (fails s
 | `capture-mstr-live.yml` | Fetches the MSTR price from Finnhub, commits it | Every ~5 min **[CONFIRM]** |
 | `capture-treasury-rate.yml` | Fetches the Treasury par yield XML, commits `treasury-rate.json` | 4× daily |
 | `check-mnav-close-captured.yml` | Verifies the closing mNAV snapshot exists | **[FILL IN]** |
-| `daily-breakdown.yml` | Posts the daily "Bitcoin Daily Breakdown" to X | **[FILL IN]** |
 | `expire-past-due.yml` | Ends Pro for `past_due` accounts after the grace period | **[FILL IN]** |
 | `fetch-options-iv.yml` | **Disabled.** Replaced by the Cloudflare `mstr-option-iv` worker; kept for reference | — |
 | `sync-fallback-defaults.yml` | Keeps fallback defaults current | **[FILL IN]** |
 | `trial-followup-check.yml` | Sends the "Still thinking about Pro?" email after the trial ends | **[FILL IN]** |
-| `update-content-from-issue.yml` | Parses the Strategy Issue Form and commits `strategy-fundamentals.json` | On issue submission |
-| `weekly-strategy-check.yml` | Opens the weekly reminder issue | Monday **[CONFIRM time]** |
+| `update-btc-holdings-pine.yml` ("Update TradingView Indicators") | When `strategy-fundamentals.json` changes: appends to `btc-holdings-history.json` if holdings moved, and regenerates both TradingView scripts (section 5c) | On push of that file; also manual |
+| `weekly-strategy-check.yml` | Opens the weekly fundamentals reminder issue (labels `maintenance`, `data-update`) and checks that next year's NYSE holiday list exists | `0 4 * * 2` = Tuesday 04:00 UTC (Monday ~midnight ET) |
 
-- **Issue Form:** `.github/ISSUE_TEMPLATE/strategy-update.yml`
 - **Script:** `mnav-close-core.mjs`, the mNAV close logic (computes the most recently completed trading day; guards against weekends, holidays, and before-close runs)
 - **Race-condition fix:** every workflow that commits runs `git pull --rebase origin main` before `git push`. Keep this in any new workflow.
-- **Weekly Strategy update:** done manually on purpose, for reliability (decided Sept 2026).
+- **Weekly Strategy update:** done manually on purpose, for reliability (decided Sept 2026). There is **no issue form**. The routine:
+  1. The reminder issue opens; check strategy.com/shares, the investor briefing, and the latest 8-K.
+  2. Ask Claude for the week's updated JSON and paste it into `data/strategy-fundamentals.json`, with `lastUpdated` set to the **8-K's date** (the TradingView holdings chart uses it as the step date).
+  3. Wait ~1 minute for `update-btc-holdings-pine.yml`, then paste both `tradingview/*.pine` files into TradingView (section 5c).
+  4. Close the reminder issue.
+- **⚠️ Known issue:** the reminder's holiday-list check reads `.github/workflows/capture-mnav-close.yml`, which no longer exists, so the "Holiday list needs updating" warning shows every week. Fix by pointing the check at the file that now holds the `HOLIDAYS_<year>` lists **[FILL IN: `check-mnav-close-captured.yml` and/or `netlify/functions/`]**.
+- **Retired (Sept 2026):** the Daily Breakdown X bot (`daily-breakdown.yml`, `update-content-from-issue.yml`, the `daily-content` issue form, `post_daily_breakdown.py`, `parse_issue_to_content.py`, `daily_content.txt`) and its X API secrets were deleted. They remain in git history if ever needed.
 - **Repository secrets:** see section 10.
 
 ---
@@ -136,6 +141,20 @@ Account subdomain: `shawncushen.workers.dev`. Free plan, which allows only 5 cro
   - MarketData's volume and OI data lags about one trading day. The worker dates each run by the data's own timestamp, so nothing is double-counted.
   - Historical chains (for backfills) cost 1 credit per 1,000 symbols.
 - **Code backup:** `rebuild/cloudflare/mstr-options-activity.js` **[copy from the Cloudflare editor]**
+
+---
+
+### 5c. TradingView indicators (not Cloudflare, but related tooling)
+Two Pine Script v5 indicators, both **generated** by `update-btc-holdings-pine.yml` via `scripts/update_btc_holdings_pine.py`:
+
+| Indicator | Generated file | Data source |
+|---|---|---|
+| MSTR BTC Holdings (WiseSatoshi) | `tradingview/mstr-btc-holdings.pine` | `data/btc-holdings-history.json` (stairstep, green after buys, red after sales) |
+| MSTR mNAV (WiseSatoshi) | `tradingview/mstr-mnav.pine` | this week's `strategy-fundamentals.json` + live `BTCUSD` / `NASDAQ:MSTR` prices; same formula as the site's `calcNetValuePerShare()` |
+
+- **To update TradingView:** open each `.pine` file in GitHub → copy → Pine Editor → select all → paste → **Save** (and **Update** if published). TradingView can't pull outside data or be updated by an API, so this paste is the one manual step.
+- **Never hand-edit the `.pine` files;** edit `btc-holdings-history.json` or `strategy-fundamentals.json` instead.
+- **Known limitation:** the mNAV indicator applies current fundamentals to the whole chart, so older history is approximate. `docs/strategy-historical-fundamentals.md` could later make it historically accurate.
 
 ---
 
@@ -269,15 +288,26 @@ Store the actual values in your password manager under matching names.
 | `RUN_KEY` | `mstr-options-activity` test link | Cloudflare |
 | Stripe secret key (live) | Supabase Edge Functions | Supabase → Edge Functions → Secrets **[CONFIRM names]** |
 | Stripe webhook signing secret | `stripe-webhook` | Supabase **[CONFIRM name]** |
-| Supabase service role key | GitHub Actions (expire/trial workflows) **[CONFIRM]** | GitHub → Settings → Secrets and variables → Actions |
-| Supabase URL + anon key | `index.html` (public by design) | In the code |
-| Finnhub API key | `capture-mstr-live.yml` | GitHub Actions secrets **[CONFIRM]** |
-| X API keys | `daily-breakdown.yml` | GitHub Actions secrets **[CONFIRM names]** |
-| Kit API key | `tag-kit-signup` | Supabase **[CONFIRM]** |
+| Kit API key | `tag-kit-signup` | Supabase Edge Function secrets **[CONFIRM name]** |
 | Mailtrap SMTP credentials | Supabase Auth + email functions | Supabase Auth SMTP settings + function secrets |
-| **[FILL IN]** any others | | |
+| Supabase URL + anon key | `index.html` (public by design) | In the code |
 
-**Account logins** (all to be consolidated onto `wisesatoshiapp@gmail.com`): GitHub, Cloudflare, Supabase, Stripe, Kit, Mailtrap, ImprovMX, Namecheap, MarketData.app, Finnhub, X developer, Netlify.
+**GitHub Actions repository secrets** (GitHub → Settings → Secrets and variables → Actions), confirmed Sept 28, 2026:
+
+| Secret | Used by |
+|---|---|
+| `FINNHUB_API_KEY` | `capture-mstr-live.yml` |
+| `KIT_API_KEY` | a workflow that talks to Kit **[CONFIRM which]** |
+| `MARKETDATA_API_KEY` | `fetch-options-iv.yml` (disabled backup; the Cloudflare workers have their own copy) |
+| `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID` | probably `sync-fallback-defaults.yml` **[CONFIRM]** |
+| `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL` | `expire-past-due.yml`, `trial-followup-check.yml` |
+| `TRIAL_FOLLOWUP_CRON_SECRET` | `trial-followup-check.yml` → `send-trial-followup` Edge Function (must match the function's copy) |
+
+GitHub also provides its own `GITHUB_TOKEN` automatically to every workflow run; there's nothing to store for it.
+
+**Password-manager convention** (Apple Passwords): Website = `WS-<service>` (e.g. `WS-marketdata.app`, `WS-github.com-activity`), User = the exact variable name, Notes = where it's used + where to regenerate. Secrets that can't be viewed again are saved when next regenerated; unrecoverable ones are noted `LOST – regenerate if needed`.
+
+**Account logins** (all to be consolidated onto `wisesatoshiapp@gmail.com`): GitHub, Cloudflare, Supabase, Stripe, Kit, Mailtrap, ImprovMX, Namecheap, MarketData.app, Finnhub, Netlify, TradingView. How you sign in to each (Google, GitHub, or password) is listed in a locked Apple Note, "WS Accounts Index".
 
 ---
 
@@ -292,6 +322,7 @@ Store the actual values in your password manager under matching names.
 - [ ] Contact form email arrives in Gmail
 - [ ] Pro picker lists the current expirations (including the newest LEAPS)
 - [ ] Activity worker dry run shows `creditsConsumed: 1`
+- [ ] Committing `strategy-fundamentals.json` triggers "Update TradingView Indicators" and both `.pine` files regenerate
 
 **Scheduled live billing tests (2026):**
 - **Oct 5, ~7:34 PM CDT:** renewal charge. Confirm the webhook deliveries in Stripe, and that `current_period_end` moves to about Nov 5.
@@ -337,10 +368,11 @@ where table_schema = 'public' and table_name = 'profiles';
 
 | When | Task |
 |---|---|
-| Weekly (Monday) | Strategy fundamentals via the Issue Form |
+| Weekly (Monday, or Tuesday after a holiday) | Update `strategy-fundamentals.json` (`lastUpdated` = 8-K date), then paste both `tradingview/*.pine` files into TradingView |
 | Monthly | Export `profiles` + `saved_contracts` to CSV and store them **outside** GitHub (they contain customer emails) |
 | After any Cloudflare code change | Copy the worker code into `rebuild/cloudflare/` |
 | After any Supabase change | Re-run section 12 and update `schema-snapshot.md` / `functions-sql/` |
 | Occasionally | Re-export `disposable_email_domains` to CSV if you've added domains |
 | ~Aug 2027 | Renew the Cloudflare workers' GitHub token (expires ~Sept 2027) |
+| Each December | Add next year's NYSE holidays (`HOLIDAYS_<year>`) to the mNAV-close capture |
 | Yearly | Review this runbook top to bottom |
