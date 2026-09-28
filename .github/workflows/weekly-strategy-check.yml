@@ -25,7 +25,7 @@ jobs:
             // a human to extend them once a year — this just makes sure that
             // never gets forgotten by piggybacking on a reminder that's
             // already running weekly, rather than needing its own schedule.
-            const captureWorkflowPath = '.github/workflows/capture-mnav-close.yml';
+            const captureWorkflowPath = '.github/workflows/check-mnav-close-captured.yml';
             const captureWorkflowText = fs.existsSync(captureWorkflowPath)
               ? fs.readFileSync(captureWorkflowPath, 'utf8')
               : '';
