@@ -76,12 +76,12 @@ jobs:
             }
 
             const bodyLines = [
-              'None of today\'s scheduled capture attempts in `capture-mnav-close.yml` succeeded — the live site is still showing the close from **' + existing + '**.',
+              'Today\'s scheduled mNAV close capture (Netlify function `capture-mnav-close-scheduled`) did not land — the live site is still showing the close from **' + existing + '**.',
               '',
-              '**To fix now:** go to Actions -> Capture mNAV At Market Close -> Run workflow.',
+              '**To fix now:** open wisesatoshi.com after 4 PM ET (that triggers `capture-mnav-close-check`), or Netlify → Functions → `capture-mnav-close-scheduled` → Run now.',
               '',
-              '**To investigate:** check the run history for today\'s four scheduled attempts (20:20, 20:35, 20:50, 21:00 UTC) and see whether they failed or never started -- the latter usually means githubstatus.com/history shows an Actions incident today.'
-            ];
+              '**To investigate:** open that function\'s logs in Netlify for today\'s runs, and check netlifystatus.com for incidents.'           
+              ];
 
             await github.rest.issues.create({
               owner: context.repo.owner,
