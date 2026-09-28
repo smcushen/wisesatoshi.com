@@ -1,4 +1,4 @@
-name: Update BTC Holdings Indicator
+name: Update TradingView Indicators
 
 on:
   push:
@@ -22,18 +22,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Update holdings history and regenerate Pine script
+      - name: Update holdings history and regenerate Pine scripts
         run: python scripts/update_btc_holdings_pine.py
 
       - name: Commit changes (if any)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/btc-holdings-history.json tradingview/mstr-btc-holdings.pine
+          git add data/btc-holdings-history.json tradingview/mstr-btc-holdings.pine tradingview/mstr-mnav.pine
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "Update BTC holdings history + TradingView indicator"
+          git commit -m "Update TradingView indicators (BTC holdings + mNAV)"
           git pull --rebase origin main
           git push
