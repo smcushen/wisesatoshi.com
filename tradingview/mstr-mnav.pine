@@ -1,0 +1,39 @@
+//@version=5
+indicator("MSTR mNAV (WiseSatoshi)", overlay=false)
+
+// -----------------------------------------------------------------
+// AUTO-GENERATED from data/strategy-fundamentals.json (as of 2026-09-21)
+// in the wisesatoshi.com repo -- do not hand-edit the numbers below.
+// Regenerated automatically whenever that file changes. To update
+// TradingView: copy this whole file into the Pine Editor, Save.
+//
+// Prices are live (TradingView's own BTCUSD and MSTR feeds); the
+// fundamentals are this week's values, so the line is LIVE-accurate,
+// not historically accurate further back on the chart.
+// -----------------------------------------------------------------
+
+// ---- Fundamentals (as of 2026-09-21) ----
+btcHeld   = 846000.0       // BTC held (btcHeld)
+debtB     = 6.714          // Convertible debt ($B) (convertibleDebtBillions)
+prefB     = 14.294         // Preferred stock ($B) (preferredStockBillions)
+usdResB   = 5.043          // USD Reserve ($B) (usdReserveBillions)
+usdCashB  = 1.049          // USD Cash ($B) (usdCashBillions)
+fdsoM     = 424.51         // Fully diluted shares (M) (fdsoMillions)
+
+// ---- Live prices, pulled from TradingView's own real symbols ----
+btcPrice  = request.security("BTCUSD", timeframe.period, close)
+mstrPrice = request.security("NASDAQ:MSTR", timeframe.period, close)
+
+// ---- Same formula as the site's calcNetValuePerShare() ----
+shares       = fdsoM * 1e6
+debt         = debtB * 1e9
+preferred    = prefB * 1e9
+usdReserve   = usdResB * 1e9
+usdCash      = usdCashB * 1e9
+
+netBtc           = btcHeld - (debt/btcPrice) - (preferred/btcPrice) + (usdReserve/btcPrice) + (usdCash/btcPrice)
+netValuePerShare = (netBtc / shares) * btcPrice
+mnav             = mstrPrice / netValuePerShare
+
+plot(mnav, title="mNAV", color=color.orange, linewidth=2)
+hline(1.0, "1.0x (fair value)", color=color.gray, linestyle=hline.style_dashed)
