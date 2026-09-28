@@ -55,7 +55,17 @@ Visitor's browser ──> index.html / learn.html (front end)
 
 - **Repo:** `github.com/smcushen/wisesatoshi.com` (public, branch `main`)
 - **Hosting:** **GitHub Pages**, served from the repo's top level, with the custom domain set by the `CNAME` file and HTTPS on. Anything in the repo can therefore be reached as a web address (`wisesatoshi.com/<path>`), so never commit secrets.
-- **Netlify (legacy):** the `netlify/` folder and `netlify.toml` remain for the old Treasury-rate function, which is now only a last-resort fallback. An ignore command in `netlify.toml` limits Netlify deploys to changes in `netlify/functions/`. Time-sensitive data is read from `raw.githubusercontent.com` rather than any published build.
+- **Netlify (functions only; the site itself is on GitHub Pages):** `netlify/functions/` holds serverless functions. An ignore command in `netlify.toml` limits Netlify deploys to changes in that folder, and **Auto Publishing is locked**, so after editing any function you must **publish the new deploy manually** in Netlify. Time-sensitive data is read from `raw.githubusercontent.com` rather than any published build.
+
+| Function | What it does |
+|---|---|
+| `lib/mnav-close-core.mjs` | Shared closing-mNAV capture logic (`captureIfNeeded()`): most-recent-trading-day math, holiday/weekend/before-4pm guards, MSTR price from Finnhub, BTC price from CoinGecko, commits `data/mnav-close-snapshot.json` via the GitHub API. Holds its own **NYSE holiday list** (`HOLIDAYS`, covers 2026-2027). |
+| `capture-mnav-close-scheduled.mjs` | Runs the capture on a schedule after the close **[FILL IN schedule]** |
+| `capture-mnav-close-check.mjs` | Runs the same capture when the site calls it after a visit (backup path; also the manual fix, since visiting the site after 4pm ET triggers it) |
+| `historical-mnav.mjs` | Likely produces `data/historical-mnav.json` **[CONFIRM]** |
+| `mstr-price.js`, `treasury-rate.js` | Fallbacks for the MSTR price and Treasury rate |
+
+- **Netlify environment variables:** `GITHUB_TOKEN` (used to commit the snapshot; **[CONFIRM type + expiration]**) and `FINNHUB_API_KEY`. Set in Netlify → Site configuration → Environment variables.
 - **Docs:** `docs/strategy-historical-fundamentals.md` (historical Strategy fundamentals reference)
 - **Pages:**
   - `index.html`: the calculator plus all Pro features (login modal, Saved Positions, picker, share card, zoom toggle)
@@ -73,9 +83,9 @@ Visitor's browser ──> index.html / learn.html (front end)
 | `strategy-fundamentals.json` | **You, by hand**, each week (see section 4, "Weekly Strategy update") | BTC held, shares, FDSO, convertible debt, preferred, USD Reserve, USD Cash, cost of capital |
 | `btc-holdings-history.json` | `update-btc-holdings-pine.yml` | Every disclosed BTC holdings change since Aug 2020; source for the TradingView holdings indicator |
 | `treasury-rate.json` | `capture-treasury-rate.yml` | Risk-free rate (Treasury XML feed) |
-| `mnav-close-snapshot.json` | mNAV close capture (`mnav-close-core.mjs`) | Prior-close mNAV reference for after hours |
+| `mnav-close-snapshot.json` | Netlify `capture-mnav-close-scheduled` / `capture-mnav-close-check` (logic in `lib/mnav-close-core.mjs`) | Prior-close MSTR price + mNAV, used after hours |
 | `mstr-price.json` | `capture-mstr-live.yml` | Live MSTR price (Finnhub) |
-| `historical-mnav.json` | **[FILL IN]** which workflow or script writes it | Historical mNAV series |
+| `historical-mnav.json` | Likely Netlify `historical-mnav.mjs` **[CONFIRM]** | Historical mNAV series |
 | **[FILL IN]** fallback defaults file | `sync-fallback-defaults.yml` | Fallback values if live fetches fail |
 
 **Access logic, for reference** (in `onLoggedIn()` in `index.html`):
@@ -90,7 +100,7 @@ If the profile row can't be loaded, the code deliberately denies access (fails s
 |---|---|---|
 | `capture-mstr-live.yml` | Fetches the MSTR price from Finnhub, commits it | Every ~5 min **[CONFIRM]** |
 | `capture-treasury-rate.yml` | Fetches the Treasury par yield XML, commits `treasury-rate.json` | 4× daily |
-| `check-mnav-close-captured.yml` | Verifies the closing mNAV snapshot exists | **[FILL IN]** |
+| `check-mnav-close-captured.yml` | Files a `data-freshness` issue if today's closing snapshot is missing (skips NYSE holidays; has its own `HOLIDAYS_<year>` lists) | `0 22 * * 1-5` = 6 PM ET during EDT (5 PM ET in winter; still after the close) |
 | `expire-past-due.yml` | Ends Pro for `past_due` accounts after the grace period | **[FILL IN]** |
 | `fetch-options-iv.yml` | **Disabled.** Replaced by the Cloudflare `mstr-option-iv` worker; kept for reference | — |
 | `sync-fallback-defaults.yml` | Keeps fallback defaults current | **[FILL IN]** |
@@ -98,14 +108,14 @@ If the profile row can't be loaded, the code deliberately denies access (fails s
 | `update-btc-holdings-pine.yml` ("Update TradingView Indicators") | When `strategy-fundamentals.json` changes: appends to `btc-holdings-history.json` if holdings moved, and regenerates both TradingView scripts (section 5c) | On push of that file; also manual |
 | `weekly-strategy-check.yml` | Opens the weekly fundamentals reminder issue (labels `maintenance`, `data-update`) and checks that next year's NYSE holiday list exists | `0 4 * * 2` = Tuesday 04:00 UTC (Monday ~midnight ET) |
 
-- **Script:** `mnav-close-core.mjs`, the mNAV close logic (computes the most recently completed trading day; guards against weekends, holidays, and before-close runs)
+- **Closing-mNAV capture** runs on **Netlify**, not GitHub Actions (see section 3). The old `capture-mnav-close.yml` workflow was retired.
 - **Race-condition fix:** every workflow that commits runs `git pull --rebase origin main` before `git push`. Keep this in any new workflow.
 - **Weekly Strategy update:** done manually on purpose, for reliability (decided Sept 2026). There is **no issue form**. The routine:
   1. The reminder issue opens; check strategy.com/shares, the investor briefing, and the latest 8-K.
   2. Ask Claude for the week's updated JSON and paste it into `data/strategy-fundamentals.json`, with `lastUpdated` set to the **8-K's date** (the TradingView holdings chart uses it as the step date).
   3. Wait ~1 minute for `update-btc-holdings-pine.yml`, then paste both `tradingview/*.pine` files into TradingView (section 5c).
   4. Close the reminder issue.
-- **⚠️ Known issue:** the reminder's holiday-list check reads `.github/workflows/capture-mnav-close.yml`, which no longer exists, so the "Holiday list needs updating" warning shows every week. Fix by pointing the check at the file that now holds the `HOLIDAYS_<year>` lists **[FILL IN: `check-mnav-close-captured.yml` and/or `netlify/functions/`]**.
+- **Holiday lists live in two places,** and both need next year's NYSE dates each year: `check-mnav-close-captured.yml` (`HOLIDAYS_<year>`) and `netlify/functions/lib/mnav-close-core.mjs` (`HOLIDAYS`). The weekly reminder checks the first and warns when next year is missing (fixed Sept 2026).
 - **Retired (Sept 2026):** the Daily Breakdown X bot (`daily-breakdown.yml`, `update-content-from-issue.yml`, the `daily-content` issue form, `post_daily_breakdown.py`, `parse_issue_to_content.py`, `daily_content.txt`) and its X API secrets were deleted. They remain in git history if ever needed.
 - **Repository secrets:** see section 10.
 
@@ -151,6 +161,8 @@ Two Pine Script v5 indicators, both **generated** by `update-btc-holdings-pine.y
 |---|---|---|
 | MSTR BTC Holdings (WiseSatoshi) | `tradingview/mstr-btc-holdings.pine` | `data/btc-holdings-history.json` (stairstep, green after buys, red after sales) |
 | MSTR mNAV (WiseSatoshi) | `tradingview/mstr-mnav.pine` | this week's `strategy-fundamentals.json` + live `BTCUSD` / `NASDAQ:MSTR` prices; same formula as the site's `calcNetValuePerShare()` |
+
+> The net-value-per-share formula exists in **four** places that must be kept in sync by hand: `index.html` (`calcNetValuePerShare()`), `netlify/functions/lib/mnav-close-core.mjs`, `scripts/update_btc_holdings_pine.py` (mNAV Pine template), and the published TradingView script.
 
 - **To update TradingView:** open each `.pine` file in GitHub → copy → Pine Editor → select all → paste → **Save** (and **Update** if published). TradingView can't pull outside data or be updated by an API, so this paste is the one manual step.
 - **Never hand-edit the `.pine` files;** edit `btc-holdings-history.json` or `strategy-fundamentals.json` instead.
@@ -291,6 +303,7 @@ Store the actual values in your password manager under matching names.
 | Kit API key | `tag-kit-signup` | Supabase Edge Function secrets **[CONFIRM name]** |
 | Mailtrap SMTP credentials | Supabase Auth + email functions | Supabase Auth SMTP settings + function secrets |
 | Supabase URL + anon key | `index.html` (public by design) | In the code |
+| `GITHUB_TOKEN`, `FINNHUB_API_KEY` | Netlify closing-mNAV capture functions | Netlify → Site configuration → Environment variables |
 
 **GitHub Actions repository secrets** (GitHub → Settings → Secrets and variables → Actions), confirmed Sept 28, 2026:
 
@@ -374,5 +387,5 @@ where table_schema = 'public' and table_name = 'profiles';
 | After any Supabase change | Re-run section 12 and update `schema-snapshot.md` / `functions-sql/` |
 | Occasionally | Re-export `disposable_email_domains` to CSV if you've added domains |
 | ~Aug 2027 | Renew the Cloudflare workers' GitHub token (expires ~Sept 2027) |
-| Each December | Add next year's NYSE holidays (`HOLIDAYS_<year>`) to the mNAV-close capture |
+| Each December | Add next year's NYSE holidays to **both** `check-mnav-close-captured.yml` and `netlify/functions/lib/mnav-close-core.mjs`, then **publish the Netlify deploy** (Auto Publishing is locked) |
 | Yearly | Review this runbook top to bottom |
