@@ -2,19 +2,16 @@
 indicator("MSTR BTC Holdings (WiseSatoshi)", overlay=false)
 
 // -----------------------------------------------------------------
-// Real cumulative BTC holdings after every disclosed purchase or
-// sale, compiled from Strategy's 8-Ks, 10-Qs, and 10-Ks (Aug 11,
-// 2020 through Aug 31, 2026). Plotted as a stairstep since holdings
-// only change on disclosed dates -- there's no real "in between."
+// AUTO-GENERATED -- do not hand-edit the data block below.
+// Source: data/btc-holdings-history.json in the wisesatoshi.com repo,
+// updated automatically whenever data/strategy-fundamentals.json
+// changes. To update TradingView: copy this whole file into the
+// Pine Editor, Save (and Update if published).
 //
-// HOW TO UPDATE: whenever Strategy discloses a new purchase or sale
-// (weekly 8-K is the usual cadence lately), add ONE new pair of
-// lines anywhere in the block below, in the same format:
-//     array.push(dDate, timestamp("YYYY-MM-DD"))
-//     array.push(dHeld, NEW_CUMULATIVE_TOTAL)
-// Order doesn't matter -- the lookup below always finds the most
-// recent disclosed date at or before each bar automatically. For a
-// sale, just use the new (lower) cumulative total, same as a buy.
+// Real cumulative BTC holdings after every disclosed purchase or
+// sale, compiled from Strategy's 8-Ks, 10-Qs, and 10-Ks (2020-08-11
+// through 2026-09-21). Plotted as a stairstep since holdings only change
+// on disclosed dates -- there's no real "in between."
 // -----------------------------------------------------------------
 
 var dDate = array.new<int>()
@@ -253,9 +250,11 @@ if barstate.isfirst
     array.push(dHeld, 840447)
     array.push(dDate, timestamp("2026-08-31"))
     array.push(dHeld, 845050)
+    array.push(dDate, timestamp("2026-09-21"))
+    array.push(dHeld, 846000)
 
 // Finds the most recent disclosed holdings figure at or before this
-// bar's time -- a plain linear scan, since 116 entries is trivial
+// bar's time -- a plain linear scan, since 117 entries is trivial
 // for Pine's per-bar execution budget.
 btcHeld = 0.0
 for i = 0 to array.size(dDate) - 1
