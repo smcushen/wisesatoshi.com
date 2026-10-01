@@ -664,7 +664,7 @@
       </div>
       <div class="field" id="expiryField">
         <label>Expiration date</label>
-        <input type="hidden" id="expiryDate" value="2028-12-15">
+        <input type="hidden" id="expiryDate" value="2029-01-19">
         <div class="quick-select cal-select" id="expiryDateWrap">
           <button type="button" id="expiryDateButton" onclick="toggleCalendarMenu('expiryDate')">
             <span id="expiryDateLabel"></span><span class="quick-select-caret">▾</span>
@@ -674,7 +674,7 @@
       </div>
       <div class="field" id="strikeField">
         <label>Strike price ($)</label>
-        <input type="number" id="strike" value="275" step="5" oninput="checkIvWarning()">
+        <input type="number" id="strike" value="270" step="5" oninput="checkIvWarning()">
       </div>
       <div class="field">
         <label>Projection date</label>
@@ -1881,19 +1881,23 @@ async function saveScenario() {
 }
 
 // Compact display label for a saved scenario, e.g.
-// "$275C Dec '28 · BTC $228K · 2.57× · MSTR $413 · IV 80%".
+// "$270C Jan '29 · BTC $228K by Jun '27 · 2.57× · MSTR $413 · IV 80%".
 // A custom name (notes) replaces the numbers. Built at display time,
 // so older saves get it too; any missing value is simply skipped.
 function scenarioLabel(c) {
   const cd = c.contract_data || {};
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const [y, m] = String(c.expiration_date || '').split('-');
-  const exp = (y && m) ? months[parseInt(m, 10) - 1] + " '" + y.slice(2) : c.expiration_date;
-  const head = '$' + c.strike + 'C ' + exp;
+  const monYr = d => {
+    const [y, m] = String(d || '').split('-');
+    return (y && m) ? months[parseInt(m, 10) - 1] + " '" + y.slice(2) : '';
+  };
+  const head = '$' + c.strike + 'C ' + (monYr(c.expiration_date) || c.expiration_date);
   if (c.notes) return head + ' — ' + c.notes;
   const parts = [head];
   const btc = parseFloat(cd.btcPrice);
-  if (btc > 0) parts.push('BTC $' + (btc >= 1e6 ? (btc / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : Math.round(btc / 1000) + 'K'));
+  const by = monYr(cd.projDate) ? ' by ' + monYr(cd.projDate) : '';
+  if (btc > 0) parts.push('BTC $' + (btc >= 1e6 ? (btc / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : Math.round(btc / 1000) + 'K') + by);
+  else if (by) parts.push(by.trim());
   const mnav = parseFloat(cd.mnav);
   if (mnav > 0) parts.push(mnav.toFixed(2) + '×');
   const mstr = parseFloat(cd.manualPrice) || parseFloat(String(cd.derivedPrice || '').replace(/[^0-9.]/g, ''));
@@ -3660,7 +3664,7 @@ function checkIvWarning() {
   const expiry = el('expiryDate').value;
   const warning = document.getElementById('ivSkewWarning');
   if (!warning) return;
-  const changed = (strike !== 275 || expiry !== '2028-12-15');
+  const changed = (strike !== 270 || expiry !== '2029-01-19');
   warning.style.display = changed ? 'block' : 'none';
 }
 
