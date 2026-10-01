@@ -1877,7 +1877,31 @@ async function saveScenario() {
   statusEl.textContent = 'Saved.';
   statusEl.style.color = 'var(--green)';
   el('scenarioNotes').value = '';
-  
+  loadSavedPositions();
+}
+
+// Compact display label for a saved scenario, e.g.
+// "$275C Dec '28 · BTC $228K · 2.57× · MSTR $413 · IV 80%".
+// A custom name (notes) replaces the numbers. Built at display time,
+// so older saves get it too; any missing value is simply skipped.
+function scenarioLabel(c) {
+  const cd = c.contract_data || {};
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [y, m] = String(c.expiration_date || '').split('-');
+  const exp = (y && m) ? months[parseInt(m, 10) - 1] + " '" + y.slice(2) : c.expiration_date;
+  const head = '$' + c.strike + 'C ' + exp;
+  if (c.notes) return head + ' — ' + c.notes;
+  const parts = [head];
+  const btc = parseFloat(cd.btcPrice);
+  if (btc > 0) parts.push('BTC $' + (btc >= 1e6 ? (btc / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M' : Math.round(btc / 1000) + 'K'));
+  const mnav = parseFloat(cd.mnav);
+  if (mnav > 0) parts.push(mnav.toFixed(2) + '×');
+  const mstr = parseFloat(cd.manualPrice) || parseFloat(String(cd.derivedPrice || '').replace(/[^0-9.]/g, ''));
+  if (mstr > 0) parts.push('MSTR $' + Math.round(mstr).toLocaleString('en-US'));
+  let iv = parseFloat(cd.iv);
+  if (iv > 0 && iv <= 3) iv *= 100;
+  if (iv > 0) parts.push('IV ' + Math.round(iv) + '%');
+  return parts.join(' · ');
 }
 
 async function loadSavedPositions() {
@@ -1905,7 +1929,7 @@ async function loadSavedPositions() {
   if (quickMenu) {
     quickMenu.innerHTML = data.length
       ? data.map(c => {
-          const label = '$' + c.strike + ' strike, exp ' + c.expiration_date + (c.notes ? ' — ' + c.notes : '');
+          const label = scenarioLabel(c);
           return '<div class="quick-select-item" onclick="selectQuickLoad(\'' + c.id + '\')">' + label + '</div>';
         }).join('')
       : '<div class="quick-select-empty">No saved scenarios yet.</div>';
@@ -1917,9 +1941,7 @@ async function loadSavedPositions() {
   }
   list.innerHTML = data.map(c => {
     const cd = c.contract_data || {};
-    const label = '$' + c.strike + ' strike, exp ' + c.expiration_date +
-      (c.notes ? ' — ' + c.notes : '') +
-      (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
+    const label = scenarioLabel(c) + (cd.totalPositionValue ? ' · ' + cd.totalPositionValue : '');
     return '<div id="savedRow-' + c.id + '" style="background:var(--bg-panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;">' +
       '<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">' +
       '<input type="checkbox" class="compareCheckbox" value="' + c.id + '" style="width:16px;height:16px;accent-color:var(--orange);cursor:pointer;flex-shrink:0;">' +
