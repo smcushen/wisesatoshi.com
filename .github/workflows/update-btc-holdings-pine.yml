@@ -35,5 +35,9 @@ jobs:
             exit 0
           fi
           git commit -m "Update TradingView indicators (BTC holdings + mNAV)"
-          git pull --rebase origin main
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && exit 0
+            echo "Push attempt $i failed; retrying in $((i * 10))s"
+            sleep $((i * 10))
+          done
+          exit 1
