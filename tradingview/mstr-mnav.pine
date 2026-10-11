@@ -37,3 +37,14 @@ mnav             = mstrPrice / netValuePerShare
 
 plot(mnav, title="mNAV", color=color.orange, linewidth=2)
 hline(1.0, "1.0x (fair value)", color=color.gray, linestyle=hline.style_dashed)
+// Latest-value tag at the right edge, matching the BTC Holdings label.
+var label lastLabel = na
+if barstate.islast
+    label.delete(lastLabel)
+    lastLabel := label.new(
+         x=bar_index, y=mnav,
+         text=str.tostring(mnav, "0.00") + "x",
+         xloc=xloc.bar_index, yloc=yloc.price,
+         style=label.style_label_left,
+         color=color.orange, textcolor=color.black,
+         size=size.normal)
