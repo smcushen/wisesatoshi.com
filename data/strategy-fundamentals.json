@@ -1,11 +1,11 @@
 {
-  "btcHeld": 848000,
-  "sharesOutstandingMillions": 422.07,
-  "fdsoMillions": 426.14,
+  "btcHeld": 848250,
+  "sharesOutstandingMillions": 422.20,
+  "fdsoMillions": 426.27,
   "annualInterestAndPrefDividendsBillions": 1.622,
   "convertibleDebtBillions": 6.714,
-  "preferredStockBillions": 13.964,
+  "preferredStockBillions": 13.771,
   "usdReserveBillions": 4.88,
-  "usdCashBillions": 0.833,
-  "lastUpdated": "2026-10-05"
+  "usdCashBillions": 0.641,
+  "lastUpdated": "2026-10-12"
 }
