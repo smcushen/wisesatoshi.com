@@ -10,7 +10,7 @@ indicator("MSTR BTC Holdings (WiseSatoshi)", overlay=false)
 //
 // Real cumulative BTC holdings after every disclosed purchase or
 // sale, compiled from Strategy's 8-Ks, 10-Qs, and 10-Ks (2020-08-11
-// through 2026-10-12). Plotted as a stairstep since holdings only change
+// through 2026-10-19). Plotted as a stairstep since holdings only change
 // on disclosed dates -- there's no real "in between."
 // -----------------------------------------------------------------
 
@@ -258,9 +258,11 @@ if barstate.isfirst
     array.push(dHeld, 848000)
     array.push(dDate, timestamp("2026-10-12"))
     array.push(dHeld, 848250)
+    array.push(dDate, timestamp("2026-10-19"))
+    array.push(dHeld, 848517)
 
 // Finds the most recent disclosed holdings figure at or before this
-// bar's time -- a plain linear scan, since 120 entries is trivial
+// bar's time -- a plain linear scan, since 121 entries is trivial
 // for Pine's per-bar execution budget.
 btcHeld = 0.0
 for i = 0 to array.size(dDate) - 1
