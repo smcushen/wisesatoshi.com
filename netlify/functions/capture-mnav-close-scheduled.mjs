@@ -3,15 +3,20 @@ import { captureIfNeeded } from './lib/mnav-close-core.mjs';
 // ET) to catch cases where the data source already has the final close
 // instantly, two more 15 minutes later (16:15/16:16 ET) as a fallback.
 // allowOverwrite:true means each later attempt re-fetches and replaces the
-// prior snapshot rather than skipping — the goal is "most recent attempt
-// wins," since a later fetch is never less likely to be settled than an
-// earlier one. The on-visit check function is untouched and still skips
-// once captured, so it won't re-fire repeatedly all evening.
+// prior snapshot rather than skipping -- "most recent attempt wins."
 //
-// 0,1,15,16 20 * * 1-5 = :00,:01,:15,:16 past 4pm ET on weekdays, while ET
-// is UTC-4 (EDT). Once ET shifts to UTC-5 (EST, ~early Nov), change the
-// hour to 21: '0,1,15,16 21 * * 1-5'.
+// DST-proof: the schedule fires in BOTH the 20:00 and 21:00 UTC hours
+// (4 PM ET in summer and in winter), and the guard below only lets the run
+// through when it is actually the 4 PM hour in New York. No more editing
+// this file each March and November.
 export default async () => {
+  const etHour = Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: '2-digit', hour12: false,
+  }).format(new Date()));
+  if (etHour !== 16) {
+    console.log('Scheduled mNAV capture: skipped, ET hour is ' + etHour + ' (not the 4 PM close window)');
+    return;
+  }
   try {
     const result = await captureIfNeeded({ force: false, allowOverwrite: true });
     console.log('Scheduled mNAV capture:', result);
@@ -20,5 +25,5 @@ export default async () => {
   }
 };
 export const config = {
-  schedule: '0,1,15,16 20 * * 1-5',
+  schedule: '0,1,15,16 20,21 * * 1-5',
 };
