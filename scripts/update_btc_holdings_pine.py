@@ -171,7 +171,11 @@ indicator("MSTR mNAV (WiseSatoshi)", overlay=false)
 {lines}
 
 // ---- Live prices, pulled from TradingView's own real symbols ----
-btcPrice  = request.security("BTCUSD", timeframe.period, close)
+// BTC trades 24/7 but MSTR's daily bar ends at 4 PM ET. Pulling BTC on
+// the chart's own timeframe returns the PREVIOUS finished BTC day (a
+// one-day lag). Hourly BTC instead gives BTC at MSTR's close each day.
+btcTf     = timeframe.in_seconds() > 3600 ? "60" : timeframe.period
+btcPrice  = request.security("BITSTAMP:BTCUSD", btcTf, close)
 mstrPrice = request.security("NASDAQ:MSTR", timeframe.period, close)
 
 // ---- Same formula as the site's calcNetValuePerShare() ----
