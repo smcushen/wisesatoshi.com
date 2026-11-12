@@ -1,8 +1,8 @@
 {
-  "mstrClosePrice": 114.6,
-  "btcPriceAtClose": 71416,
-  "netValuePerShareAtClose": 106.91119773567253,
-  "mnav": 1.0719176515385906,
+  "mstrClosePrice": 114.41,
+  "btcPriceAtClose": 71406,
+  "netValuePerShareAtClose": 106.89133043742692,
+  "mnav": 1.0703393767465026,
   "marketDate": "2026-11-12",
-  "capturedAt": "2026-11-12T21:00:05.800Z"
+  "capturedAt": "2026-11-12T21:01:05.260Z"
 }
