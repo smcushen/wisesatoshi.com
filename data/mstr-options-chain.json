@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-11-16",
+  "lastUpdated": "2026-11-17",
   "activityFilter": "Strikes with call open interest <= 25 excluded (already-listed strikes kept while still trading)",
   "cutoffMonths": 7,
   "joinRule": "New expirations added once 210+ days out; each stays until it expires",
@@ -538,6 +538,7 @@
         90,
         95,
         100,
+        105,
         110,
         115,
         120,
